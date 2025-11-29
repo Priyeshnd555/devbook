@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import { Plus, ChevronDown, ChevronRight, Circle, CheckCircle2, Clock, MessageSquare, Zap, StickyNote } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Circle, CheckCircle2, Clock, MessageSquare, Zap, StickyNote, Pencil, Trash2 } from 'lucide-react';
 
 const NestedWorkflow = () => {
   const [threads, setThreads] = useState({
@@ -52,57 +52,6 @@ const NestedWorkflow = () => {
                   children: []
                 }
               ]
-            },
-            {
-              id: 't2-3',
-              text: 'Test each CMS page type',
-              done: false,
-              note: 'Some open webview, some native - very unclear!',
-              children: [
-                {
-                  id: 't2-3-1',
-                  text: 'Static pages',
-                  done: false,
-                  note: '',
-                  children: []
-                },
-                {
-                  id: 't2-3-2',
-                  text: 'Dynamic pages',
-                  done: false,
-                  note: '',
-                  children: []
-                }
-              ]
-            }
-          ]
-        },
-        {
-          id: 't3',
-          text: 'Validate all external links',
-          done: false,
-          note: 'Check ALL, not just the ones mentioned in tickets',
-          children: [
-            {
-              id: 't3-1',
-              text: 'Sweepstakes link (ATGR-17336)',
-              done: false,
-              note: 'Goes to 404 - needs to open external browser',
-              children: []
-            },
-            {
-              id: 't3-2',
-              text: 'Browse URLs',
-              done: false,
-              note: 'qa.shopmyexchange.com/browse?query=tap not working',
-              children: []
-            },
-            {
-              id: 't3-3',
-              text: 'Privacy policy links',
-              done: false,
-              note: 'Need to move to Firebase config',
-              children: []
             }
           ]
         }
@@ -140,28 +89,15 @@ const NestedWorkflow = () => {
               done: false,
               note: 'Waiting on server team - BLOCKED',
               children: []
-            },
-            {
-              id: 'a1-3',
-              text: 'Verify with Google tool',
-              done: false,
-              note: 'Use developers.google.com/digital-asset-links/tools/generator',
-              children: []
             }
           ]
         }
       ],
-      sessions: [
-        {
-          date: '2025-11-27',
-          time: '10:30 AM',
-          notes: 'Found root cause! Package name wrong in both Android and iOS configs.'
-        }
-      ]
+      sessions: []
     }
   });
 
-  const [expandedTasks, setExpandedTasks] = useState(new Set(['t2', 't2-2', 't3', 'a1']));
+  const [expandedTasks, setExpandedTasks] = useState(new Set(['t2', 't2-2', 'a1']));
   const [expandedThreads, setExpandedThreads] = useState(new Set(Object.keys(threads)));
   const [editingNote, setEditingNote] = useState(null);
   const [noteText, setNoteText] = useState('');
@@ -169,15 +105,47 @@ const NestedWorkflow = () => {
   const [newChildText, setNewChildText] = useState('');
   const [addingSessionTo, setAddingSessionTo] = useState(null);
   const [sessionNotes, setSessionNotes] = useState('');
+  const [isAddingThread, setIsAddingThread] = useState(false);
+  const [newThreadTitle, setNewThreadTitle] = useState('');
+  const [editingThreadId, setEditingThreadId] = useState(null);
+
+  const addThread = () => {
+    if (!newThreadTitle.trim()) return;
+    const newThreadId = `thread-${Date.now()}`;
+    const newThread = {
+      id: newThreadId,
+      title: newThreadTitle,
+      status: 'active',
+      lastWorked: new Date().toISOString().split('T')[0],
+      tasks: [],
+      sessions: [],
+    };
+    setThreads(prev => ({ ...prev, [newThreadId]: newThread }));
+    setNewThreadTitle('');
+    setIsAddingThread(false);
+    setExpandedThreads(prev => new Set([...prev, newThreadId]));
+  };
+
+  const updateThreadTitle = (threadId, newTitle) => {
+    setThreads(prev => ({
+      ...prev,
+      [threadId]: { ...prev[threadId], title: newTitle }
+    }));
+    setEditingThreadId(null);
+  };
+
+  const deleteThread = (threadId) => {
+    if (window.confirm('Delete this thread?')) {
+      const newThreads = { ...threads };
+      delete newThreads[threadId];
+      setThreads(newThreads);
+    }
+  };
 
   const toggleTask = (taskId) => {
     setExpandedTasks(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(taskId)) {
-        newSet.delete(taskId);
-      } else {
-        newSet.add(taskId);
-      }
+      newSet.has(taskId) ? newSet.delete(taskId) : newSet.add(taskId);
       return newSet;
     });
   };
@@ -185,11 +153,7 @@ const NestedWorkflow = () => {
   const toggleThread = (threadId) => {
     setExpandedThreads(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(threadId)) {
-        newSet.delete(threadId);
-      } else {
-        newSet.add(threadId);
-      }
+      newSet.has(threadId) ? newSet.delete(threadId) : newSet.add(threadId);
       return newSet;
     });
   };
@@ -197,44 +161,28 @@ const NestedWorkflow = () => {
   const toggleTaskDone = (threadId, taskId) => {
     const updateTaskRecursive = (tasks) => {
       return tasks.map(task => {
-        if (task.id === taskId) {
-          return { ...task, done: !task.done };
-        }
-        if (task.children.length > 0) {
-          return { ...task, children: updateTaskRecursive(task.children) };
-        }
+        if (task.id === taskId) return { ...task, done: !task.done };
+        if (task.children.length > 0) return { ...task, children: updateTaskRecursive(task.children) };
         return task;
       });
     };
-
     setThreads(prev => ({
       ...prev,
-      [threadId]: {
-        ...prev[threadId],
-        tasks: updateTaskRecursive(prev[threadId].tasks)
-      }
+      [threadId]: { ...prev[threadId], tasks: updateTaskRecursive(prev[threadId].tasks) }
     }));
   };
 
   const saveNote = (threadId, taskId) => {
     const updateNoteRecursive = (tasks) => {
       return tasks.map(task => {
-        if (task.id === taskId) {
-          return { ...task, note: noteText };
-        }
-        if (task.children.length > 0) {
-          return { ...task, children: updateNoteRecursive(task.children) };
-        }
+        if (task.id === taskId) return { ...task, note: noteText };
+        if (task.children.length > 0) return { ...task, children: updateNoteRecursive(task.children) };
         return task;
       });
     };
-
     setThreads(prev => ({
       ...prev,
-      [threadId]: {
-        ...prev[threadId],
-        tasks: updateNoteRecursive(prev[threadId].tasks)
-      }
+      [threadId]: { ...prev[threadId], tasks: updateNoteRecursive(prev[threadId].tasks) }
     }));
     setEditingNote(null);
     setNoteText('');
@@ -242,7 +190,6 @@ const NestedWorkflow = () => {
 
   const addChild = (threadId, parentId) => {
     if (!newChildText.trim()) return;
-
     const addChildRecursive = (tasks) => {
       return tasks.map(task => {
         if (task.id === parentId) {
@@ -258,21 +205,14 @@ const NestedWorkflow = () => {
             }]
           };
         }
-        if (task.children.length > 0) {
-          return { ...task, children: addChildRecursive(task.children) };
-        }
+        if (task.children.length > 0) return { ...task, children: addChildRecursive(task.children) };
         return task;
       });
     };
-
     setThreads(prev => ({
       ...prev,
-      [threadId]: {
-        ...prev[threadId],
-        tasks: addChildRecursive(prev[threadId].tasks)
-      }
+      [threadId]: { ...prev[threadId], tasks: addChildRecursive(prev[threadId].tasks) }
     }));
-    
     setExpandedTasks(prev => new Set([...prev, parentId]));
     setNewChildText('');
     setAddingChildTo(null);
@@ -280,24 +220,17 @@ const NestedWorkflow = () => {
 
   const addSession = (threadId) => {
     if (!sessionNotes.trim()) return;
-
     const now = new Date();
     const date = now.toISOString().split('T')[0];
     const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
     setThreads(prev => ({
       ...prev,
       [threadId]: {
         ...prev[threadId],
-        sessions: [{
-          date,
-          time,
-          notes: sessionNotes
-        }, ...prev[threadId].sessions],
+        sessions: [{ date, time, notes: sessionNotes }, ...prev[threadId].sessions],
         lastWorked: `${date} ${time}`
       }
     }));
-
     setSessionNotes('');
     setAddingSessionTo(null);
   };
@@ -309,83 +242,67 @@ const NestedWorkflow = () => {
     const isAddingChild = addingChildTo === task.id;
 
     return (
-      <div className={`${level > 0 ? 'ml-6 border-l-2 border-gray-200 pl-4' : ''}`}>
-        <div className="mb-2">
-          <div className="flex items-start gap-2 group hover:bg-gray-50 p-2 rounded-lg">
-            {/* Expand/Collapse */}
+      <div className={`${level > 0 ? 'ml-7 border-l border-orange-200 pl-4 py-0.5' : ''}`}>
+        <div className="mb-1">
+          <div className="flex items-start gap-3 group hover:bg-orange-50/30 px-3 py-2 rounded transition-colors">
             {hasChildren && (
-              <button
-                onClick={() => toggleTask(task.id)}
-                className="mt-0.5 text-gray-400 hover:text-gray-600"
-              >
-                {isExpanded ? 
-                  <ChevronDown className="w-4 h-4" /> : 
-                  <ChevronRight className="w-4 h-4" />
-                }
+              <button onClick={() => toggleTask(task.id)} className="mt-0.5 text-gray-400 hover:text-orange-500 transition-colors flex-shrink-0">
+                {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               </button>
             )}
-            {!hasChildren && <div className="w-4"></div>}
+            {!hasChildren && <div className="w-4 flex-shrink-0"></div>}
 
-            {/* Checkbox */}
-            <button
-              onClick={() => toggleTaskDone(threadId, task.id)}
-              className="mt-0.5"
-            >
+            <button onClick={() => toggleTaskDone(threadId, task.id)} className="mt-0.5 flex-shrink-0 transition-colors">
               {task.done ? (
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <CheckCircle2 className="w-5 h-5 text-orange-400" />
               ) : (
-                <Circle className="w-5 h-5 text-gray-300 hover:text-gray-400" />
+                <Circle className="w-5 h-5 text-gray-300 hover:text-orange-300" />
               )}
             </button>
 
-            {/* Task Text */}
             <div className="flex-1 min-w-0">
-              <span className={`${task.done ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+              <span className={`text-sm leading-relaxed ${task.done ? 'line-through text-gray-400' : 'text-gray-700'}`}>
                 {task.text}
               </span>
               
-              <span className="text-xs text-gray-400"> {task.addedDate}  2018:04:01 </span>
-              
-              {/* Note Preview */}
               {task.note && !isEditing && (
                 <div 
-                  className="mt-1 text-sm text-gray-600 bg-amber-50 border-l-2 border-amber-400 px-3 py-1.5 rounded cursor-pointer hover:bg-amber-100"
+                  className="mt-2 text-xs leading-relaxed text-orange-900 bg-orange-100 px-3 py-2 rounded cursor-pointer hover:bg-orange-100/80 transition-colors"
                   onClick={() => {
                     setEditingNote(task.id);
                     setNoteText(task.note);
                   }}
                 >
                   <div className="flex items-start gap-2">
-                    <StickyNote className="w-3 h-3 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <StickyNote className="w-3 h-3 text-orange-700 mt-0.5 flex-shrink-0" />
                     <span>{task.note}</span>
                   </div>
                 </div>
               )}
 
-              {/* Edit Note */}
               {isEditing && (
-                <div className="mt-2 space-y-2">
+                <div className="mt-3 space-y-2">
                   <textarea
                     value={noteText}
                     onChange={(e) => setNoteText(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded text-sm resize-none"
+                    className="w-full px-3 py-2 border border-orange-300 rounded text-xs resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white leading-relaxed"
                     rows={3}
-                    placeholder="Add context, findings, questions..."
+                    placeholder="Add notes..."
                     autoFocus
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={() => saveNote(threadId, task.id)}
-                      className="px-3 py-1 bg-blue-600 text-white rounded text-sm"
+                      className="px-3 py-1.5 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition-colors font-medium"
                     >
-                      Save Note
+                      Save
                     </button>
                     <button
                       onClick={() => {
                         setEditingNote(null);
                         setNoteText('');
                       }}
-                      className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm"
+                      className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs rounded hover:bg-gray-200 transition-colors"
                     >
                       Cancel
                     </button>
@@ -394,71 +311,54 @@ const NestedWorkflow = () => {
               )}
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
               {!task.note && !isEditing && (
                 <button
                   onClick={() => {
                     setEditingNote(task.id);
                     setNoteText(task.note);
                   }}
-                  className="p-1 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded"
+                  className="p-1.5 text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded transition-colors"
                   title="Add note"
                 >
-                  <MessageSquare className="w-4 h-4" />
+                  <MessageSquare className="w-3.5 h-3.5" />
                 </button>
               )}
               <button
                 onClick={() => setAddingChildTo(task.id)}
-                className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                className="p-1.5 text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded transition-colors"
                 title="Add subtask"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
-          {/* Add Child Form */}
           {isAddingChild && (
-            <div className="ml-11 mt-2 flex gap-2">
+            <div className="ml-10 mt-2 flex gap-2">
               <input
                 type="text"
                 value={newChildText}
                 onChange={(e) => setNewChildText(e.target.value)}
                 placeholder="New subtask..."
-                className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm"
+                className="flex-1 px-3 py-2 border border-orange-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
                 autoFocus
                 onKeyPress={(e) => e.key === 'Enter' && addChild(threadId, task.id)}
               />
               <button
                 onClick={() => addChild(threadId, task.id)}
-                className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm"
+                className="px-3 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors font-medium"
               >
                 Add
-              </button>
-              <button
-                onClick={() => {
-                  setAddingChildTo(null);
-                  setNewChildText('');
-                }}
-                className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-sm"
-              >
-                Cancel
               </button>
             </div>
           )}
         </div>
 
-        {/* Children */}
         {isExpanded && hasChildren && (
           <div className="mt-1">
             {task.children.map(child => (
-              <TaskItem 
-                key={child.id} 
-                task={child} 
-                threadId={threadId}
-                level={level + 1}
-              />
+              <TaskItem key={child.id} task={child} threadId={threadId} level={level + 1} />
             ))}
           </div>
         )}
@@ -466,87 +366,104 @@ const NestedWorkflow = () => {
     );
   };
 
-  const ThreadCard = ({ thread, isThreadExpanded, toggleThread }) => {
+  const ThreadCard = ({ thread, isThreadExpanded, toggleThread, onUpdateTitle, onDelete }) => {
     const completedCount = thread.tasks.filter(t => t.done).length;
     const totalCount = thread.tasks.length;
     const isAddingSession = addingSessionTo === thread.id;
+    const [title, setTitle] = useState(thread.title);
 
+    const handleUpdate = () => {
+      if (title.trim()) onUpdateTitle(thread.id, title);
+    };
+
+    const statusConfig = {
+      active: { bg: 'bg-orange-100', text: 'text-orange-700', dot: 'bg-orange-500' },
+      blocked: { bg: 'bg-red-100', text: 'text-red-700', dot: 'bg-red-500' },
+      completed: { bg: 'bg-gray-100', text: 'text-gray-700', dot: 'bg-gray-500' }
+    };
+    const statusStyle = statusConfig[thread.status] || statusConfig.active;
+    
     return (
-      <div className="bg-white rounded-xl border-2 border-gray-200 shadow-sm mb-4">
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => toggleThread(thread.id)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  {isThreadExpanded ? 
-                    <ChevronDown className="w-5 h-5" /> : 
-                    <ChevronRight className="w-5 h-5" />
-                  }
+      <div className="bg-white rounded-lg border border-gray-200 mb-4 shadow-sm">
+        <div className="p-4 border-b border-gray-100">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 group mb-3">
+                <button onClick={() => toggleThread(thread.id)} className="text-gray-400 hover:text-orange-500 transition-colors flex-shrink-0">
+                  {isThreadExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
                 </button>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">{thread.title}</h3>
+                {editingThreadId === thread.id ? (
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    onBlur={handleUpdate}
+                    onKeyPress={(e) => e.key === 'Enter' && handleUpdate()}
+                    className="text-base font-medium text-gray-900 flex-1 px-2 py-1 border-b-2 border-orange-500 focus:outline-none bg-transparent"
+                    autoFocus
+                  />
+                ) : (
+                  <h3 className="text-base font-medium text-gray-900">{thread.title}</h3>
+                )}
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 flex-shrink-0">
+                  <button onClick={() => setEditingThreadId(thread.id)} className="p-1 text-gray-400 hover:text-orange-500 transition-colors">
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => onDelete(thread.id)} className="p-1 text-gray-400 hover:text-red-500 transition-colors">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  <span>{thread.lastWorked}</span>
+              
+              <div className="flex items-center gap-4 text-xs text-gray-500 ml-7">
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                  <span className="truncate">{thread.lastWorked}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">{completedCount}/{totalCount}</span>
-                  <div className="bg-gray-200 rounded-full h-2 w-24">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${(completedCount/totalCount) * 100}%` }}
-                    ></div>
+                  <span className="font-medium text-gray-600">{completedCount}/{totalCount}</span>
+                  <div className="bg-gray-200 rounded-full h-1 w-16">
+                    <div className="bg-orange-500 h-1 rounded-full transition-all" style={{ width: `${totalCount ? (completedCount/totalCount) * 100 : 0}%` }}></div>
                   </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  thread.status === 'active' ? 'bg-blue-100 text-blue-700' :
-                  thread.status === 'blocked' ? 'bg-red-100 text-red-700' :
-                  'bg-green-100 text-green-700'
-                }`}>
-                  {thread.status}
-                </span>
+                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${statusStyle.bg} flex-shrink-0`}>
+                  <div className={`w-1 h-1 rounded-full ${statusStyle.dot}`}></div>
+                  <span className={`text-xs font-medium ${statusStyle.text}`}>{thread.status}</span>
+                </div>
               </div>
             </div>
             
             <button
               onClick={() => setAddingSessionTo(thread.id)}
-              className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
+              className="flex items-center gap-1.5 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors"
             >
-              <Zap className="w-4 h-4" />
-              Log Session
+              <Zap className="w-3.5 h-3.5" />
+              Log
             </button>
           </div>
         </div>
 
-        {/* Add Session Form */}
         {isAddingSession && (
-          <div className="p-4 bg-blue-50 border-b border-blue-200">
-            <h4 className="text-sm font-semibold text-gray-700 mb-2">Log work session</h4>
+          <div className="p-4 bg-gray-50 border-b border-gray-100">
+            <h4 className="text-sm font-medium text-gray-900 mb-2">Work session</h4>
             <textarea
               value={sessionNotes}
               onChange={(e) => setSessionNotes(e.target.value)}
-              placeholder="What did you work on? What did you discover?"
-              className="w-full p-3 border border-gray-300 rounded text-sm resize-none"
-              rows={3}
+              placeholder="What did you work on?"
+              className="w-full p-3 border border-gray-300 rounded text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+              rows={2}
               autoFocus
             />
             <div className="flex gap-2 mt-2">
               <button
                 onClick={() => addSession(thread.id)}
-                className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                className="px-3 py-1.5 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 transition-colors font-medium"
               >
-                Save Session
+                Save
               </button>
               <button
-                onClick={() => {
-                  setAddingSessionTo(null);
-                  setSessionNotes('');
-                }}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300"
+                onClick={() => { setAddingSessionTo(null); setSessionNotes(''); }}
+                className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-xs hover:bg-gray-300 transition-colors"
               >
                 Cancel
               </button>
@@ -557,32 +474,25 @@ const NestedWorkflow = () => {
         {isThreadExpanded && (
           <>
             <div className="p-4">
-
-                  {/* Add new top-level task */}
               <button
                 onClick={() => setAddingChildTo(`${thread.id}-root`)}
-                className="mt-3 flex items-end gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium float-end"
+                className="flex items-center gap-1.5 text-orange-600 hover:text-orange-700 text-xs font-medium mb-3 transition-colors"
               >
-                <Plus className="w-4 h-4" />
-                Add task 
+                <Plus className="w-3.5 h-3.5" />
+                Add task
               </button>
 
-              <br/>
-                <br/>
-
-                {/* Add Root Task Form */}
               {addingChildTo === `${thread.id}-root` && (
-                <div className="mt-2 flex gap-2">
+                <div className="mb-3 flex gap-2">
                   <input
                     type="text"
                     value={newChildText}
                     onChange={(e) => setNewChildText(e.target.value)}
                     placeholder="New task..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                    className="flex-1 px-3 py-2 border border-orange-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
                     autoFocus
                     onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        if (!newChildText.trim()) return;
+                      if (e.key === 'Enter' && newChildText.trim()) {
                         const newId = `t${thread.tasks.length + 1}`;
                         setThreads(prev => ({
                           ...prev,
@@ -604,64 +514,58 @@ const NestedWorkflow = () => {
                   />
                   <button
                     onClick={() => {
-                      if (!newChildText.trim()) return;
-                      const newId = `t${thread.tasks.length + 1}`;
-                      setThreads(prev => ({
-                        ...prev,
-                        [thread.id]: {
-                          ...prev[thread.id],
-                          tasks: [...prev[thread.id].tasks, {
-                            id: newId,
-                            text: newChildText,
-                            done: false,
-                            note: '',
-                            children: []
-                          }]
-                        }
-                      }));
-                      setNewChildText('');
-                      setAddingChildTo(null);
+                      if (newChildText.trim()) {
+                        const newId = `t${thread.tasks.length + 1}`;
+                        setThreads(prev => ({
+                          ...prev,
+                          [thread.id]: {
+                            ...prev[thread.id],
+                            tasks: [...prev[thread.id].tasks, {
+                              id: newId,
+                              text: newChildText,
+                              done: false,
+                              note: '',
+                              children: []
+                            }]
+                          }
+                        }));
+                        setNewChildText('');
+                        setAddingChildTo(null);
+                      }
                     }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                    className="px-3 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors font-medium"
                   >
                     Add
-                  </button>
-                  <button
-                    onClick={() => {
-                      setAddingChildTo(null);
-                      setNewChildText('');
-                    }}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300"
-                  >
-                    Cancel
                   </button>
                 </div>
               )}
 
-              <br/>
-
-
-              {thread.tasks.map(task => (
-                <TaskItem key={task.id} task={task} threadId={thread.id} />
-              ))}
-              
-          
-
-            
+              {thread.tasks.length > 0 ? (
+                <div className="space-y-0.5">
+                  {thread.tasks.map(task => (
+                    <TaskItem key={task.id} task={task} threadId={thread.id} />
+                  ))}
+                </div>
+              ) : (
+                <div className="py-6 text-center text-xs text-gray-400">
+                  <p>No tasks. Add one to begin.</p>
+                </div>
+              )}
             </div>
 
-            {/* Work Sessions */}
             {thread.sessions.length > 0 && (
-              <div className="px-4 pb-4 border-t border-gray-200 pt-4">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Work Sessions</h4>
-                {thread.sessions.map((session, idx) => (
-                  <div key={idx} className="bg-gray-50 rounded p-3 text-sm mb-2">
-                    <div className="text-xs text-gray-500 mb-1">
-                      {session.date} {session.time}
+              <div className="px-4 pb-4 border-t border-gray-100 pt-3">
+                <h4 className="text-xs font-medium text-gray-900 mb-2 uppercase tracking-wide">Sessions</h4>
+                <div className="space-y-2">
+                  {thread.sessions.map((session, idx) => (
+                    <div key={idx} className="bg-gray-50 rounded p-2.5 text-xs border border-gray-200">
+                      <div className="text-gray-500 mb-1 font-medium">
+                        {session.date} {session.time}
+                      </div>
+                      <div className="text-gray-700 leading-relaxed">{session.notes}</div>
                     </div>
-                    <div className="text-gray-900">{session.notes}</div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </>
@@ -672,31 +576,65 @@ const NestedWorkflow = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="sticky top-0 bg-white border-b shadow-sm z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Deep Linking Phase 2</h1>
-              <p className="text-sm text-gray-600">Nested task tracking with context</p>
+      <div className="sticky top-0 bg-white border-b border-gray-200 shadow-xs z-10">
+        <div className="max-w-4xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-lg font-semibold text-gray-900">Deep Linking Phase 2</h1>
+              <p className="text-xs text-gray-500 mt-0.5">Nested task tracking</p>
             </div>
+            <button
+              onClick={() => setIsAddingThread(true)}
+              className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              New
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-6">
-        {Object.values(threads).map(thread => (
-          <ThreadCard 
-            key={thread.id} 
-            thread={thread} 
-            isThreadExpanded={expandedThreads.has(thread.id)}
-            toggleThread={toggleThread}
-          />
-        ))}
+      <div className="max-w-4xl mx-auto px-6 py-4">
+        {isAddingThread && (
+          <div className="mb-3 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+            <h3 className="text-sm font-medium text-gray-900 mb-2">New thread</h3>
+            <input
+              type="text"
+              value={newThreadTitle}
+              onChange={(e) => setNewThreadTitle(e.target.value)}
+              placeholder="Title..."
+              className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+              autoFocus
+              onKeyPress={(e) => e.key === 'Enter' && addThread()}
+            />
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={addThread}
+                className="px-3 py-1.5 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 transition-colors font-medium"
+              >
+                Create
+              </button>
+              <button
+                onClick={() => { setIsAddingThread(false); setNewThreadTitle(''); }}
+                className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded text-xs hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
-        <div className="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r">
-          <p className="text-sm text-blue-900">
-            <strong>💡 Tip:</strong> Hover over any task to add notes or subtasks. Click notes to edit them. Nest as deep as you need!
-          </p>
+        <div className="space-y-3">
+          {Object.values(threads).map(thread => (
+            <ThreadCard 
+              key={thread.id} 
+              thread={thread} 
+              isThreadExpanded={expandedThreads.has(thread.id)}
+              toggleThread={toggleThread}
+              onUpdateTitle={updateThreadTitle}
+              onDelete={deleteThread}
+            />
+          ))}
         </div>
       </div>
     </div>
