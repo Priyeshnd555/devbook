@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nested Workflow
+
+A simple, nested task tracking application with context.
 
 ## Getting Started
 
-First, run the development server:
+First, install the dependencies:
+
+```bash
+npm install
+```
+
+Then, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+*   **Nested Tasks**: Create tasks and nest them under each other to any depth.
+*   **Notes**: Add notes to any task to provide more context.
+*   **Task Status**: Mark tasks as complete or incomplete.
+*   **Work Sessions**: Log work sessions to keep track of your progress.
+*   **Expand/Collapse**: Collapse threads and tasks to focus on what's important.
 
-## Learn More
+## How it Works
 
-To learn more about Next.js, take a look at the following resources:
+The application is a single-page React application built with Next.js. It uses React's `useState` hook to manage the state of the tasks and threads.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+*   **Threads**: The main container for a set of tasks. Each thread has a title, status, and a list of tasks.
+*   **Tasks**: Each task has a description, a done status, a note, and a list of children tasks.
+*   **State Management**: The entire state of the application is managed in the `NestedWorkflow` component. The state is passed down to the `ThreadCard` and `TaskItem` components as props.
+*   **Actions**: Actions like adding, toggling, and updating tasks and notes are handled by functions in the `NestedWorkflow` component. These functions are passed down to the child components as props.
