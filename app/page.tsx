@@ -511,7 +511,7 @@ const NestedWorkflow = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <h1 className="text-lg font-semibold text-gray-900">Deep Linking Phase 2</h1>
+              <h1 className="text-lg font-semibold text-gray-900">Thread Notes</h1>
               <p className="text-xs text-gray-500 mt-0.5">
                 Nested task tracking &bull; {globalTotalThreads} Threads &bull; {globalCompletedTasks}/{globalTotalTasks} Tasks
               </p>
