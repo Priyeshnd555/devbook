@@ -19,13 +19,15 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
+import { TaskItem, TaskItemProps } from "./components/TaskItem"; // Import TaskItem
+import { ThreadCard, ThreadCardProps } from "./components/ThreadCard"; // Import ThreadCard
 
 // ============================================================================
 // TYPE DEFINITIONS: Core data structures for the application.
 // ============================================================================
 
 // CONSTRAINT: Tasks can be nested infinitely, but the UI is optimized for readability and may not display deep nesting well.
-interface Task {
+export interface Task {
   id: string;
   text: string;
   done: boolean;
@@ -33,7 +35,7 @@ interface Task {
   children: Task[];
 }
 
-interface Session {
+export interface Session {
   date: string;
   time: string;
   notes: string;
@@ -41,16 +43,16 @@ interface Session {
 
 // STRATEGY: A thread's status is explicitly managed to control workflow and visual styling.
 // This allows for clear visual cues about the state of a workstream.
-type ThreadStatus = "active" | "blocked" | "completed";
+export type ThreadStatus = "active" | "blocked" | "completed";
 
 // STATE MACHINE MANDATE: Explicitly define the state transitions for a thread's status.
-const THREAD_STATE_TRANSITIONS: Record<ThreadStatus, ThreadStatus[]> = {
+export const THREAD_STATE_TRANSITIONS: Record<ThreadStatus, ThreadStatus[]> = {
   active: ["blocked", "completed"],
   blocked: ["active", "completed"],
   completed: ["active"],
 };
 
-interface Thread {
+export interface Thread {
   id: string;
   title: string;
   status: ThreadStatus;
@@ -59,7 +61,7 @@ interface Thread {
   sessions: Session[];
 }
 
-type ThreadsState = Record<string, Thread>;
+export type ThreadsState = Record<string, Thread>;
 
 // ============================================================================
 // STATE TRANSITIONS: Visual map of how state changes flow.
@@ -158,7 +160,7 @@ const NestedWorkflow = () => {
   const [addingChildTo, setAddingChildTo] = useState<string | null>(null);
   const [newChildText, setNewChildText] = useState<string>("");
   const [addingSessionTo, setAddingSessionTo] = useState<string | null>(null);
-  const [sessionNotes, setSessionNotes] = useState<string>("");
+  // Removed sessionNotes state from here, now local to ThreadCard
   const [isAddingThread, setIsAddingThread] = useState<boolean>(false);
   const [newThreadTitle, setNewThreadTitle] = useState<string>("");
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
@@ -388,14 +390,14 @@ const NestedWorkflow = () => {
   // ==========================================================================
 
   // STATE CHANGE: Adds a new work session log to a thread and updates the 'lastWorked' timestamp.
-  const addSession = (threadId: string) => {
-    if (!sessionNotes.trim()) return;
+  const addSession = (threadId: string, notes: string) => { // Modified to accept notes
+    if (!notes.trim()) return;
 
     const now = new Date();
     const date = now.toISOString().split("T")[0];
     const time = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 
-    const newSession: Session = { date, time, notes: sessionNotes };
+    const newSession: Session = { date, time, notes };
 
     setThreads((prev) => ({
       ...prev,
@@ -405,26 +407,77 @@ const NestedWorkflow = () => {
         lastWorked: `${date} ${time}`,
       },
     }));
-    setSessionNotes("");
     setAddingSessionTo(null);
   };
 
   // ==========================================================================
-  // UI COMPONENTS: Reusable components for rendering the interface.
-  // These are defined within the main component to have closure over state and handlers.
+  // MAIN COMPONENT RENDER: Assembles the top-level UI structure.
   // ==========================================================================
+
+  // CONTEXT ANCHOR: TaskItem Component Reference
+  // The full code for TaskItem is located in './components/TaskItem.tsx'.
+  // It is duplicated here as a comment for AI reference as per user's request.
+  /*
+  import React, { useState, useEffect } from "react";
+  import {
+    Plus,
+    ChevronDown,
+    ChevronRight,
+    Circle,
+    CheckCircle2,
+    MessageSquare,
+    StickyNote,
+    Pencil,
+  } from "lucide-react";
+  import { Task } from "../page"; // Assuming Task type is exported from page.tsx
 
   // CONTEXT ANCHOR
   // PURPOSE: Renders a single task item and recursively renders its children. This component handles displaying task status, notes, and actions like adding a sub-task.
-  // DEPENDENCIES: Relies on parent state for expansion, editing status, and data.
+  // DEPENDENCIES: React hooks, Lucide icons, Task type from parent.
   // INVARIANTS: It must be provided a valid 'task' and 'threadId'.
-  interface TaskItemProps {
+  export interface TaskItemProps {
     task: Task;
     threadId: string;
     level?: number;
+    expandedTasks: Set<string>;
+    editingNote: string | null;
+    addingChildTo: string | null;
+    editingTaskId: string | null;
+    editedTaskText: string;
+    toggleTask: (taskId: string) => void;
+    toggleTaskDone: (threadId: string, taskId: string) => void;
+    setEditingNote: (id: string | null) => void;
+    saveNote: (threadId: string, taskId: string, text: string) => void;
+    setAddingChildTo: (id: string | null) => void;
+    newChildText: string;
+    setNewChildText: (text: string) => void;
+    addChild: (threadId: string, parentId: string) => void;
+    setEditingTaskId: (id: string | null) => void;
+    setEditedTaskText: (text: string) => void;
+    updateTaskText: (threadId: string, taskId: string, text: string) => void;
   }
 
-  const TaskItem: React.FC<TaskItemProps> = ({ task, threadId, level = 0 }) => {
+  export const TaskItem: React.FC<TaskItemProps> = ({
+    task,
+    threadId,
+    level = 0,
+    expandedTasks,
+    editingNote,
+    addingChildTo,
+    editingTaskId,
+    editedTaskText,
+    toggleTask,
+    toggleTaskDone,
+    setEditingNote,
+    saveNote,
+    setAddingChildTo,
+    newChildText,
+    setNewChildText,
+    addChild,
+    setEditingTaskId,
+    setEditedTaskText,
+    updateTaskText,
+  }) => {
     const isExpanded = expandedTasks.has(task.id);
     const hasChildren = task.children.length > 0;
     const isEditing = editingNote === task.id;
@@ -520,7 +573,7 @@ const NestedWorkflow = () => {
                   <MessageSquare className="w-3.5 h-3.5" />
                 </button>
               )}
-              <button onClick={() => setAddingChildTo(task.id)} className="p-1.5 text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded transition-colors" title="Add subtask">
+              <button onClick={() => { setAddingChildTo(task.id); setNewChildText(''); }} className="p-1.5 text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded transition-colors" title="Add subtask">
                 <Plus className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -537,19 +590,58 @@ const NestedWorkflow = () => {
         {isExpanded && hasChildren && (
           <div className="mt-1">
             {task.children.map((child) => (
-              <TaskItem key={`${threadId}-${child.id}`} task={child} threadId={threadId} level={level + 1} />
+              <TaskItem key={`${threadId}-${child.id}`} {...{...{
+                expandedTasks,
+                editingNote,
+                addingChildTo,
+                editingTaskId,
+                editedTaskText,
+                toggleTask,
+                toggleTaskDone,
+                setEditingNote,
+                saveNote,
+                setAddingChildTo,
+                newChildText,
+                setNewChildText,
+                addChild,
+                setEditingTaskId,
+                setEditedTaskText,
+                updateTaskText,
+              }, task: child, threadId, level: level + 1 }} />
             ))}
           </div>
         )}
       </div>
     );
   };
+  */
+
+  // CONTEXT ANCHOR: ThreadCard Component Reference
+  // The full code for ThreadCard is located in './components/ThreadCard.tsx'.
+  // It is duplicated here as a comment for AI reference as per user's request.
+  /*
+  import React, { useState, useEffect } from "react";
+  import {
+    Plus,
+    ChevronDown,
+    ChevronRight,
+    Circle,
+    CheckCircle2,
+    Clock,
+    MessageSquare,
+    Zap,
+    StickyNote,
+    Pencil,
+    Trash2,
+  } from "lucide-react";
+  import { TaskItem, TaskItemProps } from "./TaskItem"; // Import TaskItem and its props
+  import { Thread, ThreadStatus, THREAD_STATE_TRANSITIONS } from "../page"; // Import necessary types from page.tsx
 
   // CONTEXT ANCHOR
   // PURPOSE: Renders a card for a single thread, including its metadata, tasks, and session history. It handles thread-level actions like editing the title, deleting, and logging work sessions.
-  // DEPENDENCIES: Relies on parent state and handlers passed via props.
+  // DEPENDENCIES: React hooks, Lucide icons, TaskItem component, Thread and related types from parent.
   // INVARIANTS: Must be provided a 'thread' object and all required handler functions.
-  interface ThreadCardProps {
+  export interface ThreadCardProps {
     thread: Thread;
     isThreadExpanded: boolean;
     toggleThread: (threadId: string) => void;
@@ -557,14 +649,35 @@ const NestedWorkflow = () => {
     onDelete: (threadId: string) => void;
     onAddRootTask: (threadId: string) => void;
     onUpdateStatus: (threadId: string, status: ThreadStatus) => void;
+    addingSessionTo: string | null;
+    setAddingSessionTo: (id: string | null) => void;
+    onAddSession: (threadId: string, notes: string) => void;
+    editingThreadId: string | null;
+    setEditingThreadId: (id: string | null) => void;
+    taskItemProps: Omit<TaskItemProps, 'task' | 'threadId' | 'level'>;
   }
 
-  const ThreadCard: React.FC<ThreadCardProps> = ({ thread, isThreadExpanded, toggleThread, onUpdateTitle, onDelete, onAddRootTask, onUpdateStatus }) => {
+  export const ThreadCard: React.FC<ThreadCardProps> = ({
+    thread,
+    isThreadExpanded,
+    toggleThread,
+    onUpdateTitle,
+    onDelete,
+    onAddRootTask,
+    onUpdateStatus,
+    addingSessionTo,
+    setAddingSessionTo,
+    onAddSession,
+    editingThreadId,
+    setEditingThreadId,
+    taskItemProps,
+  }) => {
     const completedCount = thread.tasks.filter((t) => t.done).length;
     const totalCount = thread.tasks.length;
     const isAddingSession = addingSessionTo === thread.id;
     const [title, setTitle] = useState<string>(thread.title);
     const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
+    const [sessionNotes, setSessionNotes] = useState<string>("");
 
     const handleUpdate = () => {
       if (title.trim()) onUpdateTitle(thread.id, title);
@@ -573,7 +686,7 @@ const NestedWorkflow = () => {
     const handleAddTask = () => {
         onAddRootTask(thread.id);
     }
-    
+
     // STATUS CONFIG: Maps status values to visual styles for clarity.
     const statusConfig: Record<ThreadStatus, { bg: string, text: string, dot: string }> = {
       active: { bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500" },
@@ -581,6 +694,10 @@ const NestedWorkflow = () => {
       completed: { bg: "bg-gray-100", text: "text-gray-700", dot: "bg-gray-500" },
     };
     const statusStyle = statusConfig[thread.status];
+
+    useEffect(() => {
+      setTitle(thread.title);
+    }, [thread.title]);
 
     return (
       <div className="bg-white rounded-lg border border-gray-200 mb-4 shadow-sm" key={thread.id}>
@@ -594,7 +711,7 @@ const NestedWorkflow = () => {
                 {editingThreadId === thread.id ? (
                   <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} onBlur={handleUpdate} onKeyPress={(e) => e.key === "Enter" && handleUpdate()} className="text-base font-medium text-gray-900 flex-1 px-2 py-1 border-b-2 border-orange-500 focus:outline-none bg-transparent" autoFocus />
                 ) : (
-                  <h3 className="text-base font-medium text-gray-900">{thread.title}</h3>
+                  <h3 className="text-base font-medium text-gray-900" onClick={() => setEditingThreadId(thread.id)}>{thread.title}</h3>
                 )}
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 flex-shrink-0">
                   <button onClick={() => setEditingThreadId(thread.id)} className="p-1 text-gray-400 hover:text-orange-500 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
@@ -633,9 +750,9 @@ const NestedWorkflow = () => {
         {isAddingSession && (
           <div className="p-4 bg-gray-50 border-b border-gray-100">
             <h4 className="text-sm font-medium text-gray-900 mb-2">Work session</h4>
-            <textarea value={sessionNotes} onChange={(e) => setSessionNotes(e.target.value)} placeholder="What did you work on?" className="w-full p-3 border border-gray-300 rounded text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white" rows={2} />
+            <textarea value={sessionNotes} onChange={(e) => setSessionNotes(e.target.value)} placeholder="What did you work on?" className="w-full p-3 border border-gray-300 rounded text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white" rows={2} autoFocus/>
             <div className="flex gap-2 mt-2">
-              <button onClick={() => addSession(thread.id)} className="px-3 py-1.5 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 transition-colors font-medium">Save</button>
+              <button onClick={() => {onAddSession(thread.id, sessionNotes); setSessionNotes('')}} className="px-3 py-1.5 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 transition-colors font-medium">Save</button>
               <button onClick={() => { setAddingSessionTo(null); setSessionNotes(""); }} className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-xs hover:bg-gray-300 transition-colors">Cancel</button>
             </div>
           </div>
@@ -644,19 +761,19 @@ const NestedWorkflow = () => {
         {isThreadExpanded && (
           <>
             <div className="p-4">
-              <button onClick={() => setAddingChildTo(`${thread.id}-root`)} className="flex items-center gap-1.5 text-orange-600 hover:text-orange-700 text-xs font-medium mb-3 transition-colors">
+              <button onClick={() => taskItemProps.setAddingChildTo(`${thread.id}-root`)} className="flex items-center gap-1.5 text-orange-600 hover:text-orange-700 text-xs font-medium mb-3 transition-colors">
                 <Plus className="w-3.5 h-3.5" /> Add task
               </button>
 
-              {addingChildTo === `${thread.id}-root` && (
+              {taskItemProps.addingChildTo === `${thread.id}-root` && (
                 <div className="mb-3 flex gap-2">
-                  <input type="text" value={newChildText} onChange={(e) => setNewChildText(e.target.value)} placeholder="New task..." className="flex-1 px-3 py-2 border border-orange-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white" autoFocus onKeyPress={(e) => e.key === "Enter" && handleAddTask()} />
+                  <input type="text" value={taskItemProps.newChildText} onChange={(e) => taskItemProps.setNewChildText(e.target.value)} placeholder="New task..." className="flex-1 px-3 py-2 border border-orange-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white" autoFocus onKeyPress={(e) => e.key === "Enter" && handleAddTask()} />
                   <button onClick={handleAddTask} className="px-3 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors font-medium">Add</button>
                 </div>
               )}
 
               {thread.tasks.length > 0 ? (
-                <div className="space-y-0.5">{thread.tasks.map((task) => <TaskItem key={`${thread.id}-${task.id}`} task={task} threadId={thread.id} />)}</div>
+                <div className="space-y-0.5">{thread.tasks.map((task) => <TaskItem key={`${thread.id}-${task.id}`} {...taskItemProps} task={task} threadId={thread.id} />)}</div>
               ) : (
                 <div className="py-6 text-center text-xs text-gray-400"><p>No tasks. Add one to begin.</p></div>
               )}
@@ -680,11 +797,27 @@ const NestedWorkflow = () => {
       </div>
     );
   };
+  */
 
-  // ==========================================================================
-  // MAIN COMPONENT RENDER: Assembles the top-level UI structure.
-  // ==========================================================================
-
+  const taskItemProps: Omit<TaskItemProps, 'task' | 'threadId' | 'level'> = {
+    expandedTasks,
+    editingNote,
+    addingChildTo,
+    editingTaskId,
+    editedTaskText,
+    toggleTask,
+    toggleTaskDone,
+    setEditingNote,
+    saveNote,
+    setAddingChildTo,
+    newChildText,
+    setNewChildText,
+    addChild,
+    setEditingTaskId,
+    setEditedTaskText,
+    updateTaskText,
+  };
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="sticky top-0 bg-white border-b border-gray-200 shadow-xs z-10">
@@ -715,7 +848,22 @@ const NestedWorkflow = () => {
 
         <div className="space-y-3">
           {Object.values(threads).map((thread) => (
-            <ThreadCard key={thread.id} thread={thread} isThreadExpanded={expandedThreads.has(thread.id)} toggleThread={toggleThread} onUpdateTitle={updateThreadTitle} onDelete={deleteThread} onAddRootTask={addRootTaskToThread} onUpdateStatus={updateThreadStatus} />
+            <ThreadCard 
+              key={thread.id} 
+              thread={thread} 
+              isThreadExpanded={expandedThreads.has(thread.id)} 
+              toggleThread={toggleThread} 
+              onUpdateTitle={updateThreadTitle} 
+              onDelete={deleteThread} 
+              onAddRootTask={addRootTaskToThread} 
+              onUpdateStatus={updateThreadStatus}
+              addingSessionTo={addingSessionTo}
+              setAddingSessionTo={setAddingSessionTo}
+              onAddSession={addSession}
+              editingThreadId={editingThreadId}
+              setEditingThreadId={setEditingThreadId}
+              taskItemProps={taskItemProps}
+            />
           ))}
         </div>
       </main>
