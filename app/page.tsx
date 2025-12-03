@@ -472,6 +472,16 @@ const NestedWorkflow = () => {
       }, 0);
   };
 
+  const allThreads = Object.values(threads);
+  const globalTotalThreads = allThreads.length;
+  let globalTotalTasks = 0;
+  let globalCompletedTasks = 0;
+
+  allThreads.forEach(thread => {
+      globalTotalTasks += countAllTasks(thread.tasks);
+      globalCompletedTasks += countAllCompletedTasks(thread.tasks);
+  });
+
   // ==========================================================================
   // MAIN COMPONENT RENDER: Assembles the top-level UI structure.
   // ==========================================================================
@@ -502,7 +512,9 @@ const NestedWorkflow = () => {
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <h1 className="text-lg font-semibold text-gray-900">Deep Linking Phase 2</h1>
-              <p className="text-xs text-gray-500 mt-0.5">Nested task tracking</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Nested task tracking &bull; {globalTotalThreads} Threads &bull; {globalCompletedTasks}/{globalTotalTasks} Tasks
+              </p>
             </div>
             <button onClick={() => setIsAddingThread(true)} className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors">
               <Plus className="w-3.5 h-3.5" /> New Thread
