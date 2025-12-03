@@ -459,6 +459,20 @@ const NestedWorkflow = () => {
   const selectedThread = selectedThreadId ? threads[selectedThreadId] : null;
 
   // ==========================================================================
+  // HELPER FUNCTIONS: Pure functions for calculations.
+  // ==========================================================================
+  const countAllTasks = (tasks: Task[]): number => {
+    return tasks.reduce((count, task) => {
+        return count + 1 + countAllTasks(task.children);
+    }, 0);
+  };
+  const countAllCompletedTasks = (tasks: Task[]): number => {
+      return tasks.reduce((count, task) => {
+          return count + (task.done ? 1 : 0) + countAllCompletedTasks(task.children);
+      }, 0);
+  };
+
+  // ==========================================================================
   // MAIN COMPONENT RENDER: Assembles the top-level UI structure.
   // ==========================================================================
 
@@ -511,26 +525,33 @@ const NestedWorkflow = () => {
           )}
 
           <div className="space-y-3">
-            {Object.values(threads).map((thread) => (
-              <ThreadCard 
-                key={thread.id} 
-                thread={thread}
-                isSelected={selectedThreadId === thread.id}
-                onSelect={() => setSelectedThreadId(thread.id)}
-                isThreadExpanded={expandedThreads.has(thread.id)} 
-                toggleThread={toggleThread} 
-                onUpdateTitle={updateThreadTitle} 
-                onDelete={deleteThread} 
-                onAddRootTask={addRootTaskToThread} 
-                onUpdateStatus={updateThreadStatus}
-                addingSessionTo={addingSessionTo}
-                setAddingSessionTo={setAddingSessionTo}
-                onAddSession={addSession}
-                editingThreadId={editingThreadId}
-                setEditingThreadId={setEditingThreadId}
-                taskItemProps={taskItemProps}
-              />
-            ))}
+            {Object.values(threads).map((thread, index) => {
+              const totalTasks = countAllTasks(thread.tasks);
+              const completedTasks = countAllCompletedTasks(thread.tasks);
+              return (
+                <ThreadCard 
+                  key={thread.id} 
+                  thread={thread}
+                  threadNumber={index + 1}
+                  totalTaskCount={totalTasks}
+                  completedTaskCount={completedTasks}
+                  isSelected={selectedThreadId === thread.id}
+                  onSelect={() => setSelectedThreadId(thread.id)}
+                  isThreadExpanded={expandedThreads.has(thread.id)} 
+                  toggleThread={toggleThread} 
+                  onUpdateTitle={updateThreadTitle} 
+                  onDelete={deleteThread} 
+                  onAddRootTask={addRootTaskToThread} 
+                  onUpdateStatus={updateThreadStatus}
+                  addingSessionTo={addingSessionTo}
+                  setAddingSessionTo={setAddingSessionTo}
+                  onAddSession={addSession}
+                  editingThreadId={editingThreadId}
+                  setEditingThreadId={setEditingThreadId}
+                  taskItemProps={taskItemProps}
+                />
+              );
+            })}
           </div>
         </div>
         <div className="md:col-span-1">

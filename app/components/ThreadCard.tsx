@@ -21,6 +21,9 @@ import { Thread, ThreadStatus, THREAD_STATE_TRANSITIONS } from "../page"; // Imp
 // INVARIANTS: Must be provided a 'thread' object and all required handler functions.
 export interface ThreadCardProps {
   thread: Thread;
+  threadNumber: number;
+  totalTaskCount: number;
+  completedTaskCount: number;
   isThreadExpanded: boolean;
   isSelected: boolean;
   onSelect: () => void;
@@ -39,6 +42,9 @@ export interface ThreadCardProps {
 
 export const ThreadCard: React.FC<ThreadCardProps> = ({
   thread,
+  threadNumber,
+  totalTaskCount,
+  completedTaskCount,
   isThreadExpanded,
   isSelected,
   onSelect,
@@ -54,8 +60,6 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
   setEditingThreadId,
   taskItemProps,
 }) => {
-  const completedCount = thread.tasks.filter((t) => t.done).length;
-  const totalCount = thread.tasks.length;
   const isAddingSession = addingSessionTo === thread.id;
   const [title, setTitle] = useState<string>(thread.title);
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
@@ -103,6 +107,9 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 group mb-3">
+              <span className="flex-shrink-0 w-6 text-center text-xs font-mono text-gray-400" title={`Thread ${threadNumber}`}>
+                {threadNumber}.
+              </span>
               <button onClick={(e) => { e.stopPropagation(); toggleThread(thread.id); }} className="text-gray-400 hover:text-orange-500 transition-colors flex-shrink-0">
                 {isThreadExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
               </button>
@@ -117,11 +124,11 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-4 text-xs text-gray-500 ml-7">
+            <div className="flex items-center gap-4 text-xs text-gray-500 ml-12">
               <div className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" /> <span className="truncate">{thread.lastWorked}</span></div>
               <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-600">{completedCount}/{totalCount}</span>
-                <div className="bg-gray-200 rounded-full h-1 w-16"><div className="bg-orange-500 h-1 rounded-full transition-all" style={{ width: `${totalCount > 0 ? (completedCount / totalCount) * 100 : 0}%` }}></div></div>
+                <span className="font-medium text-gray-600">{completedTaskCount}/{totalTaskCount}</span>
+                <div className="bg-gray-200 rounded-full h-1 w-16"><div className="bg-orange-500 h-1 rounded-full transition-all" style={{ width: `${totalTaskCount > 0 ? (completedTaskCount / totalTaskCount) * 100 : 0}%` }}></div></div>
               </div>
               <div className="relative">
                 <button onClick={(e) => { e.stopPropagation(); setIsStatusMenuOpen(!isStatusMenuOpen);}} onBlur={() => setIsStatusMenuOpen(false)} className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${statusStyle.bg} flex-shrink-0`}>
