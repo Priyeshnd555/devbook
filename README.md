@@ -34,3 +34,10 @@ The application is a single-page React application built with Next.js. It uses R
 *   **Tasks**: Each task has a description, a done status, a note, and a list of children tasks.
 *   **State Management**: The entire state of the application is managed in the `NestedWorkflow` component. The state is passed down to the `ThreadCard` and `TaskItem` components as props.
 *   **Actions**: Actions like adding, toggling, and updating tasks and notes are handled by functions in the `NestedWorkflow` component. These functions are passed down to the child components as props.
+
+
+
+example: 
+@AI_CODING_RULES.MD  @coding_guidelines.md  i want the total counts to be shown somewhere in @app/page.tsx make sure ui is      │
+│   usable                                                                                                                          │
+╰─────────────
