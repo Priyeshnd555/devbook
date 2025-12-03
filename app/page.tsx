@@ -23,6 +23,36 @@ import { TaskItem, TaskItemProps } from "./components/TaskItem"; // Import TaskI
 import { ThreadCard, ThreadCardProps } from "./components/ThreadCard"; // Import ThreadCard
 
 // ============================================================================
+// COMPONENT CONTEXT: High-level overview of imported components for AI reference.
+// ============================================================================
+/*
+  COMPONENT: TaskItem (from ./components/TaskItem.tsx)
+  ----------------------------------------------------
+  PURPOSE: Renders a single, potentially nested, task item. It handles displaying
+           the task's text, completion status, and note. It also manages user
+           interactions for editing a task, adding a sub-task, and toggling
+           its 'done' state.
+  KEY PROPS:
+    - task: The task object to render.
+    - threadId: The ID of the parent thread.
+    - expandedTasks: A Set<string> to determine if the task's children are visible.
+    - ... (and many state handlers from the parent to modify the application state).
+
+  COMPONENT: ThreadCard (from ./components/ThreadCard.tsx)
+  ------------------------------------------------------
+  PURPOSE: Renders a full "thread" card, which is a top-level container for a
+           group of tasks. It displays thread metadata (title, status, last worked on),
+           and contains the list of root-level TaskItems for that thread. It also
+           handles thread-specific actions like logging a new work session, editing
+           the thread title, and changing its status.
+  KEY PROPS:
+    - thread: The thread object to render.
+    - isThreadExpanded: A boolean to control the visibility of the thread's content.
+    - onUpdateTitle, onDelete, onUpdateStatus: Handlers for modifying the thread.
+    - taskItemProps: A collection of props that are passed down to all child TaskItem components.
+*/
+
+// ============================================================================
 // TYPE DEFINITIONS: Core data structures for the application.
 // ============================================================================
 
