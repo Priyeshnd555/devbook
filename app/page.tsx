@@ -151,6 +151,8 @@ const NestedWorkflow = () => {
   const [isAddingThread, setIsAddingThread] = useState<boolean>(false);
   const [newThreadTitle, setNewThreadTitle] = useState<string>("");
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editedTaskText, setEditedTaskText] = useState<string>("");
 
   // ==========================================================================
   // THREAD OPERATIONS: Functions for managing top-level thread data.
@@ -285,6 +287,32 @@ const NestedWorkflow = () => {
     setEditingNote(null);
   };
 
+  // STATE CHANGE: Recursively finds a task and updates its text.
+  const updateTaskText = (threadId: string, taskId: string, newText: string) => {
+    // STRATEGY: A recursive function to immutably update the text for a given task.
+    const updateTextRecursive = (tasks: Task[]): Task[] => {
+      return tasks.map((task) => {
+        if (task.id === taskId) {
+          return { ...task, text: newText };
+        }
+        if (task.children.length > 0) {
+          return { ...task, children: updateTextRecursive(task.children) };
+        }
+        return task;
+      });
+    };
+
+    setThreads((prev) => ({
+      ...prev,
+      [threadId]: {
+        ...prev[threadId],
+        tasks: updateTextRecursive(prev[threadId].tasks),
+      },
+    }));
+
+    setEditingTaskId(null);
+  };
+
   // STATE CHANGE: Adds a new root-level task to a thread.
   const addRootTaskToThread = (threadId: string) => {
     if (!newChildText.trim()) return;
@@ -391,6 +419,19 @@ const NestedWorkflow = () => {
     const isEditing = editingNote === task.id;
     const isAddingChild = addingChildTo === task.id;
     const [editedNoteText, setEditedNoteText] = useState("");
+    const isEditingTask = editingTaskId === task.id;
+
+    const handleSaveTaskText = () => {
+      if (editedTaskText.trim()) {
+        updateTaskText(threadId, task.id, editedTaskText);
+      } else {
+        setEditingTaskId(null); // Cancel edit if new text is empty
+      }
+    };
+
+    const handleCancelEdit = () => {
+      setEditingTaskId(null);
+    };
 
     // STRATEGY: Use a local state `editedNoteText` for the textarea to prevent re-renders on every keystroke.
     // Sync this local state with the task's note only when the editing mode begins.
@@ -417,9 +458,32 @@ const NestedWorkflow = () => {
             </button>
 
             <div className="flex-1 min-w-0">
-              <span className={`text-sm leading-relaxed ${task.done ? "line-through text-gray-400" : "text-gray-700"}`}>{task.text}</span>
+              {isEditingTask ? (
+                <input
+                  type="text"
+                  value={editedTaskText}
+                  onChange={(e) => setEditedTaskText(e.target.value)}
+                  onBlur={handleSaveTaskText}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveTaskText();
+                    if (e.key === 'Escape') handleCancelEdit();
+                  }}
+                  className="w-full px-2 py-1 border border-orange-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                  autoFocus
+                />
+              ) : (
+                <span
+                  className={`text-sm leading-relaxed ${task.done ? "line-through text-gray-400" : "text-gray-700"} cursor-text`}
+                  onClick={() => {
+                    setEditingTaskId(task.id);
+                    setEditedTaskText(task.text);
+                  }}
+                >
+                  {task.text}
+                </span>
+              )}
 
-              {task.note && !isEditing && (
+              {task.note && !isEditing && !isEditingTask && (
                 <div className="mt-2 text-xs leading-relaxed text-orange-900 bg-orange-100 px-3 py-2 rounded cursor-pointer hover:bg-orange-100/80 transition-colors" onClick={() => setEditingNote(task.id)}>
                   <div className="flex items-start gap-2">
                     <StickyNote className="w-3 h-3 text-orange-700 mt-0.5 flex-shrink-0" />
