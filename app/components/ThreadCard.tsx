@@ -22,6 +22,8 @@ import { Thread, ThreadStatus, THREAD_STATE_TRANSITIONS } from "../page"; // Imp
 export interface ThreadCardProps {
   thread: Thread;
   isThreadExpanded: boolean;
+  isSelected: boolean;
+  onSelect: () => void;
   toggleThread: (threadId: string) => void;
   onUpdateTitle: (threadId: string, newTitle: string) => void;
   onDelete: (threadId: string) => void;
@@ -38,6 +40,8 @@ export interface ThreadCardProps {
 export const ThreadCard: React.FC<ThreadCardProps> = ({
   thread,
   isThreadExpanded,
+  isSelected,
+  onSelect,
   toggleThread,
   onUpdateTitle,
   onDelete,
@@ -77,23 +81,39 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
     setTitle(thread.title);
   }, [thread.title]);
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Prevent clicks on buttons and inputs from selecting the thread
+    if (e.target instanceof HTMLElement) {
+      if (e.target.closest('button, input')) {
+        return;
+      }
+    }
+    onSelect();
+  }
+
   return (
-    <div className="bg-white rounded-lg border border-gray-200 mb-4 shadow-sm" key={thread.id}>
-      <div className="p-4 border-b border-gray-100">
+    <div 
+      className={`bg-white rounded-lg border mb-4 shadow-sm transition-all ${isSelected ? 'border-orange-400 shadow-md' : 'border-gray-200'}`}
+      key={thread.id}
+    >
+      <div 
+        className="p-4 border-b border-gray-100 cursor-pointer" 
+        onClick={handleCardClick}
+      >
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 group mb-3">
-              <button onClick={() => toggleThread(thread.id)} className="text-gray-400 hover:text-orange-500 transition-colors flex-shrink-0">
+              <button onClick={(e) => { e.stopPropagation(); toggleThread(thread.id); }} className="text-gray-400 hover:text-orange-500 transition-colors flex-shrink-0">
                 {isThreadExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
               </button>
               {editingThreadId === thread.id ? (
-                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} onBlur={handleUpdate} onKeyPress={(e) => e.key === "Enter" && handleUpdate()} className="text-base font-medium text-gray-900 flex-1 px-2 py-1 border-b-2 border-orange-500 focus:outline-none bg-transparent" autoFocus />
+                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} onBlur={handleUpdate} onKeyPress={(e) => e.key === "Enter" && handleUpdate()} className="text-base font-medium text-gray-900 flex-1 px-2 py-1 border-b-2 border-orange-500 focus:outline-none bg-transparent" autoFocus onClick={(e) => e.stopPropagation()}/>
               ) : (
-                <h3 className="text-base font-medium text-gray-900" onClick={() => setEditingThreadId(thread.id)}>{thread.title}</h3>
+                <h3 className="text-base font-medium text-gray-900" onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id);}}>{thread.title}</h3>
               )}
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 flex-shrink-0">
-                <button onClick={() => setEditingThreadId(thread.id)} className="p-1 text-gray-400 hover:text-orange-500 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                <button onClick={() => onDelete(thread.id)} className="p-1 text-gray-400 hover:text-red-500 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id);}} className="p-1 text-gray-400 hover:text-orange-500 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                <button onClick={(e) => { e.stopPropagation(); onDelete(thread.id);}} className="p-1 text-gray-400 hover:text-red-500 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             </div>
 
@@ -104,7 +124,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                 <div className="bg-gray-200 rounded-full h-1 w-16"><div className="bg-orange-500 h-1 rounded-full transition-all" style={{ width: `${totalCount > 0 ? (completedCount / totalCount) * 100 : 0}%` }}></div></div>
               </div>
               <div className="relative">
-                <button onClick={() => setIsStatusMenuOpen(!isStatusMenuOpen)} onBlur={() => setIsStatusMenuOpen(false)} className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${statusStyle.bg} flex-shrink-0`}>
+                <button onClick={(e) => { e.stopPropagation(); setIsStatusMenuOpen(!isStatusMenuOpen);}} onBlur={() => setIsStatusMenuOpen(false)} className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${statusStyle.bg} flex-shrink-0`}>
                   <div className={`w-1 h-1 rounded-full ${statusStyle.dot}`}></div>
                   <span className={`text-xs font-medium ${statusStyle.text}`}>{thread.status}</span>
                 </button>
@@ -119,7 +139,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
             </div>
           </div>
 
-          <button onClick={() => setAddingSessionTo(thread.id)} className="flex items-center gap-1.5 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors">
+          <button onClick={(e) => { e.stopPropagation(); setAddingSessionTo(thread.id); }} className="flex items-center gap-1.5 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors">
             <Zap className="w-3.5 h-3.5" /> Log
           </button>
         </div>
@@ -156,20 +176,6 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
               <div className="py-6 text-center text-xs text-gray-400"><p>No tasks. Add one to begin.</p></div>
             )}
           </div>
-
-          {thread.sessions.length > 0 && (
-            <div className="px-4 pb-4 border-t border-gray-100 pt-3">
-              <h4 className="text-xs font-medium text-gray-900 mb-2 uppercase tracking-wide">Sessions</h4>
-              <div className="space-y-2">
-                {thread.sessions.map((session, idx) => (
-                  <div key={`${thread.id}-session-${idx}`} className="bg-gray-50 rounded p-2.5 text-xs border border-gray-200">
-                    <div className="text-gray-500 mb-1 font-medium">{session.date} {session.time}</div>
-                    <div className="text-gray-700 leading-relaxed">{session.notes}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </>
       )}
     </div>

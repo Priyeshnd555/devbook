@@ -195,8 +195,16 @@ const NestedWorkflow = () => {
   const [newThreadTitle, setNewThreadTitle] = useState<string>("");
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [editedTaskText, setEditedTaskText] = useState<string>("");
 
+  useEffect(() => {
+    // When threads change, if the selected thread is deleted, unselect it.
+    if (selectedThreadId && !threads[selectedThreadId]) {
+      setSelectedThreadId(null);
+    }
+  }, [threads, selectedThreadId]);
+  
   // ==========================================================================
   // THREAD OPERATIONS: Functions for managing top-level thread data.
   // ==========================================================================
@@ -219,6 +227,7 @@ const NestedWorkflow = () => {
     setNewThreadTitle("");
     setIsAddingThread(false);
     setExpandedThreads((prev) => new Set([...prev, newThreadId]));
+    setSelectedThreadId(newThreadId); // Select the new thread
   };
 
   // STATE CHANGE: Updates a thread's title and exits edit mode.
@@ -248,6 +257,10 @@ const NestedWorkflow = () => {
       const newThreads = { ...threads };
       delete newThreads[threadId];
       setThreads(newThreads);
+      // If the deleted thread was selected, unselect it
+      if (selectedThreadId === threadId) {
+        setSelectedThreadId(null);
+      }
     }
   };
 
@@ -441,6 +454,11 @@ const NestedWorkflow = () => {
   };
 
   // ==========================================================================
+  // DERIVED STATE: Computed values based on the core state.
+  // ==========================================================================
+  const selectedThread = selectedThreadId ? threads[selectedThreadId] : null;
+
+  // ==========================================================================
   // MAIN COMPONENT RENDER: Assembles the top-level UI structure.
   // ==========================================================================
 
@@ -465,51 +483,85 @@ const NestedWorkflow = () => {
   
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 bg-white border-b border-gray-200 shadow-xs z-10">
-        <div className="max-w-4xl mx-auto px-6 py-4">
+      <header className="sticky top-0 bg-white border-b border-gray-200 shadow-xs z-20">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <h1 className="text-lg font-semibold text-gray-900">Deep Linking Phase 2</h1>
               <p className="text-xs text-gray-500 mt-0.5">Nested task tracking</p>
             </div>
             <button onClick={() => setIsAddingThread(true)} className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors">
-              <Plus className="w-3.5 h-3.5" /> New
+              <Plus className="w-3.5 h-3.5" /> New Thread
             </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-4">
-        {isAddingThread && (
-          <div className="mb-3 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-            <h3 className="text-sm font-medium text-gray-900 mb-2">New thread</h3>
-            <input type="text" value={newThreadTitle} onChange={(e) => setNewThreadTitle(e.target.value)} placeholder="Title..." className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white" autoFocus onKeyPress={(e) => e.key === "Enter" && addThread()} />
-            <div className="flex gap-2 mt-2">
-              <button onClick={addThread} className="px-3 py-1.5 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 transition-colors font-medium">Create</button>
-              <button onClick={() => { setIsAddingThread(false); setNewThreadTitle(""); }} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded text-xs hover:bg-gray-200 transition-colors">Cancel</button>
+      <main className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto px-6 py-4">
+        <div className="md:col-span-2">
+          {isAddingThread && (
+            <div className="mb-3 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+              <h3 className="text-sm font-medium text-gray-900 mb-2">New thread</h3>
+              <input type="text" value={newThreadTitle} onChange={(e) => setNewThreadTitle(e.target.value)} placeholder="Title..." className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white" autoFocus onKeyPress={(e) => e.key === "Enter" && addThread()} />
+              <div className="flex gap-2 mt-2">
+                <button onClick={addThread} className="px-3 py-1.5 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 transition-colors font-medium">Create</button>
+                <button onClick={() => { setIsAddingThread(false); setNewThreadTitle(""); }} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded text-xs hover:bg-gray-200 transition-colors">Cancel</button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="space-y-3">
-          {Object.values(threads).map((thread) => (
-            <ThreadCard 
-              key={thread.id} 
-              thread={thread} 
-              isThreadExpanded={expandedThreads.has(thread.id)} 
-              toggleThread={toggleThread} 
-              onUpdateTitle={updateThreadTitle} 
-              onDelete={deleteThread} 
-              onAddRootTask={addRootTaskToThread} 
-              onUpdateStatus={updateThreadStatus}
-              addingSessionTo={addingSessionTo}
-              setAddingSessionTo={setAddingSessionTo}
-              onAddSession={addSession}
-              editingThreadId={editingThreadId}
-              setEditingThreadId={setEditingThreadId}
-              taskItemProps={taskItemProps}
-            />
-          ))}
+          <div className="space-y-3">
+            {Object.values(threads).map((thread) => (
+              <ThreadCard 
+                key={thread.id} 
+                thread={thread}
+                isSelected={selectedThreadId === thread.id}
+                onSelect={() => setSelectedThreadId(thread.id)}
+                isThreadExpanded={expandedThreads.has(thread.id)} 
+                toggleThread={toggleThread} 
+                onUpdateTitle={updateThreadTitle} 
+                onDelete={deleteThread} 
+                onAddRootTask={addRootTaskToThread} 
+                onUpdateStatus={updateThreadStatus}
+                addingSessionTo={addingSessionTo}
+                setAddingSessionTo={setAddingSessionTo}
+                onAddSession={addSession}
+                editingThreadId={editingThreadId}
+                setEditingThreadId={setEditingThreadId}
+                taskItemProps={taskItemProps}
+              />
+            ))}
+          </div>
+        </div>
+        <div className="md:col-span-1">
+          <div className="sticky top-24">
+            {selectedThread ? (
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                <div className="p-4 border-b border-gray-100">
+                  <h2 className="text-base font-medium text-gray-900">Session Log</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">{selectedThread.title}</p>
+                </div>
+                <div className="p-4 space-y-3 max-h-[calc(100vh-15rem)] overflow-y-auto">
+                  {selectedThread.sessions.length > 0 ? (
+                    selectedThread.sessions.map((session, idx) => (
+                      <div key={`${selectedThread.id}-session-${idx}`} className="bg-gray-50 rounded p-3 text-xs border border-gray-200">
+                        <div className="text-gray-500 mb-1.5 font-medium">{session.date} at {session.time}</div>
+                        <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">{session.notes}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-10 text-center text-xs text-gray-400">
+                      <p>No sessions logged for this thread.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="py-20 text-center text-sm text-gray-400">
+                <p>Select a thread to view its session log.</p>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>
