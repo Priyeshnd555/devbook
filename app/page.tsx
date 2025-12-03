@@ -81,66 +81,77 @@ type ThreadsState = Record<string, Thread>;
   3. UI re-renders to reflect the new, immutable state.
 */
 
+// ============================================================================
+// PERSISTENCE HOOK: Manages state persistence to localStorage.
+// PURPOSE: To abstract data storage for easy migration and to avoid repetitive
+// localStorage logic. It's a reusable pattern for syncing state with the browser's storage.
+// STRATEGY: This hook encapsulates the logic for reading from and writing to
+// localStorage. It handles JSON serialization/deserialization, including for Sets.
+// This can be swapped with another storage mechanism (e.g., IndexedDB) in one place.
+// DEPENDENCIES: 'react' (useState, useEffect).
+// INVARIANTS: The key must be unique. The initialValue is used only if no value
+// is found in storage.
+// ============================================================================
+const usePersistentState = <T extends object>(
+  key: string,
+  initialValue: T
+): [T, React.Dispatch<React.SetStateAction<T>>] => {
+  const [state, setState] = useState<T>(() => {
+    if (typeof window === "undefined") {
+      return initialValue;
+    }
+    try {
+      const item = window.localStorage.getItem(key);
+      if (!item) return initialValue;
+
+      const parsed = JSON.parse(item);
+      // Handle Set deserialization
+      if (initialValue instanceof Set) {
+        return new Set(parsed) as T;
+      }
+      return parsed;
+    } catch (error) {
+      console.error(`Error reading from localStorage for key "${key}":`, error);
+      return initialValue;
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const valueToStore =
+        state instanceof Set
+          ? JSON.stringify(Array.from(state as Set<unknown>))
+          : JSON.stringify(state);
+      window.localStorage.setItem(key, valueToStore);
+    } catch (error) {
+      console.error(`Error writing to localStorage for key "${key}":`, error);
+    }
+  }, [key, state]);
+
+  return [state, setState];
+};
+
 const NestedWorkflow = () => {
   // ==========================================================================
   // CORE STATE: All application data and UI state are managed here.
   // ==========================================================================
 
-  // MAIN DATA: 'threads' holds the primary data for the application.
-  const [threads, setThreads] = useState<ThreadsState>({
-    "dl-ios": {
-      id: "dl-ios",
-      title: "iOS Deeplink Implementation",
-      status: "active",
-      lastWorked: "2025-11-28 11:30 AM",
-      tasks: [
-        { id: "t1", text: "Test basic deeplinks on iOS", done: true, note: "Working perfectly after assetlinks fix", children: [] },
-        {
-          id: "t2",
-          text: "Test CMS page navigation",
-          done: false,
-          note: "This is complex - multiple page types behave differently",
-          children: [
-            { id: "t2-1", text: "Figure out which CMS pages exist in mobile", done: true, note: "Found business-delivery page NOT in mobile app", children: [] },
-            {
-              id: "t2-2",
-              text: "Check routing logic for CMS",
-              done: false,
-              note: "Need to ask Sandeep about the logic here",
-              children: [
-                { id: "t2-2-1", text: "Check Frontastic config", done: false, note: "", children: [] },
-                { id: "t2-2-2", text: "Review existing CMS navigation code", done: false, note: "", children: [] },
-              ],
-            },
-          ],
-        },
-      ],
-      sessions: [{ date: "2025-11-28", time: "11:30 AM", notes: "Working on CMS navigation - discovered multiple page types. Unclear routing." }],
-    },
-    "dl-android": {
-      id: "dl-android",
-      title: "Android Configuration Fix",
-      status: "blocked",
-      lastWorked: "2025-11-27 10:30 AM",
-      tasks: [
-        {
-          id: "a1",
-          text: "Fix assetlinks.json",
-          done: false,
-          note: "CRITICAL: PROD pointing to QA package",
-          children: [
-            { id: "a1-1", text: "Get server access", done: true, note: "Requested from server team", children: [] },
-            { id: "a1-2", text: "Update package name to .prod", done: false, note: "Waiting on server team - BLOCKED", children: [] },
-          ],
-        },
-      ],
-      sessions: [],
-    },
-  });
+  // MAIN DATA: 'threads' holds the primary data for the application, persisted to localStorage.
+  const [threads, setThreads] = usePersistentState<ThreadsState>(
+    "nested-workflow-threads",
+    {}
+  );
 
-  // UI STATE: Manages expanded/collapsed sections for a clear user experience.
-  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set(["t2", "t2-2", "a1"]));
-  const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set(Object.keys(threads)));
+  // UI STATE: Manages expanded/collapsed sections for a clear user experience, persisted to localStorage.
+  const [expandedTasks, setExpandedTasks] = usePersistentState<Set<string>>(
+    "nested-workflow-expanded-tasks",
+    new Set()
+  );
+  const [expandedThreads, setExpandedThreads] = usePersistentState<Set<string>>(
+    "nested-workflow-expanded-threads",
+    new Set()
+  );
 
   // UI STATE: Manages states for inline editing and content creation.
   const [editingNote, setEditingNote] = useState<string | null>(null);
