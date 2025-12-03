@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { TaskItem, TaskItemProps } from "./components/TaskItem"; // Import TaskItem
 import { ThreadCard, ThreadCardProps } from "./components/ThreadCard"; // Import ThreadCard
+import { motion, AnimatePresence } from "framer-motion";
 
 // ============================================================================
 // COMPONENT CONTEXT: High-level overview of imported components for AI reference.
@@ -141,6 +142,9 @@ const usePersistentState = <T extends object>(
       if (initialValue instanceof Set) {
         return new Set(parsed) as T;
       }
+       if (Array.isArray(initialValue)) {
+        return parsed as T;
+      }
       return parsed;
     } catch (error) {
       console.error(`Error reading from localStorage for key "${key}":`, error);
@@ -175,6 +179,11 @@ const NestedWorkflow = () => {
     {}
   );
 
+  const [threadOrder, setThreadOrder] = usePersistentState<string[]>(
+    "nested-workflow-thread-order",
+    []
+  );
+
   // UI STATE: Manages expanded/collapsed sections for a clear user experience, persisted to localStorage.
   const [expandedTasks, setExpandedTasks] = usePersistentState<Set<string>>(
     "nested-workflow-expanded-tasks",
@@ -203,7 +212,23 @@ const NestedWorkflow = () => {
     if (selectedThreadId && !threads[selectedThreadId]) {
       setSelectedThreadId(null);
     }
-  }, [threads, selectedThreadId]);
+    const currentThreadIds = Object.keys(threads);
+    if(threadOrder.length === 0 && currentThreadIds.length > 0){
+        setThreadOrder(currentThreadIds);
+        return;
+    }
+
+    const newOrder = threadOrder.filter(id => currentThreadIds.includes(id));
+    currentThreadIds.forEach(id => {
+        if(!newOrder.includes(id)){
+            newOrder.push(id);
+        }
+    });
+    if(newOrder.length !== threadOrder.length || newOrder.some((id,i) => id !== threadOrder[i])){
+        setThreadOrder(newOrder);
+    }
+
+  }, [threads, selectedThreadId, threadOrder]); // Added threadOrder to dependencies
   
   // ==========================================================================
   // THREAD OPERATIONS: Functions for managing top-level thread data.
@@ -224,10 +249,19 @@ const NestedWorkflow = () => {
     };
 
     setThreads((prev) => ({ ...prev, [newThreadId]: newThread }));
+    setThreadOrder(prev => [newThreadId, ...prev]);
     setNewThreadTitle("");
     setIsAddingThread(false);
     setExpandedThreads((prev) => new Set([...prev, newThreadId]));
     setSelectedThreadId(newThreadId); // Select the new thread
+  };
+
+  const handleSelectThread = (threadId: string) => {
+    setSelectedThreadId(threadId);
+    setThreadOrder(prev => {
+        const newOrder = prev.filter(id => id !== threadId);
+        return [threadId, ...newOrder];
+    });
   };
 
   // STATE CHANGE: Updates a thread's title and exits edit mode.
@@ -257,6 +291,7 @@ const NestedWorkflow = () => {
       const newThreads = { ...threads };
       delete newThreads[threadId];
       setThreads(newThreads);
+      setThreadOrder(prev => prev.filter(id => id !== threadId));
       // If the deleted thread was selected, unselect it
       if (selectedThreadId === threadId) {
         setSelectedThreadId(null);
@@ -295,80 +330,73 @@ const NestedWorkflow = () => {
   };
 
   // STATE CHANGE: Recursively finds and toggles the 'done' status of a task.
-  const toggleTaskDone = (threadId: string, taskId: string) => {
-    // STRATEGY: Use recursion to traverse the nested task structure. This function creates new objects and arrays for the modified path, ensuring the state update is immutable.
-    const updateTaskRecursive = (tasks: Task[]): Task[] => {
-      return tasks.map((task) => {
-        if (task.id === taskId) {
-          return { ...task, done: !task.done };
-        }
-        if (task.children.length > 0) {
-          return { ...task, children: updateTaskRecursive(task.children) };
-        }
-        return task;
-      });
-    };
-
-    setThreads((prev) => ({
-      ...prev,
-      [threadId]: {
-        ...prev[threadId],
-        tasks: updateTaskRecursive(prev[threadId].tasks),
-      },
-    }));
+  const updateTaskRecursive = (tasks: Task[], taskId: string, newDoneState?: boolean, newText?: string, newNote?: string): Task[] => {
+    return tasks.map(task => {
+      if (task.id === taskId) {
+        return {
+          ...task,
+          done: newDoneState !== undefined ? newDoneState : task.done,
+          text: newText !== undefined ? newText : task.text,
+          note: newNote !== undefined ? newNote : task.note,
+        };
+      }
+      if (task.children.length > 0) {
+        return { ...task, children: updateTaskRecursive(task.children, taskId, newDoneState, newText, newNote) };
+      }
+      return task;
+    });
   };
 
-  // STATE CHANGE: Recursively finds a task and updates its note text.
-  const saveNote = (threadId: string, taskId: string, newText: string) => {
-    // STRATEGY: A recursive approach is used to immutably update the note for a deeply nested task.
-    const updateNoteRecursive = (tasks: Task[]): Task[] => {
-      return tasks.map((task) => {
-        if (task.id === taskId) {
-          return { ...task, note: newText };
-        }
-        if (task.children.length > 0) {
-          return { ...task, children: updateNoteRecursive(task.children) };
-        }
-        return task;
-      });
-    };
+  const toggleTaskDone = (threadId: string, taskId: string) => {
+    setThreads(prevThreads => {
+      const threadToUpdate = prevThreads[threadId];
+      if (!threadToUpdate) return prevThreads;
 
-    setThreads((prev) => ({
-      ...prev,
-      [threadId]: {
-        ...prev[threadId],
-        tasks: updateNoteRecursive(prev[threadId].tasks),
-      },
-    }));
+      const updatedTasks = updateTaskRecursive(threadToUpdate.tasks, taskId, !threadToUpdate.tasks.find(t => t.id === taskId)?.done);
+      return {
+        ...prevThreads,
+        [threadId]: {
+          ...threadToUpdate,
+          tasks: updatedTasks,
+        },
+      };
+    });
+  };
+
+  const saveNote = (threadId: string, taskId: string, newText: string) => {
+    setThreads(prevThreads => {
+      const threadToUpdate = prevThreads[threadId];
+      if (!threadToUpdate) return prevThreads;
+
+      const updatedTasks = updateTaskRecursive(threadToUpdate.tasks, taskId, undefined, undefined, newText);
+      return {
+        ...prevThreads,
+        [threadId]: {
+          ...threadToUpdate,
+          tasks: updatedTasks,
+        },
+      };
+    });
     setEditingNote(null);
   };
 
-  // STATE CHANGE: Recursively finds a task and updates its text.
   const updateTaskText = (threadId: string, taskId: string, newText: string) => {
-    // STRATEGY: A recursive function to immutably update the text for a given task.
-    const updateTextRecursive = (tasks: Task[]): Task[] => {
-      return tasks.map((task) => {
-        if (task.id === taskId) {
-          return { ...task, text: newText };
-        }
-        if (task.children.length > 0) {
-          return { ...task, children: updateTextRecursive(task.children) };
-        }
-        return task;
-      });
-    };
+    setThreads(prevThreads => {
+      const threadToUpdate = prevThreads[threadId];
+      if (!threadToUpdate) return prevThreads;
 
-    setThreads((prev) => ({
-      ...prev,
-      [threadId]: {
-        ...prev[threadId],
-        tasks: updateTextRecursive(prev[threadId].tasks),
-      },
-    }));
-
+      const updatedTasks = updateTaskRecursive(threadToUpdate.tasks, taskId, undefined, newText);
+      return {
+        ...prevThreads,
+        [threadId]: {
+          ...threadToUpdate,
+          tasks: updatedTasks,
+        },
+      };
+    });
     setEditingTaskId(null);
   };
-
+  
   // STATE CHANGE: Adds a new root-level task to a thread.
   const addRootTaskToThread = (threadId: string) => {
     if (!newChildText.trim()) return;
@@ -472,14 +500,16 @@ const NestedWorkflow = () => {
       }, 0);
   };
 
-  const allThreads = Object.values(threads);
-  const globalTotalThreads = allThreads.length;
+  const globalTotalThreads = threadOrder.length;
   let globalTotalTasks = 0;
   let globalCompletedTasks = 0;
 
-  allThreads.forEach(thread => {
-      globalTotalTasks += countAllTasks(thread.tasks);
-      globalCompletedTasks += countAllCompletedTasks(thread.tasks);
+  threadOrder.forEach(threadId => {
+      const thread = threads[threadId];
+      if(thread){
+        globalTotalTasks += countAllTasks(thread.tasks);
+        globalCompletedTasks += countAllCompletedTasks(thread.tasks);
+      }
   });
 
   // ==========================================================================
@@ -537,33 +567,45 @@ const NestedWorkflow = () => {
           )}
 
           <div className="space-y-3">
-            {Object.values(threads).map((thread, index) => {
+            <AnimatePresence>
+            {threadOrder.map((threadId, index) => {
+              const thread = threads[threadId];
+              if(!thread) return null;
               const totalTasks = countAllTasks(thread.tasks);
               const completedTasks = countAllCompletedTasks(thread.tasks);
               return (
-                <ThreadCard 
-                  key={thread.id} 
-                  thread={thread}
-                  threadNumber={index + 1}
-                  totalTaskCount={totalTasks}
-                  completedTaskCount={completedTasks}
-                  isSelected={selectedThreadId === thread.id}
-                  onSelect={() => setSelectedThreadId(thread.id)}
-                  isThreadExpanded={expandedThreads.has(thread.id)} 
-                  toggleThread={toggleThread} 
-                  onUpdateTitle={updateThreadTitle} 
-                  onDelete={deleteThread} 
-                  onAddRootTask={addRootTaskToThread} 
-                  onUpdateStatus={updateThreadStatus}
-                  addingSessionTo={addingSessionTo}
-                  setAddingSessionTo={setAddingSessionTo}
-                  onAddSession={addSession}
-                  editingThreadId={editingThreadId}
-                  setEditingThreadId={setEditingThreadId}
-                  taskItemProps={taskItemProps}
-                />
+                <motion.div
+                  key={thread.id}
+                  layout
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -50}}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                    <ThreadCard 
+                      thread={thread}
+                      threadNumber={index + 1}
+                      totalTaskCount={totalTasks}
+                      completedTaskCount={completedTasks}
+                      isSelected={selectedThreadId === thread.id}
+                      onSelect={() => handleSelectThread(thread.id)}
+                      isThreadExpanded={expandedThreads.has(thread.id)} 
+                      toggleThread={toggleThread} 
+                      onUpdateTitle={updateThreadTitle} 
+                      onDelete={deleteThread} 
+                      onAddRootTask={addRootTaskToThread} 
+                      onUpdateStatus={updateThreadStatus}
+                      addingSessionTo={addingSessionTo}
+                      setAddingSessionTo={setAddingSessionTo}
+                      onAddSession={addSession}
+                      editingThreadId={editingThreadId}
+                      setEditingThreadId={setEditingThreadId}
+                      taskItemProps={taskItemProps}
+                    />
+                </motion.div>
               );
             })}
+            </AnimatePresence>
           </div>
         </div>
         <div className="md:col-span-1">
