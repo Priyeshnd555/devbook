@@ -41,3 +41,14 @@ example:
 @AI_CODING_RULES.MD  @coding_guidelines.md  i want the total counts to be shown somewhere in @app/page.tsx make sure ui is      │
 │   usable                                                                                                                          │
 ╰─────────────
+
+
+
+steps to deploy
+
+
+1. update package json with homepath
+2. add gh-pages library
+3. make repo pubilc
+4. go to repo settings and then go to pages select the branch to deploy from 
+5. then run `npm run deploy`
