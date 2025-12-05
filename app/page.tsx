@@ -5,7 +5,7 @@
 // DEPENDENCIES: Uses 'react' for component-based UI and 'lucide-react' for iconography.
 // INVARIANTS: State is always updated immutably. All task IDs must be unique within their respective threads. A task's status is derived from its `done` property.
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Plus,
   ChevronDown,
@@ -22,11 +22,18 @@ import {
 import { TaskItem, TaskItemProps } from "./components/TaskItem"; // Import TaskItem
 import { ThreadCard, ThreadCardProps } from "./components/ThreadCard"; // Import ThreadCard
 import { motion, AnimatePresence } from "framer-motion";
+import ProjectSidebar, { Project } from './components/ProjectSidebar';
+
 
 // ============================================================================
 // COMPONENT CONTEXT: High-level overview of imported components for AI reference.
 // ============================================================================
 /*
+  COMPONENT: ProjectSidebar (from ./components/ProjectSidebar.tsx)
+  ----------------------------------------------------
+  PURPOSE: Renders a sidebar that allows for creation and navigation of nested projects.
+           It displays projects in a hierarchical view.
+
   COMPONENT: TaskItem (from ./components/TaskItem.tsx)
   ----------------------------------------------------
   PURPOSE: Renders a single, potentially nested, task item. It handles displaying
@@ -85,6 +92,7 @@ export const THREAD_STATE_TRANSITIONS: Record<ThreadStatus, ThreadStatus[]> = {
 
 export interface Thread {
   id: string;
+  projectId: string;
   title: string;
   status: ThreadStatus;
   lastWorked: string;
@@ -172,6 +180,12 @@ const NestedWorkflow = () => {
   // ==========================================================================
   // CORE STATE: All application data and UI state are managed here.
   // ==========================================================================
+  const [projects, setProjects] = usePersistentState<Record<string, Project>>(
+    "nested-workflow-projects",
+    {}
+  );
+  
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   // MAIN DATA: 'threads' holds the primary data for the application, persisted to localStorage.
   const [threads, setThreads] = usePersistentState<ThreadsState>(
@@ -207,6 +221,43 @@ const NestedWorkflow = () => {
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [editedTaskText, setEditedTaskText] = useState<string>("");
 
+    useEffect(() => {
+    // Initialize default project if none exist
+    if (Object.keys(projects).length === 0) {
+      const inboxId = 'proj-inbox';
+      const newProject: Project = { id: inboxId, name: 'Inbox', parentId: null };
+      setProjects({ [inboxId]: newProject });
+      setSelectedProjectId(inboxId);
+    }
+
+    // Select first project if nothing is selected
+    if(!selectedProjectId && Object.keys(projects).length > 0){
+        const firstProject = Object.values(projects).find(p => p.parentId === null) || Object.values(projects)[0];
+        if(firstProject) {
+            setSelectedProjectId(firstProject.id);
+        }
+    }
+
+    // Data migration for threads without a projectId
+    const threadsNeedMigration = Object.values(threads).some(t => !t.projectId);
+    if (threadsNeedMigration && Object.keys(projects).length > 0) {
+      let inboxId = Object.values(projects).find(p => p.name === 'Inbox')?.id;
+      if (!inboxId) {
+        inboxId = 'proj-inbox';
+      }
+      setThreads(currentThreads => {
+        const migratedThreads = { ...currentThreads };
+        Object.keys(migratedThreads).forEach(id => {
+          if (!migratedThreads[id].projectId) {
+            migratedThreads[id].projectId = inboxId!;
+          }
+        });
+        return migratedThreads;
+      });
+    }
+  }, [projects, setProjects, threads, setThreads, selectedProjectId]);
+
+
   useEffect(() => {
     // When threads change, if the selected thread is deleted, unselect it.
     if (selectedThreadId && !threads[selectedThreadId]) {
@@ -231,16 +282,38 @@ const NestedWorkflow = () => {
   }, [threads, selectedThreadId, threadOrder]); // Added threadOrder to dependencies
   
   // ==========================================================================
+  // PROJECT OPERATIONS
+  // ==========================================================================
+  const addProject = (name: string, parentId: string | null) => {
+    if (!name.trim()) return;
+    const newProjectId = `proj-${Date.now()}`;
+    const newProject: Project = {
+      id: newProjectId,
+      name,
+      parentId,
+    };
+    setProjects(prev => ({ ...prev, [newProjectId]: newProject }));
+  };
+
+  const handleSelectProject = (projectId: string) => {
+    setSelectedProjectId(projectId);
+  }
+
+  // ==========================================================================
   // THREAD OPERATIONS: Functions for managing top-level thread data.
   // ==========================================================================
 
   // STATE CHANGE: Creates a new thread and adds it to the threads object.
   const addThread = () => {
-    if (!newThreadTitle.trim()) return;
+    if (!newThreadTitle.trim() || !selectedProjectId) {
+        alert("Please select a project before adding a thread.");
+        return;
+    };
 
     const newThreadId = `thread-${Date.now()}`;
     const newThread: Thread = {
       id: newThreadId,
+      projectId: selectedProjectId,
       title: newThreadTitle,
       status: "active",
       lastWorked: new Date().toISOString().split("T")[0],
@@ -351,8 +424,19 @@ const NestedWorkflow = () => {
     setThreads(prevThreads => {
       const threadToUpdate = prevThreads[threadId];
       if (!threadToUpdate) return prevThreads;
+      
+      const findTask = (tasks: Task[], id: string): Task | undefined => {
+        for(const task of tasks) {
+            if(task.id === id) return task;
+            if(task.children) {
+                const found = findTask(task.children, id);
+                if(found) return found;
+            }
+        }
+      }
+      const taskToUpdate = findTask(threadToUpdate.tasks, taskId);
 
-      const updatedTasks = updateTaskRecursive(threadToUpdate.tasks, taskId, !threadToUpdate.tasks.find(t => t.id === taskId)?.done);
+      const updatedTasks = updateTaskRecursive(threadToUpdate.tasks, taskId, !taskToUpdate?.done);
       return {
         ...prevThreads,
         [threadId]: {
@@ -482,9 +566,30 @@ const NestedWorkflow = () => {
   };
 
   // ==========================================================================
-  // DERIVED STATE: Computed values based on the core state.
+  // DERIVED STATE & MEMOIZED VALUES
   // ==========================================================================
   const selectedThread = selectedThreadId ? threads[selectedThreadId] : null;
+
+  const descendantProjectIds = useMemo(() => {
+    const getDescendants = (projectId: string): string[] => {
+        const children = Object.values(projects)
+            .filter(p => p.parentId === projectId)
+            .map(p => p.id);
+        return [...children, ...children.flatMap(getDescendants)];
+    };
+
+    if (!selectedProjectId) return [];
+    return [selectedProjectId, ...getDescendants(selectedProjectId)];
+  }, [selectedProjectId, projects]);
+
+  const filteredThreadOrder = useMemo(() => {
+    if (!selectedProjectId) return threadOrder;
+    return threadOrder.filter(id => {
+        const thread = threads[id];
+        return thread && descendantProjectIds.includes(thread.projectId);
+    });
+  }, [threadOrder, threads, descendantProjectIds, selectedProjectId]);
+
 
   // ==========================================================================
   // HELPER FUNCTIONS: Pure functions for calculations.
@@ -536,109 +641,122 @@ const NestedWorkflow = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 bg-white border-b border-gray-200 shadow-xs z-20">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <h1 className="text-lg font-semibold text-gray-900">Thread Notes</h1>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Nested task tracking &bull; {globalTotalThreads} Threads &bull; {globalCompletedTasks}/{globalTotalTasks} Tasks
-              </p>
-            </div>
-            <button onClick={() => setIsAddingThread(true)} className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors">
-              <Plus className="w-3.5 h-3.5" /> New Thread
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto px-6 py-4">
-        <div className="md:col-span-2">
-          {isAddingThread && (
-            <div className="mb-3 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-900 mb-2">New thread</h3>
-              <input type="text" value={newThreadTitle} onChange={(e) => setNewThreadTitle(e.target.value)} placeholder="Title..." className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white" autoFocus onKeyPress={(e) => e.key === "Enter" && addThread()} />
-              <div className="flex gap-2 mt-2">
-                <button onClick={addThread} className="px-3 py-1.5 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 transition-colors font-medium">Create</button>
-                <button onClick={() => { setIsAddingThread(false); setNewThreadTitle(""); }} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded text-xs hover:bg-gray-200 transition-colors">Cancel</button>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            <AnimatePresence>
-            {threadOrder.map((threadId, index) => {
-              const thread = threads[threadId];
-              if(!thread) return null;
-              const totalTasks = countAllTasks(thread.tasks);
-              const completedTasks = countAllCompletedTasks(thread.tasks);
-              return (
-                <motion.div
-                  key={thread.id}
-                  layout
-                  initial={{ opacity: 0, y: 50 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -50}}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
+    <div className="flex h-screen bg-gray-50 font-sans">
+      <ProjectSidebar 
+        projects={projects}
+        selectedProjectId={selectedProjectId}
+        onAddProject={addProject}
+        onSelectProject={handleSelectProject}
+      />
+      <div className="flex-1 flex flex-col">
+        <header className="bg-white border-b border-gray-200 shadow-xs z-20">
+            <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                <h1 className="text-lg font-semibold text-gray-900">Thread Notes</h1>
+                <p className="text-xs text-gray-500 mt-0.5">
+                    Nested task tracking &bull; {globalTotalThreads} Threads &bull; {globalCompletedTasks}/{globalTotalTasks} Tasks
+                </p>
+                </div>
+                <button 
+                    onClick={() => setIsAddingThread(true)} 
+                    className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors disabled:bg-gray-400"
+                    disabled={!selectedProjectId}
+                    title={!selectedProjectId ? "Select a project to add a thread" : "Add new thread"}
                 >
-                    <ThreadCard 
-                      thread={thread}
-                      threadNumber={index + 1}
-                      totalTaskCount={totalTasks}
-                      completedTaskCount={completedTasks}
-                      isSelected={selectedThreadId === thread.id}
-                      onSelect={() => handleSelectThread(thread.id)}
-                      isThreadExpanded={expandedThreads.has(thread.id)} 
-                      toggleThread={toggleThread} 
-                      onUpdateTitle={updateThreadTitle} 
-                      onDelete={deleteThread} 
-                      onAddRootTask={addRootTaskToThread} 
-                      onUpdateStatus={updateThreadStatus}
-                      addingSessionTo={addingSessionTo}
-                      setAddingSessionTo={setAddingSessionTo}
-                      onAddSession={addSession}
-                      editingThreadId={editingThreadId}
-                      setEditingThreadId={setEditingThreadId}
-                      taskItemProps={taskItemProps}
-                    />
-                </motion.div>
-              );
-            })}
-            </AnimatePresence>
-          </div>
-        </div>
-        <div className="md:col-span-1">
-          <div className="sticky top-24">
-            {selectedThread ? (
-              <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-                <div className="p-4 border-b border-gray-100">
-                  <h2 className="text-base font-medium text-gray-900">Session Log</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">{selectedThread.title}</p>
+                <Plus className="w-3.5 h-3.5" /> New Thread
+                </button>
+            </div>
+            </div>
+        </header>
+
+        <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto px-6 py-4 w-full overflow-y-auto">
+            <div className="md:col-span-2">
+            {isAddingThread && (
+                <div className="mb-3 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <h3 className="text-sm font-medium text-gray-900 mb-2">New thread</h3>
+                <input type="text" value={newThreadTitle} onChange={(e) => setNewThreadTitle(e.target.value)} placeholder="Title..." className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white" autoFocus onKeyPress={(e) => e.key === "Enter" && addThread()} />
+                <div className="flex gap-2 mt-2">
+                    <button onClick={addThread} className="px-3 py-1.5 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 transition-colors font-medium">Create</button>
+                    <button onClick={() => { setIsAddingThread(false); setNewThreadTitle(""); }} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded text-xs hover:bg-gray-200 transition-colors">Cancel</button>
                 </div>
-                <div className="p-4 space-y-3 max-h-[calc(100vh-15rem)] overflow-y-auto">
-                  {selectedThread.sessions.length > 0 ? (
-                    selectedThread.sessions.map((session, idx) => (
-                      <div key={`${selectedThread.id}-session-${idx}`} className="bg-gray-50 rounded p-3 text-xs border border-gray-200">
-                        <div className="text-gray-500 mb-1.5 font-medium">{session.date} at {session.time}</div>
-                        <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">{session.notes}</div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="py-10 text-center text-xs text-gray-400">
-                      <p>No sessions logged for this thread.</p>
-                    </div>
-                  )}
                 </div>
-              </div>
-            ) : (
-              <div className="py-20 text-center text-sm text-gray-400">
-                <p>Select a thread to view its session log.</p>
-              </div>
             )}
-          </div>
-        </div>
-      </main>
+
+            <div className="space-y-3">
+                <AnimatePresence>
+                {filteredThreadOrder.map((threadId, index) => {
+                const thread = threads[threadId];
+                if(!thread) return null;
+                const totalTasks = countAllTasks(thread.tasks);
+                const completedTasks = countAllCompletedTasks(thread.tasks);
+                return (
+                    <motion.div
+                    key={thread.id}
+                    layout
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -50}}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    >
+                        <ThreadCard 
+                        thread={thread}
+                        threadNumber={index + 1}
+                        totalTaskCount={totalTasks}
+                        completedTaskCount={completedTasks}
+                        isSelected={selectedThreadId === thread.id}
+                        onSelect={() => handleSelectThread(thread.id)}
+                        isThreadExpanded={expandedThreads.has(thread.id)} 
+                        toggleThread={toggleThread} 
+                        onUpdateTitle={updateThreadTitle} 
+                        onDelete={deleteThread} 
+                        onAddRootTask={addRootTaskToThread} 
+                        onUpdateStatus={updateThreadStatus}
+                        addingSessionTo={addingSessionTo}
+                        setAddingSessionTo={setAddingSessionTo}
+                        onAddSession={addSession}
+                        editingThreadId={editingThreadId}
+                        setEditingThreadId={setEditingThreadId}
+                        taskItemProps={taskItemProps}
+                        />
+                    </motion.div>
+                );
+                })}
+                </AnimatePresence>
+            </div>
+            </div>
+            <div className="md:col-span-1">
+            <div className="sticky top-6">
+                {selectedThread ? (
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div className="p-4 border-b border-gray-100">
+                    <h2 className="text-base font-medium text-gray-900">Session Log</h2>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">{selectedThread.title}</p>
+                    </div>
+                    <div className="p-4 space-y-3 max-h-[calc(100vh-18rem)] overflow-y-auto">
+                    {selectedThread.sessions.length > 0 ? (
+                        selectedThread.sessions.map((session, idx) => (
+                        <div key={`${selectedThread.id}-session-${idx}`} className="bg-gray-50 rounded p-3 text-xs border border-gray-200">
+                            <div className="text-gray-500 mb-1.5 font-medium">{session.date} at {session.time}</div>
+                            <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">{session.notes}</div>
+                        </div>
+                        ))
+                    ) : (
+                        <div className="py-10 text-center text-xs text-gray-400">
+                        <p>No sessions logged for this thread.</p>
+                        </div>
+                    )}
+                    </div>
+                </div>
+                ) : (
+                <div className="py-20 text-center text-sm text-gray-400">
+                    <p>Select a thread to view its session log.</p>
+                </div>
+                )}
+            </div>
+            </div>
+        </main>
+      </div>
     </div>
   );
 };
