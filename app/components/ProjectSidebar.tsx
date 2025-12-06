@@ -31,13 +31,9 @@
  */
 
 import React, { useState } from 'react';
-import { Folder, Plus, ChevronDown, ChevronRight, FolderPlus, PanelLeftOpen, PanelLeftClose, FolderOpen, X, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Folder, Plus, ChevronDown, ChevronRight, PanelLeftOpen, PanelLeftClose, FolderOpen, X, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Project } from '../types';
 
-export interface Project {
-  id: string;
-  name: string;
-  parentId: string | null;
-}
 
 interface ProjectSidebarProps {
   projects: Record<string, Project>;

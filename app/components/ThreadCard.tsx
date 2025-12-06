@@ -3,17 +3,13 @@ import {
   Plus,
   ChevronDown,
   ChevronRight,
-  Circle,
-  CheckCircle2,
   Clock,
-  MessageSquare,
   Zap,
-  StickyNote,
   Pencil,
   Trash2,
 } from "lucide-react";
 import { TaskItem, TaskItemProps } from "./TaskItem"; // Import TaskItem and its props
-import { Thread, ThreadStatus, THREAD_STATE_TRANSITIONS } from "../page"; // Import necessary types from page.tsx
+import { Thread, THREAD_STATE_TRANSITIONS, ThreadStatus } from "../types";
 
 // CONTEXT ANCHOR
 // PURPOSE: Renders a card for a single thread, including its metadata, tasks, and session history. It handles thread-level actions like editing the title, deleting, and logging work sessions.
