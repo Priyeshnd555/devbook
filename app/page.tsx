@@ -8,19 +8,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Plus,
-  ChevronDown,
-  ChevronRight,
-  Circle,
-  CheckCircle2,
-  Clock,
-  MessageSquare,
-  Zap,
-  StickyNote,
-  Pencil,
-  Trash2,
 } from "lucide-react";
 import { TaskItem, TaskItemProps } from "./components/TaskItem"; // Import TaskItem
-import { ThreadCard, ThreadCardProps } from "./components/ThreadCard"; // Import ThreadCard
+import { ThreadCard } from "./components/ThreadCard"; // Import ThreadCard
 import { motion, AnimatePresence } from "framer-motion";
 import ProjectSidebar, { Project } from './components/ProjectSidebar';
 
@@ -103,26 +93,6 @@ export interface Thread {
 export type ThreadsState = Record<string, Thread>;
 
 // ============================================================================
-// STATE TRANSITIONS: Visual map of how state changes flow.
-// ============================================================================
-/*
-  THREAD STATE FLOW:
-  1. Initial state → Default threads loaded from initial state.
-  2. User actions trigger state update functions:
-     - toggleThread() → expands/collapses a thread.
-     - toggleTask() → expands/collapses a task.
-     - toggleTaskDone() → toggles the 'done' status of a task.
-     - addThread() → creates a new thread.
-     - deleteThread() → removes a thread.
-     - updateThreadStatus() → changes the status of a thread.
-     - addChild() → adds a new sub-task to a parent task.
-     - addSession() → adds a new work session log to a thread.
-     - updateThreadTitle() → updates the title of a thread.
-     - saveNote() → saves a note for a task.
-  3. UI re-renders to reflect the new, immutable state.
-*/
-
-// ============================================================================
 // PERSISTENCE HOOK: Manages state persistence to localStorage.
 // PURPOSE: To abstract data storage for easy migration and to avoid repetitive
 // localStorage logic. It's a reusable pattern for syncing state with the browser's storage.
@@ -176,7 +146,70 @@ const usePersistentState = <T extends object>(
   return [state, setState];
 };
 
-const NestedWorkflow = () => {
+// ============================================================================
+// PURE HELPER FUNCTIONS: For calculations and data transformations.
+// These are defined at the module level because they do not depend on any component state.
+// ============================================================================
+
+/**
+ * STRATEGY: Recursion is used to locate an item within the nested structure and apply an update, maintaining immutability.
+ * This function is pure and has no side effects.
+ * @param tasks The array of tasks to search through.
+ * @param taskId The ID of the task to update.
+ * @param newDoneState Optional new 'done' state.
+ * @param newText Optional new text.
+ * @param newNote Optional new note.
+ * @returns A new array of tasks with the specified task updated.
+ */
+const updateTaskRecursive = (tasks: Task[], taskId: string, newDoneState?: boolean, newText?: string, newNote?: string): Task[] => {
+    return tasks.map(task => {
+      if (task.id === taskId) {
+        return {
+          ...task,
+          done: newDoneState !== undefined ? newDoneState : task.done,
+          text: newText !== undefined ? newText : task.text,
+          note: newNote !== undefined ? newNote : task.note,
+        };
+      }
+      if (task.children.length > 0) {
+        return { ...task, children: updateTaskRecursive(task.children, taskId, newDoneState, newText, newNote) };
+      }
+      return task;
+    });
+};
+
+/**
+ * Recursively counts all tasks in a given array of tasks.
+ * @param tasks The array of tasks to count.
+ * @returns The total number of tasks and their descendants.
+ */
+const countAllTasks = (tasks: Task[]): number => {
+  return tasks.reduce((count, task) => {
+      return count + 1 + countAllTasks(task.children);
+  }, 0);
+};
+
+/**
+ * Recursively counts all completed tasks in a given array of tasks.
+ * @param tasks The array of tasks to count.
+ * @returns The total number of completed tasks.
+ */
+const countAllCompletedTasks = (tasks: Task[]): number => {
+    return tasks.reduce((count, task) => {
+        return count + (task.done ? 1 : 0) + countAllCompletedTasks(task.children);
+    }, 0);
+};
+
+
+// ============================================================================
+// WORKFLOW MANAGER HOOK: Encapsulates all application state and business logic.
+// PURPOSE: To separate state management from the UI, making the main component
+// a "dumb" presentational component. This improves testability, maintainability,
+// and AI comprehension by isolating complexity.
+// DEPENDENCIES: `usePersistentState` hook, React hooks (`useState`, `useEffect`, `useMemo`).
+// INVARIANTS: Returns a consistent API for the `NestedWorkflow` component to consume.
+// ============================================================================
+const useWorkflowManager = () => {
   // ==========================================================================
   // CORE STATE: All application data and UI state are managed here.
   // ==========================================================================
@@ -187,7 +220,6 @@ const NestedWorkflow = () => {
   
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
-  // MAIN DATA: 'threads' holds the primary data for the application, persisted to localStorage.
   const [threads, setThreads] = usePersistentState<ThreadsState>(
     "nested-workflow-threads",
     {}
@@ -198,7 +230,6 @@ const NestedWorkflow = () => {
     []
   );
 
-  // UI STATE: Manages expanded/collapsed sections for a clear user experience, persisted to localStorage.
   const [expandedTasks, setExpandedTasks] = usePersistentState<Set<string>>(
     "nested-workflow-expanded-tasks",
     new Set()
@@ -208,12 +239,10 @@ const NestedWorkflow = () => {
     new Set()
   );
 
-  // UI STATE: Manages states for inline editing and content creation.
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [addingChildTo, setAddingChildTo] = useState<string | null>(null);
   const [newChildText, setNewChildText] = useState<string>("");
   const [addingSessionTo, setAddingSessionTo] = useState<string | null>(null);
-  // Removed sessionNotes state from here, now local to ThreadCard
   const [isAddingThread, setIsAddingThread] = useState<boolean>(false);
   const [newThreadTitle, setNewThreadTitle] = useState<string>("");
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
@@ -222,7 +251,6 @@ const NestedWorkflow = () => {
   const [editedTaskText, setEditedTaskText] = useState<string>("");
 
     useEffect(() => {
-    // Initialize default project if none exist
     if (Object.keys(projects).length === 0) {
       const inboxId = 'proj-inbox';
       const newProject: Project = { id: inboxId, name: 'Inbox', parentId: null };
@@ -230,7 +258,6 @@ const NestedWorkflow = () => {
       setSelectedProjectId(inboxId);
     }
 
-    // Select first project if nothing is selected
     if(!selectedProjectId && Object.keys(projects).length > 0){
         const firstProject = Object.values(projects).find(p => p.parentId === null) || Object.values(projects)[0];
         if(firstProject) {
@@ -238,7 +265,6 @@ const NestedWorkflow = () => {
         }
     }
 
-    // Data migration for threads without a projectId
     const threadsNeedMigration = Object.values(threads).some(t => !t.projectId);
     if (threadsNeedMigration && Object.keys(projects).length > 0) {
       let inboxId = Object.values(projects).find(p => p.name === 'Inbox')?.id;
@@ -259,7 +285,6 @@ const NestedWorkflow = () => {
 
 
   useEffect(() => {
-    // When threads change, if the selected thread is deleted, unselect it.
     if (selectedThreadId && !threads[selectedThreadId]) {
       setSelectedThreadId(null);
     }
@@ -279,7 +304,7 @@ const NestedWorkflow = () => {
         setThreadOrder(newOrder);
     }
 
-  }, [threads, selectedThreadId, threadOrder]); // Added threadOrder to dependencies
+  }, [threads, selectedThreadId, threadOrder, setThreadOrder]);
   
   // ==========================================================================
   // PROJECT OPERATIONS
@@ -300,10 +325,8 @@ const NestedWorkflow = () => {
   }
 
   // ==========================================================================
-  // THREAD OPERATIONS: Functions for managing top-level thread data.
+  // THREAD OPERATIONS
   // ==========================================================================
-
-  // STATE CHANGE: Creates a new thread and adds it to the threads object.
   const addThread = () => {
     if (!newThreadTitle.trim() || !selectedProjectId) {
         alert("Please select a project before adding a thread.");
@@ -326,7 +349,7 @@ const NestedWorkflow = () => {
     setNewThreadTitle("");
     setIsAddingThread(false);
     setExpandedThreads((prev) => new Set([...prev, newThreadId]));
-    setSelectedThreadId(newThreadId); // Select the new thread
+    setSelectedThreadId(newThreadId);
   };
 
   const handleSelectThread = (threadId: string) => {
@@ -337,7 +360,6 @@ const NestedWorkflow = () => {
     });
   };
 
-  // STATE CHANGE: Updates a thread's title and exits edit mode.
   const updateThreadTitle = (threadId: string, newTitle: string) => {
     setThreads((prev) => ({
       ...prev,
@@ -345,7 +367,7 @@ const NestedWorkflow = () => {
     }));
     setEditingThreadId(null);
   };
-    // STATE CHANGE: Updates the status of a specific thread.
+    
   const updateThreadStatus = (threadId: string, status: ThreadStatus) => {
     setThreads((prev) => {
       if (prev[threadId]) {
@@ -357,15 +379,13 @@ const NestedWorkflow = () => {
       return prev;
     });
   };
-  // STATE CHANGE: Removes a thread after user confirmation.
+  
   const deleteThread = (threadId: string) => {
-    // CONSTRAINT: Deletion is a destructive action and requires confirmation.
     if (window.confirm("Are you sure you want to delete this thread?")) {
       const newThreads = { ...threads };
       delete newThreads[threadId];
       setThreads(newThreads);
       setThreadOrder(prev => prev.filter(id => id !== threadId));
-      // If the deleted thread was selected, unselect it
       if (selectedThreadId === threadId) {
         setSelectedThreadId(null);
       }
@@ -373,10 +393,8 @@ const NestedWorkflow = () => {
   };
 
   // ==========================================================================
-  // TASK OPERATIONS: Functions for managing individual tasks and their state.
+  // TASK OPERATIONS
   // ==========================================================================
-
-  // UI STATE CHANGE: Toggles the expansion state of a single task.
   const toggleTask = (taskId: string) => {
     setExpandedTasks((prev) => {
       const newSet = new Set(prev);
@@ -389,7 +407,6 @@ const NestedWorkflow = () => {
     });
   };
 
-  // UI STATE CHANGE: Toggles the expansion state of a single thread.
   const toggleThread = (threadId: string) => {
     setExpandedThreads((prev) => {
       const newSet = new Set(prev);
@@ -399,24 +416,6 @@ const NestedWorkflow = () => {
         newSet.add(threadId);
       }
       return newSet;
-    });
-  };
-
-  // STATE CHANGE: Recursively finds and toggles the 'done' status of a task.
-  const updateTaskRecursive = (tasks: Task[], taskId: string, newDoneState?: boolean, newText?: string, newNote?: string): Task[] => {
-    return tasks.map(task => {
-      if (task.id === taskId) {
-        return {
-          ...task,
-          done: newDoneState !== undefined ? newDoneState : task.done,
-          text: newText !== undefined ? newText : task.text,
-          note: newNote !== undefined ? newNote : task.note,
-        };
-      }
-      if (task.children.length > 0) {
-        return { ...task, children: updateTaskRecursive(task.children, taskId, newDoneState, newText, newNote) };
-      }
-      return task;
     });
   };
 
@@ -481,7 +480,6 @@ const NestedWorkflow = () => {
     setEditingTaskId(null);
   };
   
-  // STATE CHANGE: Adds a new root-level task to a thread.
   const addRootTaskToThread = (threadId: string) => {
     if (!newChildText.trim()) return;
     const newId = `${threadId}-task-${Date.now()}`;
@@ -503,11 +501,9 @@ const NestedWorkflow = () => {
     setAddingChildTo(null);
   };
   
-  // STATE CHANGE: Adds a new child task to a specified parent task.
   const addChild = (threadId: string, parentId: string) => {
     if (!newChildText.trim()) return;
 
-    // STRATEGY: Recursion is used to locate the parent task within the nested structure and add the new child task, maintaining immutability.
     const addChildRecursive = (tasks: Task[]): Task[] => {
       return tasks.map((task) => {
         if (task.id === parentId) {
@@ -541,11 +537,9 @@ const NestedWorkflow = () => {
   };
 
   // ==========================================================================
-  // SESSION OPERATIONS: Functions for managing work session logs.
+  // SESSION OPERATIONS
   // ==========================================================================
-
-  // STATE CHANGE: Adds a new work session log to a thread and updates the 'lastWorked' timestamp.
-  const addSession = (threadId: string, notes: string) => { // Modified to accept notes
+  const addSession = (threadId: string, notes: string) => {
     if (!notes.trim()) return;
 
     const now = new Date();
@@ -590,37 +584,21 @@ const NestedWorkflow = () => {
     });
   }, [threadOrder, threads, descendantProjectIds, selectedProjectId]);
 
-
-  // ==========================================================================
-  // HELPER FUNCTIONS: Pure functions for calculations.
-  // ==========================================================================
-  const countAllTasks = (tasks: Task[]): number => {
-    return tasks.reduce((count, task) => {
-        return count + 1 + countAllTasks(task.children);
-    }, 0);
-  };
-  const countAllCompletedTasks = (tasks: Task[]): number => {
-      return tasks.reduce((count, task) => {
-          return count + (task.done ? 1 : 0) + countAllCompletedTasks(task.children);
-      }, 0);
-  };
-
+  const { globalTotalTasks, globalCompletedTasks } = useMemo(() => {
+    let total = 0;
+    let completed = 0;
+    threadOrder.forEach(threadId => {
+        const thread = threads[threadId];
+        if(thread){
+          total += countAllTasks(thread.tasks);
+          completed += countAllCompletedTasks(thread.tasks);
+        }
+    });
+    return { globalTotalTasks: total, globalCompletedTasks: completed };
+  }, [threadOrder, threads]);
+  
   const globalTotalThreads = threadOrder.length;
-  let globalTotalTasks = 0;
-  let globalCompletedTasks = 0;
-
-  threadOrder.forEach(threadId => {
-      const thread = threads[threadId];
-      if(thread){
-        globalTotalTasks += countAllTasks(thread.tasks);
-        globalCompletedTasks += countAllCompletedTasks(thread.tasks);
-      }
-  });
-
-  // ==========================================================================
-  // MAIN COMPONENT RENDER: Assembles the top-level UI structure.
-  // ==========================================================================
-
+  
   const taskItemProps: Omit<TaskItemProps, 'task' | 'threadId' | 'level'> = {
     expandedTasks,
     editingNote,
@@ -639,6 +617,102 @@ const NestedWorkflow = () => {
     setEditedTaskText,
     updateTaskText,
   };
+
+  return {
+    projects,
+    selectedProjectId,
+    threads,
+    threadOrder,
+    expandedTasks,
+    expandedThreads,
+    editingNote,
+    addingChildTo,
+    newChildText,
+    addingSessionTo,
+    isAddingThread,
+    newThreadTitle,
+    editingThreadId,
+    editingTaskId,
+    selectedThreadId,
+    editedTaskText,
+    selectedThread,
+    descendantProjectIds,
+    filteredThreadOrder,
+    globalTotalThreads,
+    globalTotalTasks,
+    globalCompletedTasks,
+    taskItemProps,
+    setProjects,
+    setSelectedProjectId,
+    setThreads,
+    setThreadOrder,
+    setExpandedTasks,
+    setExpandedThreads,
+    setEditingNote,
+    setAddingChildTo,
+    setNewChildText,
+    setAddingSessionTo,
+    setIsAddingThread,
+    setNewThreadTitle,
+    setEditingThreadId,
+    setEditingTaskId,
+    setSelectedThreadId,
+    setEditedTaskText,
+    addProject,
+    handleSelectProject,
+    addThread,
+    handleSelectThread,
+    updateThreadTitle,
+    updateThreadStatus,
+    deleteThread,
+    toggleTask,
+    toggleThread,
+    toggleTaskDone,
+    saveNote,
+    updateTaskText,
+    addRootTaskToThread,
+    addChild,
+    addSession,
+  };
+};
+
+
+// ==========================================================================
+// MAIN COMPONENT RENDER: Assembles the top-level UI structure.
+// This is now a "dumb" component that receives all state and handlers from the useWorkflowManager hook.
+// ==========================================================================
+const NestedWorkflow = () => {
+  const {
+    projects,
+    selectedProjectId,
+    threads,
+    filteredThreadOrder,
+    expandedThreads,
+    selectedThreadId,
+    selectedThread,
+    globalTotalThreads,
+    globalTotalTasks,
+    globalCompletedTasks,
+    isAddingThread,
+    newThreadTitle,
+    addingSessionTo,
+    editingThreadId,
+    addProject,
+    handleSelectProject,
+    setIsAddingThread,
+    setNewThreadTitle,
+    addThread,
+    handleSelectThread,
+    updateThreadTitle,
+    updateThreadStatus,
+    deleteThread,
+    toggleThread,
+    addRootTaskToThread,
+    setAddingSessionTo,
+    addSession,
+    setEditingThreadId,
+    taskItemProps,
+  } = useWorkflowManager();
   
   return (
     <div className="flex h-screen bg-gray-50 font-sans">
