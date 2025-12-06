@@ -24,7 +24,7 @@
  */
 
 import React, { useState } from 'react';
-import { Folder, Plus, ChevronDown, ChevronRight, FolderPlus, PanelLeftOpen, PanelLeftClose, FolderOpen, X } from 'lucide-react';
+import { Folder, Plus, ChevronDown, ChevronRight, FolderPlus, PanelLeftOpen, PanelLeftClose, FolderOpen, X, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 
 export interface Project {
   id: string;
@@ -36,6 +36,8 @@ interface ProjectSidebarProps {
   projects: Record<string, Project>;
   onSelectProject: (projectId: string) => void;
   onAddProject: (name: string, parentId: string | null) => void;
+  onRenameProject?: (projectId: string, newName: string) => void;
+  onDeleteProject?: (projectId: string) => void;
   selectedProjectId: string | null;
 }
 
@@ -46,14 +48,19 @@ const ProjectItem: React.FC<{
   onSelectProject: (projectId: string) => void;
   selectedProjectId: string | null;
   onAddProject: (name: string, parentId: string | null) => void;
+  onRenameProject?: (projectId: string, newName: string) => void;
+  onDeleteProject?: (projectId: string) => void;
   isCollapsed: boolean;
-}> = ({ project, projects, level, onSelectProject, selectedProjectId, onAddProject, isCollapsed }) => {
+}> = ({ project, projects, level, onSelectProject, selectedProjectId, onAddProject, onRenameProject, onDeleteProject, isCollapsed }) => {
   
   const children = Object.values(projects).filter(p => p.parentId === project.id);
   const [isExpanded, setIsExpanded] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [isHovered, setIsHovered] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(project.name);
 
   const isSelected = selectedProjectId === project.id;
   const hasChildren = children.length > 0;
@@ -73,6 +80,30 @@ const ProjectItem: React.FC<{
     } else if (e.key === 'Escape') {
       setIsAdding(false);
       setNewProjectName('');
+    }
+  };
+
+  const handleRename = () => {
+    if (renameValue.trim() && renameValue !== project.name && onRenameProject) {
+      onRenameProject(project.id, renameValue.trim());
+    }
+    setIsRenaming(false);
+    setShowMenu(false);
+  };
+
+  const handleDelete = () => {
+    if (onDeleteProject && window.confirm(`Delete "${project.name}" and all its sub-projects?`)) {
+      onDeleteProject(project.id);
+    }
+    setShowMenu(false);
+  };
+
+  const handleRenameKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleRename();
+    } else if (e.key === 'Escape') {
+      setIsRenaming(false);
+      setRenameValue(project.name);
     }
   };
 
@@ -149,14 +180,27 @@ const ProjectItem: React.FC<{
         </div>
 
         {/* Project Name */}
-        <span className={`flex-1 truncate text-[15px] font-medium ${
-          isSelected ? 'text-orange-900' : 'text-slate-700'
-        }`}>
-          {project.name}
-        </span>
+        {isRenaming ? (
+          <input
+            type="text"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={handleRenameKeyPress}
+            onBlur={handleRename}
+            className="flex-1 px-2 py-1 text-[15px] font-medium bg-white border border-orange-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+            autoFocus
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span className={`flex-1 truncate text-[15px] font-medium ${
+            isSelected ? 'text-orange-900' : 'text-slate-700'
+          }`}>
+            {project.name}
+          </span>
+        )}
 
         {/* Child Count Badge - Show on both selected and unselected */}
-        {hasChildren && (
+        {hasChildren && !isRenaming && (
           <span className={`flex-shrink-0 px-2 py-0.5 text-[11px] font-semibold rounded-full ${
             isSelected 
               ? 'bg-orange-100 text-orange-700'
@@ -166,22 +210,83 @@ const ProjectItem: React.FC<{
           </span>
         )}
 
+        {/* 3-Dot Menu Button */}
+        {!isRenaming && (
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu(!showMenu);
+              }}
+              className={`flex-shrink-0 p-1.5 rounded-md transition-all ${
+                showMenu
+                  ? 'bg-slate-200 text-slate-700'
+                  : isSelected
+                  ? 'hover:bg-orange-100 text-orange-600 opacity-0 group-hover:opacity-100'
+                  : 'hover:bg-slate-100 text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100'
+              }`}
+              title="Options"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+
+            {/* Dropdown Menu */}
+            {showMenu && (
+              <>
+                {/* Backdrop to close menu */}
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowMenu(false)}
+                />
+                
+                {/* Menu */}
+                <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRenameValue(project.name);
+                      setIsRenaming(true);
+                      setShowMenu(false);
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    Rename
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete();
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Add Nested Button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsAdding(true);
-            setIsExpanded(true);
-          }}
-          className={`flex-shrink-0 p-1.5 rounded-md transition-all ${
-            isSelected
-              ? 'hover:bg-orange-100 text-orange-600 opacity-0 group-hover:opacity-100'
-              : 'hover:bg-slate-100 text-slate-400 hover:text-orange-600 opacity-0 group-hover:opacity-100'
-          }`}
-          title="Add nested project"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
+        {!isRenaming && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsAdding(true);
+              setIsExpanded(true);
+            }}
+            className={`flex-shrink-0 p-1.5 rounded-md transition-all ${
+              isSelected
+                ? 'hover:bg-orange-100 text-orange-600 opacity-0 group-hover:opacity-100'
+                : 'hover:bg-slate-100 text-slate-400 hover:text-orange-600 opacity-0 group-hover:opacity-100'
+            }`}
+            title="Add nested project"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Children */}
@@ -196,6 +301,8 @@ const ProjectItem: React.FC<{
               onSelectProject={onSelectProject}
               selectedProjectId={selectedProjectId}
               onAddProject={onAddProject}
+              onRenameProject={onRenameProject}
+              onDeleteProject={onDeleteProject}
               isCollapsed={isCollapsed}
             />
           ))}
@@ -246,6 +353,8 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
   projects,
   onSelectProject,
   onAddProject,
+  onRenameProject,
+  onDeleteProject,
   selectedProjectId
 }) => {
   const [newProjectName, setNewProjectName] = useState('');
@@ -319,6 +428,8 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                 onSelectProject={onSelectProject}
                 selectedProjectId={selectedProjectId}
                 onAddProject={onAddProject}
+                onRenameProject={onRenameProject}
+                onDeleteProject={onDeleteProject}
                 isCollapsed={isCollapsed}
               />
             ))}

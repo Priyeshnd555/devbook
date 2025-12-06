@@ -324,6 +324,61 @@ const useWorkflowManager = () => {
     setSelectedProjectId(projectId);
   }
 
+  const renameProject = (projectId: string, newName: string) => {
+    if (!newName.trim()) return;
+    setProjects(prev => {
+      if (!prev[projectId]) return prev;
+      return {
+        ...prev,
+        [projectId]: { ...prev[projectId], name: newName },
+      };
+    });
+  };
+
+  const deleteProject = (projectId: string) => {
+    const idsToDelete = new Set<string>([projectId]);
+    const queue = [projectId];
+    while(queue.length > 0) {
+      const currentId = queue.shift()!;
+      const children = Object.values(projects).filter(p => p.parentId === currentId);
+      children.forEach(child => {
+        if (!idsToDelete.has(child.id)) {
+          idsToDelete.add(child.id);
+          queue.push(child.id);
+        }
+      });
+    }
+
+    const idsToDeleteArray = Array.from(idsToDelete);
+    
+    setProjects(prev => {
+      const newProjects = { ...prev };
+      idsToDeleteArray.forEach(id => delete newProjects[id]);
+      return newProjects;
+    });
+
+    setThreads(prev => {
+      const newThreads = { ...prev };
+      Object.keys(newThreads).forEach(threadId => {
+        if (idsToDelete.has(newThreads[threadId].projectId)) {
+          delete newThreads[threadId];
+        }
+      });
+      return newThreads;
+    });
+
+    if (selectedProjectId && idsToDelete.has(selectedProjectId)) {
+      const projectToDelete = projects[projectId];
+      const parentId = projectToDelete?.parentId;
+      if (parentId && projects[parentId] && !idsToDelete.has(parentId)) {
+        setSelectedProjectId(parentId);
+      } else {
+        const anyOtherRootProject = Object.values(projects).find(p => p.parentId === null && !idsToDelete.has(p.id));
+        setSelectedProjectId(anyOtherRootProject ? anyOtherRootProject.id : null);
+      }
+    }
+  };
+
   // ==========================================================================
   // THREAD OPERATIONS
   // ==========================================================================
@@ -673,6 +728,8 @@ const useWorkflowManager = () => {
     addRootTaskToThread,
     addChild,
     addSession,
+    renameProject,
+    deleteProject
   };
 };
 
@@ -712,6 +769,8 @@ const NestedWorkflow = () => {
     addSession,
     setEditingThreadId,
     taskItemProps,
+    renameProject,
+    deleteProject,
   } = useWorkflowManager();
   
   return (
@@ -721,6 +780,8 @@ const NestedWorkflow = () => {
         selectedProjectId={selectedProjectId}
         onAddProject={addProject}
         onSelectProject={handleSelectProject}
+        onDeleteProject={deleteProject}
+        onRenameProject={renameProject}
       />
       <div className="flex-1 flex flex-col">
         <header className="bg-white border-b border-gray-200 shadow-xs z-20">
