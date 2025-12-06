@@ -1,11 +1,45 @@
-// ============================================================================
-// WORKFLOW MANAGER HOOK: Encapsulates all application state and business logic.
-// PURPOSE: To separate state management from the UI, making the main component
-// a "dumb" presentational component. This improves testability, maintainability,
-// and AI comprehension by isolating complexity.
-// DEPENDENCIES: `usePersistentState` hook, React hooks (`useState`, `useEffect`, `useMemo`).
-// INVARIANTS: Returns a consistent API for the `NestedWorkflow` component to consume.
-// ============================================================================
+/**
+ * =================================================================================================
+ * CONTEXT ANCHOR: WORKFLOW MANAGER HOOK (useWorkflowManager.ts)
+ * =================================================================================================
+ *
+ * @purpose
+ * This hook is the central nervous system of the application. It encapsulates all business logic,
+ * state management, and data operations related to projects, threads, and tasks. By centralizing
+
+ * logic here, we make UI components "presentational" (dumb), which simplifies the UI layer,
+ * enhances testability, and provides a single, predictable source of truth for the AI to understand.
+ *
+ * @dependencies
+ * - HOOK: `usePersistentState`: For persisting application state to localStorage.
+ * - REACT: `useState`, `useEffect`, `useMemo` for state management and optimization.
+ * - UTILS: `taskUtils`: For complex, recursive operations on task data.
+ * - TYPES: All core data structures (`Project`, `Thread`, `Task`) are imported from `../types`.
+ *
+ * @invariants
+ * 1. STATE IMMUTABILITY: All state updates are performed immutably (creating new objects/arrays
+ *    instead of mutating them) to ensure predictable state transitions and compatibility with React's
+ *    rendering cycle.
+ * 2. DATA INTEGRITY: Operations like project deletion are designed to be atomic, performing
+ *    cascading deletes of related entities (threads) to prevent orphaned data.
+ * 3. SINGLE SOURCE OF TRUTH: All application data flows from this hook. Components do not
+ *    manage their own conflicting state.
+ *
+ * @state_management
+ * - The hook uses a combination of `useState` for transient UI state (e.g., `isAddingThread`) and
+ *   the custom `usePersistentState` hook for core data that needs to survive page reloads.
+ * - State is normalized where possible (e.g., `threads` is a dictionary/map) for efficient lookups.
+ * - `useEffect` hooks are used for initialization, data migration, and ensuring state consistency
+ *   after certain operations.
+ * - `useMemo` is used to optimize the calculation of derived state (e.g., filtered threads, global
+ *   task counts) to prevent unnecessary re-renders.
+ *
+ * @ai_note
+ * To understand any business logic (e.g., "How is a project deleted?", "How are tasks counted?"),
+ * this is the primary file to analyze. The functions are grouped by domain (Project, Thread, Task,
+ * Session). The returned object at the end of the hook is the public API consumed by the UI.
+ * =================================================================================================
+ */
 
 import { useState, useEffect, useMemo } from 'react';
 import usePersistentState from './usePersistentState';
@@ -66,6 +100,9 @@ const useWorkflowManager = () => {
   const [editedTaskText, setEditedTaskText] = useState<string>("");
 
     useEffect(() => {
+    // STRATEGY: Handles application initialization and data integrity checks on mount.
+    // 1. Project Initialization: If no projects exist, create a default "Inbox" project.
+    //    This ensures the app is never in a state without at least one project.
     if (Object.keys(projects).length === 0) {
       const inboxId = 'proj-inbox';
       const newProject: Project = { id: inboxId, name: 'Inbox', parentId: null };
@@ -73,6 +110,8 @@ const useWorkflowManager = () => {
       setSelectedProjectId(inboxId);
     }
 
+    // 2. Project Selection: If no project is selected but projects exist, select the first
+    //    available root project to ensure the UI is always displaying a valid project context.
     if(!selectedProjectId && Object.keys(projects).length > 0){
         const firstProject = Object.values(projects).find(p => p.parentId === null) || Object.values(projects)[0];
         if(firstProject) {
@@ -80,6 +119,9 @@ const useWorkflowManager = () => {
         }
     }
 
+    // 3. Data Migration: For backward compatibility, this checks if any threads are missing a
+    //    `projectId`. If so, it assigns them to the "Inbox" project. This is a one-time
+    //    migration to handle older data structures.
     const threadsNeedMigration = Object.values(threads).some(t => !t.projectId);
     if (threadsNeedMigration && Object.keys(projects).length > 0) {
       let inboxId = Object.values(projects).find(p => p.name === 'Inbox')?.id;
@@ -100,15 +142,24 @@ const useWorkflowManager = () => {
 
 
   useEffect(() => {
+    // STRATEGY: Ensures the integrity and consistency of the thread order and selection.
+    // 1. Selection Cleanup: If the `selectedThreadId` points to a thread that no longer exists,
+    //    it resets the selection to null, preventing UI errors.
     if (selectedThreadId && !threads[selectedThreadId]) {
       setSelectedThreadId(null);
     }
     const currentThreadIds = Object.keys(threads);
+
+    // 2. Initial Order: If `threadOrder` is empty but threads exist, initialize it with all
+    //    current thread IDs.
     if(threadOrder.length === 0 && currentThreadIds.length > 0){
         setThreadOrder(currentThreadIds);
         return;
     }
-
+    
+    // 3. Order Sync: This reconciles the `threadOrder` array with the `threads` object. It removes
+    //    any IDs from the order that are no longer in `threads` and appends any new thread IDs that
+    //    are not yet in the order. This prevents desynchronization between the order and the data.
     const newOrder = threadOrder.filter(id => currentThreadIds.includes(id));
     currentThreadIds.forEach(id => {
         if(!newOrder.includes(id)){
@@ -125,6 +176,7 @@ const useWorkflowManager = () => {
   // PROJECT OPERATIONS
   // ==========================================================================
   const addProject = (name: string, parentId: string | null) => {
+    // CONSTRAINT: Do not allow projects with empty or whitespace-only names.
     if (!name.trim()) return;
     const newProjectId = `proj-${Date.now()}`;
     const newProject: Project = {
@@ -145,7 +197,8 @@ const useWorkflowManager = () => {
   const renameProject = (projectId: string, newName: string) => {
     if (!newName.trim()) return; // Disallow empty names
     setProjects(prev => {
-      if (!prev[projectId]) return prev; // Safety check
+      // CONSTRAINT: Safety check to prevent errors if the project ID does not exist.
+      if (!prev[projectId]) return prev;
       return {
         ...prev,
         [projectId]: { ...prev[projectId], name: newName },
@@ -199,11 +252,11 @@ const useWorkflowManager = () => {
     if (selectedProjectId && idsToDelete.has(selectedProjectId)) {
       const projectToDelete = projects[projectId];
       const parentId = projectToDelete?.parentId;
-      // Prefer selecting the parent of the deleted project.
+      // STRATEGY: Prefer selecting the parent of the deleted project for better UX continuity.
       if (parentId && projects[parentId] && !idsToDelete.has(parentId)) {
         setSelectedProjectId(parentId);
       } else {
-        // Fallback: select any other root project that wasn't deleted.
+        // Fallback: select any other root project that wasn't deleted to avoid a blank screen.
         const anyOtherRootProject = Object.values(projects).find(p => p.parentId === null && !idsToDelete.has(p.id));
         setSelectedProjectId(anyOtherRootProject ? anyOtherRootProject.id : null);
       }
@@ -214,6 +267,7 @@ const useWorkflowManager = () => {
   // THREAD OPERATIONS
   // ==========================================================================
   const addThread = () => {
+    // CONSTRAINT: A thread must have a title and be associated with a project.
     if (!newThreadTitle.trim() || !selectedProjectId) {
         alert("Please select a project before adding a thread.");
         return;
@@ -231,15 +285,18 @@ const useWorkflowManager = () => {
     };
 
     setThreads((prev) => ({ ...prev, [newThreadId]: newThread }));
+    // STRATEGY: New threads are prepended to the order to appear at the top of the list.
     setThreadOrder(prev => [newThreadId, ...prev]);
     setNewThreadTitle("");
     setIsAddingThread(false);
+    // STRATEGY: Automatically expand the new thread and select it for immediate user interaction.
     setExpandedThreads((prev) => new Set([...prev, newThreadId]));
     setSelectedThreadId(newThreadId);
   };
 
   const handleSelectThread = (threadId: string) => {
     setSelectedThreadId(threadId);
+    // STRATEGY: When a thread is selected, move it to the top of the order for visibility.
     setThreadOrder(prev => {
         const newOrder = prev.filter(id => id !== threadId);
         return [threadId, ...newOrder];
@@ -256,6 +313,7 @@ const useWorkflowManager = () => {
     
   const updateThreadStatus = (threadId: string, status: ThreadStatus) => {
     setThreads((prev) => {
+      // CONSTRAINT: Ensure thread exists before attempting to update its status.
       if (prev[threadId]) {
         return {
           ...prev,
@@ -267,6 +325,7 @@ const useWorkflowManager = () => {
   };
   
   const deleteThread = (threadId: string) => {
+    // STRATEGY: Use a confirmation dialog before performing a destructive action.
     if (window.confirm("Are you sure you want to delete this thread?")) {
       const newThreads = { ...threads };
       delete newThreads[threadId];
@@ -308,8 +367,11 @@ const useWorkflowManager = () => {
   const toggleTaskDone = (threadId: string, taskId: string) => {
     setThreads(prevThreads => {
       const threadToUpdate = prevThreads[threadId];
+      // CONSTRAINT: Bail out if the thread doesn't exist.
       if (!threadToUpdate) return prevThreads;
       
+      // STRATEGY: Recursively find the specific task to toggle its 'done' status.
+      // This is necessary because tasks can be deeply nested.
       const findTask = (tasks: Task[], id: string): Task | undefined => {
         for(const task of tasks) {
             if(task.id === id) return task;
@@ -321,6 +383,7 @@ const useWorkflowManager = () => {
       }
       const taskToUpdate = findTask(threadToUpdate.tasks, taskId);
 
+      // STRATEGY: Delegate the complex recursive update to a dedicated utility function.
       const updatedTasks = updateTaskRecursive(threadToUpdate.tasks, taskId, !taskToUpdate?.done);
       return {
         ...prevThreads,
@@ -337,6 +400,7 @@ const useWorkflowManager = () => {
       const threadToUpdate = prevThreads[threadId];
       if (!threadToUpdate) return prevThreads;
 
+      // STRATEGY: Delegate the recursive update of a task's note to a utility function.
       const updatedTasks = updateTaskRecursive(threadToUpdate.tasks, taskId, undefined, undefined, newText);
       return {
         ...prevThreads,
@@ -353,7 +417,8 @@ const useWorkflowManager = () => {
     setThreads(prevThreads => {
       const threadToUpdate = prevThreads[threadId];
       if (!threadToUpdate) return prevThreads;
-
+      
+      // STRATEGY: Delegate the recursive update of a task's text to a utility function.
       const updatedTasks = updateTaskRecursive(threadToUpdate.tasks, taskId, undefined, newText);
       return {
         ...prevThreads,
@@ -389,7 +454,8 @@ const useWorkflowManager = () => {
   
   const addChild = (threadId: string, parentId: string) => {
     if (!newChildText.trim()) return;
-
+    
+    // STRATEGY: Use a recursive function to traverse the task tree and add a child to the correct parent.
     const addChildRecursive = (tasks: Task[]): Task[] => {
       return tasks.map((task) => {
         if (task.id === parentId) {
@@ -417,6 +483,7 @@ const useWorkflowManager = () => {
         tasks: addChildRecursive(prev[threadId].tasks),
       },
     }));
+    // STRATEGY: Automatically expand the parent task to show the newly added child.
     setExpandedTasks((prev) => new Set([...prev, parentId]));
     setNewChildText("");
     setAddingChildTo(null);
@@ -438,6 +505,7 @@ const useWorkflowManager = () => {
       ...prev,
       [threadId]: {
         ...prev[threadId],
+        // STRATEGY: Prepend new sessions to the array so they appear at the top of the log.
         sessions: [newSession, ...prev[threadId].sessions],
         lastWorked: `${date} ${time}`,
       },
@@ -447,10 +515,16 @@ const useWorkflowManager = () => {
 
   // ==========================================================================
   // DERIVED STATE & MEMOIZED VALUES
+  // STRATEGY: `useMemo` is used for computationally expensive derived state. This prevents
+  // these values from being recalculated on every render, optimizing performance.
   // ==========================================================================
+  
+  // Get the full object for the currently selected thread.
   const selectedThread = selectedThreadId ? threads[selectedThreadId] : null;
 
+  // Calculate all descendant project IDs for the currently selected project.
   const descendantProjectIds = useMemo(() => {
+    // STRATEGY: A recursive function traverses the project tree to find all children.
     const getDescendants = (projectId: string): string[] => {
         const children = Object.values(projects)
             .filter(p => p.parentId === projectId)
@@ -462,6 +536,7 @@ const useWorkflowManager = () => {
     return [selectedProjectId, ...getDescendants(selectedProjectId)];
   }, [selectedProjectId, projects]);
 
+  // Filter the master thread order to only show threads belonging to the selected project and its descendants.
   const filteredThreadOrder = useMemo(() => {
     if (!selectedProjectId) return threadOrder;
     return threadOrder.filter(id => {
@@ -470,12 +545,14 @@ const useWorkflowManager = () => {
     });
   }, [threadOrder, threads, descendantProjectIds, selectedProjectId]);
 
+  // Calculate global task counts across all threads.
   const { globalTotalTasks, globalCompletedTasks } = useMemo(() => {
     let total = 0;
     let completed = 0;
     threadOrder.forEach(threadId => {
         const thread = threads[threadId];
         if(thread){
+          // STRATEGY: Delegate task counting to a dedicated utility function to handle recursion.
           total += countAllTasks(thread.tasks);
           completed += countAllCompletedTasks(thread.tasks);
         }
@@ -485,6 +562,8 @@ const useWorkflowManager = () => {
   
   const globalTotalThreads = threadOrder.length;
   
+  // STRATEGY: Group all props needed by `TaskItem` into a single object. This avoids passing a
+  // long list of individual props through multiple component layers (prop drilling).
   const taskItemProps: Omit<TaskItemProps, 'task' | 'threadId' | 'level'> = {
     expandedTasks,
     editingNote,
@@ -505,62 +584,77 @@ const useWorkflowManager = () => {
   };
 
   return {
+    // ================== CORE DATA STATE ==================
     projects,
-    selectedProjectId,
     threads,
     threadOrder,
+    
+    // ================== UI SELECTION & EXPANSION STATE ==================
+    selectedProjectId,
+    selectedThreadId,
     expandedTasks,
     expandedThreads,
+
+    // ================== TRANSIENT UI EDITING STATE ==================
+    isAddingThread,
+    newThreadTitle,
+    addingSessionTo,
+    editingThreadId,
+    editingTaskId,
+    editedTaskText,
     editingNote,
     addingChildTo,
     newChildText,
-    addingSessionTo,
-    isAddingThread,
-    newThreadTitle,
-    editingThreadId,
-    editingTaskId,
-    selectedThreadId,
-    editedTaskText,
+
+    // ================== DERIVED STATE ==================
     selectedThread,
     descendantProjectIds,
     filteredThreadOrder,
     globalTotalThreads,
     globalTotalTasks,
     globalCompletedTasks,
+    
+    // ================== PROP COLLECTIONS ==================
     taskItemProps,
-    setProjects,
-    setSelectedProjectId,
-    setThreads,
-    setThreadOrder,
-    setExpandedTasks,
-    setExpandedThreads,
-    setEditingNote,
-    setAddingChildTo,
-    setNewChildText,
-    setAddingSessionTo,
-    setIsAddingThread,
-    setNewThreadTitle,
-    setEditingThreadId,
-    setEditingTaskId,
-    setSelectedThreadId,
-    setEditedTaskText,
+
+    // ================== STATE SETTERS & ACTIONS ==================
+    // Projects
     addProject,
     handleSelectProject,
+    renameProject,
+    deleteProject,
+    setProjects,
+    setSelectedProjectId,
+    // Threads
     addThread,
     handleSelectThread,
     updateThreadTitle,
     updateThreadStatus,
     deleteThread,
-    toggleTask,
     toggleThread,
+    setThreads,
+    setThreadOrder,
+    setExpandedThreads,
+    setIsAddingThread,
+    setNewThreadTitle,
+    setEditingThreadId,
+    setSelectedThreadId,
+    // Tasks
+    addRootTaskToThread,
+    addChild,
+    toggleTask,
     toggleTaskDone,
     saveNote,
     updateTaskText,
-    addRootTaskToThread,
-    addChild,
+    setExpandedTasks,
+    setEditingNote,
+    setAddingChildTo,
+    setNewChildText,
+    setEditingTaskId,
+    setEditedTaskText,
+    // Sessions
     addSession,
-    renameProject,
-    deleteProject
+    setAddingSessionTo,
   };
 };
 

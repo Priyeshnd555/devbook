@@ -6,32 +6,42 @@
 // PURPOSE: This file serves as the main entry point for the Nested Workflow application's UI.
 // It assembles the primary components and orchestrates the overall layout and data flow.
 //
+// DEPENDENCIES:
+// - HOOK: useWorkflowManager (from ./hooks/useWorkflowManager.ts)
+// - HOOK: usePersistentState (from ./hooks/usePersistentState.ts)
+// - UTILS: taskUtils (from ./utils/taskUtils.ts)
+// - TYPES: (from ./types/index.ts)
+// - COMPONENT: ProjectSidebar (from ./components/ProjectSidebar.tsx)
+// - COMPONENT: ThreadCard (from ./components/ThreadCard.tsx)
+// - COMPONENT: TaskItem (implied within ThreadCard, from ./components/TaskItem.tsx)
+//
+// INVARIANTS:
+// - This component strictly follows a "thin" or "presentational" pattern, focusing solely on UI
+//   layout and composition. It does not contain complex business logic or state manipulation.
+// - All data flow is managed through props and callbacks provided by the `useWorkflowManager` hook.
+// - Application data (projects, threads, tasks) is consistently typed according to `types/index.ts`.
+//
 // ARCHITECTURE OVERVIEW:
-// This component follows a "thin" or "presentational" component pattern. Its main responsibilities
-// are UI layout and composition. All complex state management, business logic, and data
-// manipulation have been deliberately extracted into custom hooks and utility modules to improve
-// maintainability, testability, and AI-assistant comprehension.
+// This component leverages several architectural pieces:
 //
-// The core architectural pieces are:
-//
-// 1. HOOK: useWorkflowManager (from /hooks/useWorkflowManager.ts)
+// # HOOK: useWorkflowManager (from /hooks/useWorkflowManager.ts)
 //    - PURPOSE: The brain of the application. It encapsulates all state (projects, threads, tasks)
 //      and the logic to manipulate it (add, update, delete operations).
 //    - AI-NOTE: To understand the application's business logic, start by analyzing this hook.
 //
-// 2. HOOK: usePersistentState (from /hooks/usePersistentState.ts)
+// # HOOK: usePersistentState (from /hooks/usePersistentState.ts)
 //    - PURPOSE: A generic utility hook that abstracts away the logic for storing and retrieving
 //      state from the browser's localStorage. It ensures data persists across sessions.
 //
-// 3. UTILS: taskUtils (from /utils/taskUtils.ts)
+// # UTILS: taskUtils (from /utils/taskUtils.ts)
 //    - PURPOSE: A collection of pure, stateless functions for performing calculations and
 //      transformations on task data (e.g., counting tasks, recursive updates).
 //
-// 4. TYPES: index.ts (from /types/index.ts)
+// # TYPES: index.ts (from /types/index.ts)
 //    - PURPOSE: The single source of truth for all data structures (interfaces and types) used
 //      throughout the application, like `Project`, `Thread`, and `Task`.
 //
-// 5. COMPONENTS:
+// # COMPONENTS:
 //    - ProjectSidebar: Renders the hierarchical project list and navigation controls.
 //    - ThreadCard: Renders a container for a top-level workstream, including its tasks.
 //    - TaskItem: Renders a single, potentially nested, task.
@@ -144,6 +154,7 @@ const NestedWorkflow = () => {
                 <button 
                     onClick={() => setIsAddingThread(true)} 
                     className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors disabled:bg-gray-400"
+                    // CONSTRAINT: New thread button is disabled if no project is selected to ensure threads are always associated with a project.
                     disabled={!selectedProjectId}
                     title={!selectedProjectId ? "Select a project to add a thread" : "Add new thread"}
                 >
@@ -155,6 +166,7 @@ const NestedWorkflow = () => {
 
         <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto px-6 py-4 w-full overflow-y-auto">
             <div className="md:col-span-2">
+            {/* STRATEGY: Conditionally render the "Add New Thread" input form based on the `isAddingThread` state. */}
             {isAddingThread && (
                 <div className="mb-3 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
                 <h3 className="text-sm font-medium text-gray-900 mb-2">New thread</h3>
@@ -167,13 +179,17 @@ const NestedWorkflow = () => {
             )}
 
             <div className="space-y-3">
+                {/* STRATEGY: Use AnimatePresence for smooth entry/exit animations of thread cards. */}
                 <AnimatePresence>
+                {/* STRATEGY: Map over `filteredThreadOrder` to render ThreadCard components. This ensures UI updates reflect filtering/sorting logic from useWorkflowManager. */}
                 {filteredThreadOrder.map((threadId, index) => {
                 const thread = threads[threadId];
+                // CONSTRAINT: Ensure 'thread' object exists before rendering; a null check prevents rendering issues if a thread is unexpectedly missing.
                 if(!thread) return null;
                 const totalTasks = countAllTasks(thread.tasks);
                 const completedTasks = countAllCompletedTasks(thread.tasks);
                 return (
+                    // STRATEGY: Use Framer Motion for layout animations on thread cards, providing a dynamic user experience.
                     <motion.div
                     key={thread.id}
                     layout
@@ -187,6 +203,7 @@ const NestedWorkflow = () => {
                         threadNumber={index + 1}
                         totalTaskCount={totalTasks}
                         completedTaskCount={completedTasks}
+                        // STRATEGY: Highlight the currently selected thread for visual feedback.
                         isSelected={selectedThreadId === thread.id}
                         onSelect={() => handleSelectThread(thread.id)}
                         isThreadExpanded={expandedThreads.has(thread.id)} 
@@ -209,7 +226,9 @@ const NestedWorkflow = () => {
             </div>
             </div>
             <div className="md:col-span-1">
+            {/* CONSTRAINT: The session log sidebar is sticky to remain visible during scrolling. */}
             <div className="sticky top-6">
+                {/* STRATEGY: Conditionally render session log details or a placeholder message based on whether a thread is selected. */}
                 {selectedThread ? (
                 <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
                     <div className="p-4 border-b border-gray-100">
@@ -217,6 +236,7 @@ const NestedWorkflow = () => {
                     <p className="text-xs text-gray-500 mt-0.5 truncate">{selectedThread.title}</p>
                     </div>
                     <div className="p-4 space-y-3 max-h-[calc(100vh-18rem)] overflow-y-auto">
+                    {/* STRATEGY: Display individual session notes or a message if no sessions are logged for the selected thread. */}
                     {selectedThread.sessions.length > 0 ? (
                         selectedThread.sessions.map((session, idx) => (
                         <div key={`${selectedThread.id}-session-${idx}`} className="bg-gray-50 rounded p-3 text-xs border border-gray-200">
