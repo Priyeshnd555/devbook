@@ -1,26 +1,33 @@
 /**
- * WHY: Project sidebar for hierarchical navigation with polished modern UI
- * 
+ * CONTEXT ANCHOR: ProjectSidebar Component
+ *
+ * PURPOSE:
+ * Provides a hierarchical navigation sidebar for projects, designed with a polished, modern UI.
+ * It's the primary interface for users to organize and navigate their work streams.
+ *
  * WHAT IT DOES:
- * - Displays projects in a beautiful collapsible tree structure
- * - Allows adding nested projects at any level
- * - Supports sidebar collapse for minimal view
- * - Provides smooth animations and micro-interactions
- * 
+ * - Displays projects in a beautiful, collapsible tree structure.
+ * - Allows adding nested projects at any level.
+ * - Supports a fully collapsed state for a minimal, icon-based view.
+ * - Provides smooth animations and micro-interactions for an enhanced user experience.
+ * - Handles user actions like renaming and deleting projects via a context menu.
+ *
  * DEPENDENCIES:
- * - react: Core React library
- * - lucide-react: Icon components
- * 
+ * - 'react': For building the component structure and managing state.
+ * - 'lucide-react': For clear and modern iconography.
+ *
  * STATE MANAGEMENT:
- * - projects: Record of all projects (flat structure, hierarchy via parentId)
- * - selectedProjectId: Currently active project
- * - isCollapsed: Sidebar expanded/collapsed state
- * 
+ * - The component is largely controlled by props passed from a parent container.
+ * - `projects`: A flat record of all projects; hierarchy is established via `parentId`.
+ * - `selectedProjectId`: The ID of the currently active project.
+ * - `isCollapsed` (internal state): Manages the sidebar's expanded/collapsed view.
+ *
  * DESIGN DECISIONS:
- * - Uses 20px indentation per level for clear hierarchy
- * - Smooth color transitions and hover states
- * - Folder icons change based on state (open/closed/selected)
- * - Inline editing with proper focus management
+ * - A 20px indentation is used for each level of nesting to create a clear visual hierarchy.
+ * - Smooth CSS transitions are used for colors and hover states to feel responsive.
+ * - Folder icons change based on their state (open, closed, selected) to provide immediate feedback.
+ * - Inline editing for adding and renaming projects is implemented with proper keyboard controls (Enter, Escape) and focus management for usability.
+ * - Destructive actions like deletion are gated behind a user confirmation dialog to prevent data loss.
  */
 
 import React, { useState } from 'react';
@@ -41,6 +48,16 @@ interface ProjectSidebarProps {
   selectedProjectId: string | null;
 }
 
+// ============================================================================
+// CONTEXT ANCHOR: ProjectItem
+// PURPOSE: Renders a single, potentially nested, project entry in the sidebar.
+//          It handles user interactions for selection, expansion, renaming, and deletion.
+// DEPENDENCIES: 'react', 'lucide-react'.
+// INVARIANTS:
+// - It receives all state modification handlers (onSelect, onAdd, onRename, onDelete) from its parent.
+// - It displays differently based on the sidebar's `isCollapsed` state.
+// - It manages its own internal UI state (e.g., isExpanded, isAdding, isRenaming, isHovered).
+// ============================================================================
 const ProjectItem: React.FC<{
   project: Project;
   projects: Record<string, Project>;
@@ -83,6 +100,9 @@ const ProjectItem: React.FC<{
     }
   };
 
+  // STRATEGY: Finalizes the rename operation. It triggers the parent callback `onRenameProject`
+  // only if the name has actually changed and is not empty. This prevents unnecessary state updates.
+  // It then resets the local renaming UI state.
   const handleRename = () => {
     if (renameValue.trim() && renameValue !== project.name && onRenameProject) {
       onRenameProject(project.id, renameValue.trim());
@@ -91,8 +111,13 @@ const ProjectItem: React.FC<{
     setShowMenu(false);
   };
 
+  // STRATEGY: Handles the delete action with user confirmation.
+  // A native `window.confirm` dialog is used to prevent accidental deletion, clearly stating
+  // the consequences (deleting sub-projects). The actual deletion logic is deferred to the parent
+  // component via the `onDeleteProject` callback.
   const handleDelete = () => {
-    if (onDeleteProject && window.confirm(`Delete "${project.name}" and all its sub-projects?`)) {
+    // CONSTRAINT: Always confirm destructive actions with the user.
+    if (onDeleteProject && window.confirm(`Are you sure you want to delete "${project.name}" and all its sub-projects? This action cannot be undone.`)) {
       onDeleteProject(project.id);
     }
     setShowMenu(false);

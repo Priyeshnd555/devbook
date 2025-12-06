@@ -324,10 +324,13 @@ const useWorkflowManager = () => {
     setSelectedProjectId(projectId);
   }
 
+  // STRATEGY: Renames a project by updating its name in the projects state.
+  // This is a non-destructive, single-entity update.
+  // INVARIANT: The projectId must exist in the projects state for the update to occur.
   const renameProject = (projectId: string, newName: string) => {
-    if (!newName.trim()) return;
+    if (!newName.trim()) return; // Disallow empty names
     setProjects(prev => {
-      if (!prev[projectId]) return prev;
+      if (!prev[projectId]) return prev; // Safety check
       return {
         ...prev,
         [projectId]: { ...prev[projectId], name: newName },
@@ -335,7 +338,15 @@ const useWorkflowManager = () => {
     });
   };
 
+  // STRATEGY: Implements a cascading delete for a project and all its descendants.
+  // This is a critical and destructive operation that affects multiple parts of the state.
+  // 1. Identification: It first traverses the project hierarchy to gather the IDs of the target project and all its nested children. A breadth-first search is used for this traversal.
+  // 2. Project Deletion: It removes all identified projects from the main `projects` state object.
+  // 3. Thread Deletion: It then purges all threads from the `threads` state object that are associated with any of the deleted project IDs.
+  // 4. UI State Update: Finally, it intelligently updates the `selectedProjectId` to ensure the UI doesn't point to a non-existent project. It prioritizes selecting the parent of the deleted project, falling back to another root project if necessary.
+  // INVARIANT: All descendants of the deleted project and their associated threads must be removed to maintain data integrity.
   const deleteProject = (projectId: string) => {
+    // 1. Identification: Gather all descendant project IDs.
     const idsToDelete = new Set<string>([projectId]);
     const queue = [projectId];
     while(queue.length > 0) {
@@ -351,12 +362,14 @@ const useWorkflowManager = () => {
 
     const idsToDeleteArray = Array.from(idsToDelete);
     
+    // 2. Project Deletion: Atomically update projects state.
     setProjects(prev => {
       const newProjects = { ...prev };
       idsToDeleteArray.forEach(id => delete newProjects[id]);
       return newProjects;
     });
 
+    // 3. Thread Deletion: Atomically update threads state.
     setThreads(prev => {
       const newThreads = { ...prev };
       Object.keys(newThreads).forEach(threadId => {
@@ -367,12 +380,15 @@ const useWorkflowManager = () => {
       return newThreads;
     });
 
+    // 4. UI State Update: Reselect a new project if the current one was deleted.
     if (selectedProjectId && idsToDelete.has(selectedProjectId)) {
       const projectToDelete = projects[projectId];
       const parentId = projectToDelete?.parentId;
+      // Prefer selecting the parent of the deleted project.
       if (parentId && projects[parentId] && !idsToDelete.has(parentId)) {
         setSelectedProjectId(parentId);
       } else {
+        // Fallback: select any other root project that wasn't deleted.
         const anyOtherRootProject = Object.values(projects).find(p => p.parentId === null && !idsToDelete.has(p.id));
         setSelectedProjectId(anyOtherRootProject ? anyOtherRootProject.id : null);
       }
