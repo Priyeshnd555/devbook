@@ -68,12 +68,13 @@ import { countAllTasks, countAllCompletedTasks } from "./utils/taskUtils";
   ----------------------------------------------------
   PURPOSE: Renders a single, potentially nested, task item. It handles displaying
            the task's text, completion status, and note. It also manages user
-           interactions for editing a task, adding a sub-task, and toggling
-           its 'done' state.
+           interactions for editing a task, adding a sub-task, toggling
+           its 'done' state, and cycling through priority levels.
   KEY PROPS:
     - task: The task object to render.
     - threadId: The ID of the parent thread.
     - expandedTasks: A Set<string> to determine if the task's children are visible.
+    - setTaskPriority: A handler to set the priority of a task.
     - ... (and many state handlers from the parent to modify the application state).
 
   COMPONENT: ThreadCard (from ./components/ThreadCard.tsx)
@@ -82,7 +83,10 @@ import { countAllTasks, countAllCompletedTasks } from "./utils/taskUtils";
            group of tasks. It displays thread metadata (title, status, last worked on),
            and contains the list of root-level TaskItems for that thread. It also
            handles thread-specific actions like logging a new work session, editing
-           the thread title, and changing its status.
+           the thread title, and changing its status. The tasks within the card are
+           automatically sorted first by priority (descending), and then by
+           completion status. A task is only considered "completed" for sorting
+           if it and all of its sub-tasks are also marked as done.
   KEY PROPS:
     - thread: The thread object to render.
     - isThreadExpanded: A boolean to control the visibility of the thread's content.

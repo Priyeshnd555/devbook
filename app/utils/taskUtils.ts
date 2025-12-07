@@ -16,9 +16,10 @@ import { Task } from '../types';
  * @param newDoneState Optional new 'done' state.
  * @param newText Optional new text.
  * @param newNote Optional new note.
+ * @param newPriority Optional new priority.
  * @returns A new array of tasks with the specified task updated.
  */
-export const updateTaskRecursive = (tasks: Task[], taskId: string, newDoneState?: boolean, newText?: string, newNote?: string): Task[] => {
+export const updateTaskRecursive = (tasks: Task[], taskId: string, newDoneState?: boolean, newText?: string, newNote?: string, newPriority?: number): Task[] => {
     return tasks.map(task => {
       if (task.id === taskId) {
         return {
@@ -26,10 +27,11 @@ export const updateTaskRecursive = (tasks: Task[], taskId: string, newDoneState?
           done: newDoneState !== undefined ? newDoneState : task.done,
           text: newText !== undefined ? newText : task.text,
           note: newNote !== undefined ? newNote : task.note,
+          priority: newPriority !== undefined ? newPriority : task.priority,
         };
       }
       if (task.children.length > 0) {
-        return { ...task, children: updateTaskRecursive(task.children, taskId, newDoneState, newText, newNote) };
+        return { ...task, children: updateTaskRecursive(task.children, taskId, newDoneState, newText, newNote, newPriority) };
       }
       return task;
     });
@@ -55,4 +57,20 @@ export const countAllCompletedTasks = (tasks: Task[]): number => {
     return tasks.reduce((count, task) => {
         return count + (task.done ? 1 : 0) + countAllCompletedTasks(task.children);
     }, 0);
+};
+
+/**
+ * STRATEGY: Recursively checks if a task and all of its descendants are marked as 'done'.
+ * This is used for sorting, to ensure that only fully completed task trees are moved to the bottom.
+ * @param task The task to check.
+ * @returns True if the task and all its children are done, false otherwise.
+ */
+export const isTaskFullyCompleted = (task: Task): boolean => {
+  if (!task.done) {
+    return false;
+  }
+  if (task.children.length === 0) {
+    return task.done;
+  }
+  return task.children.every(isTaskFullyCompleted);
 };

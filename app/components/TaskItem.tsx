@@ -49,8 +49,10 @@ import {
   MessageSquare,
   StickyNote,
   Pencil,
+  Star,
 } from "lucide-react";
 import { Task } from "../types";
+import { isTaskFullyCompleted } from "../utils/taskUtils";
 
 export interface TaskItemProps {
   task: Task;
@@ -72,6 +74,7 @@ export interface TaskItemProps {
   setEditingTaskId: (id: string | null) => void;
   setEditedTaskText: (text: string) => void;
   updateTaskText: (threadId: string, taskId: string, text: string) => void;
+  setTaskPriority: (threadId: string, taskId: string, priority: number) => void;
 }
 
 export const TaskItem: React.FC<TaskItemProps> = ({
@@ -94,6 +97,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
   setEditingTaskId,
   setEditedTaskText,
   updateTaskText,
+  setTaskPriority,
 }) => {
   const isExpanded = expandedTasks.has(task.id);
   const hasChildren = task.children.length > 0;
@@ -113,6 +117,18 @@ export const TaskItem: React.FC<TaskItemProps> = ({
 
   const handleCancelEdit = () => {
     setEditingTaskId(null);
+  };
+
+  const handleCyclePriority = () => {
+    const newPriority = ((task.priority || 0) + 1) % 4;
+    setTaskPriority(threadId, task.id, newPriority);
+  };
+
+  const priorityStyles: Record<number, string> = {
+    0: "text-gray-300",
+    1: "text-blue-400",
+    2: "text-yellow-400",
+    3: "text-red-500",
   };
 
   // STRATEGY: Use a local state `editedNoteText` for the textarea to prevent re-renders on every keystroke.
@@ -192,6 +208,9 @@ export const TaskItem: React.FC<TaskItemProps> = ({
 
           {/* STRATEGY: Action buttons appear on hover for a cleaner UI. */}
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+            <button onClick={handleCyclePriority} className={`p-1.5 rounded transition-colors ${priorityStyles[task.priority || 0]} hover:bg-orange-50`} title="Set priority">
+              <Star className="w-3.5 h-3.5" fill={task.priority > 0 ? 'currentColor' : 'none'}/>
+            </button>
             {/* STRATEGY: The "Add Note" button is only shown if a note does not already exist. */}
             {!task.note && !isEditing && (
               <button onClick={() => setEditingNote(task.id)} className="p-1.5 text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded transition-colors" title="Add note">
@@ -216,8 +235,21 @@ export const TaskItem: React.FC<TaskItemProps> = ({
       {/* RECURSIVE RENDERING: If the task is expanded and has children, map over them and render a TaskItem for each. */}
       {isExpanded && hasChildren && (
         <div className="mt-1">
-          {task.children.map((child) => (
+          {[...task.children].sort((a, b) => {
+            if ((b.priority || 0) !== (a.priority || 0)) {
+              return (b.priority || 0) - (a.priority || 0);
+            }
+            const aDone = isTaskFullyCompleted(a);
+            const bDone = isTaskFullyCompleted(b);
+            if (aDone !== bDone) {
+              return aDone ? 1 : -1;
+            }
+            return 0;
+          }).map((child) => (
             <TaskItem key={`${threadId}-${child.id}`} {...{...{
+              task,
+              threadId,
+              level: level + 1,
               expandedTasks,
               editingNote,
               addingChildTo,
@@ -234,7 +266,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({
               setEditingTaskId,
               setEditedTaskText,
               updateTaskText,
-            }, task: child, threadId, level: level + 1 }} />
+              setTaskPriority,
+            }, task: child }} />
           ))}
         </div>
       )}

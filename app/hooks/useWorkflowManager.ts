@@ -440,6 +440,7 @@ const useWorkflowManager = () => {
       done: false,
       note: "",
       children: [],
+      priority: 0,
     };
     setThreads((prev) => ({
       ...prev,
@@ -466,6 +467,7 @@ const useWorkflowManager = () => {
             done: false,
             note: "",
             children: [],
+            priority: 0,
           };
           return { ...task, children: [...task.children, newChild] };
         }
@@ -487,6 +489,22 @@ const useWorkflowManager = () => {
     setExpandedTasks((prev) => new Set([...prev, parentId]));
     setNewChildText("");
     setAddingChildTo(null);
+  };
+
+  const setTaskPriority = (threadId: string, taskId: string, priority: number) => {
+    setThreads(prevThreads => {
+      const threadToUpdate = prevThreads[threadId];
+      if (!threadToUpdate) return prevThreads;
+      
+      const updatedTasks = updateTaskRecursive(threadToUpdate.tasks, taskId, undefined, undefined, undefined, priority);
+      return {
+        ...prevThreads,
+        [threadId]: {
+          ...threadToUpdate,
+          tasks: updatedTasks,
+        },
+      };
+    });
   };
 
   // ==========================================================================
@@ -581,6 +599,7 @@ const useWorkflowManager = () => {
     setEditingTaskId,
     setEditedTaskText,
     updateTaskText,
+    setTaskPriority,
   };
 
   return {
@@ -652,6 +671,7 @@ const useWorkflowManager = () => {
     setNewChildText,
     setEditingTaskId,
     setEditedTaskText,
+    setTaskPriority,
     // Sessions
     addSession,
     setAddingSessionTo,

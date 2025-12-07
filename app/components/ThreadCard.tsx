@@ -47,6 +47,7 @@ import {
 } from "lucide-react";
 import { TaskItem, TaskItemProps } from "./TaskItem"; // Import TaskItem and its props
 import { Thread, THREAD_STATE_TRANSITIONS, ThreadStatus } from "../types";
+import { isTaskFullyCompleted } from "../utils/taskUtils";
 
 export interface ThreadCardProps {
   thread: Thread;
@@ -220,7 +221,19 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
             )}
 
             {thread.tasks.length > 0 ? (
-              <div className="space-y-0.5">{thread.tasks.map((task) => <TaskItem key={`${thread.id}-${task.id}`} {...taskItemProps} task={task} threadId={thread.id} />)}</div>
+              <div className="space-y-0.5">{
+                [...thread.tasks].sort((a, b) => {
+                  if ((b.priority || 0) !== (a.priority || 0)) {
+                    return (b.priority || 0) - (a.priority || 0);
+                  }
+                  const aDone = isTaskFullyCompleted(a);
+                  const bDone = isTaskFullyCompleted(b);
+                  if (aDone !== bDone) {
+                    return aDone ? 1 : -1;
+                  }
+                  return 0;
+                }).map((task) => <TaskItem key={`${thread.id}-${task.id}`} {...taskItemProps} task={task} threadId={thread.id} />)
+              }</div>
             ) : (
               // STRATEGY: Display a helpful empty state message if there are no tasks.
               <div className="py-6 text-center text-xs text-gray-400"><p>No tasks. Add one to begin.</p></div>

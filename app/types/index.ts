@@ -12,6 +12,7 @@ export interface Task {
   done: boolean;
   note: string;
   children: Task[];
+  priority: number;
 }
 
 export interface Session {
