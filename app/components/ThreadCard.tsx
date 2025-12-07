@@ -35,7 +35,7 @@
  * - How it passes the `taskItemProps` object down to each `TaskItem`.
  * =================================================================================================
  */
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Plus,
   ChevronDown,
@@ -91,14 +91,24 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
   taskItemProps,
 }) => {
   const isAddingSession = addingSessionTo === thread.id;
-  const [title, setTitle] = useState<string>(thread.title);
+  const [title, setTitle] = useState<string>(thread.title); // Initialize with prop
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const [sessionNotes, setSessionNotes] = useState<string>("");
 
   const handleUpdate = () => {
-    if (title.trim()) onUpdateTitle(thread.id, title);
+    if (title.trim()) {
+      onUpdateTitle(thread.id, title);
+    } else {
+      setTitle(thread.title); // Revert to original title if new title is empty
+    }
+    setEditingThreadId(null); // Exit editing mode
   };
 
+  const handleCancelEdit = () => {
+    setTitle(thread.title); // Revert to original title
+    setEditingThreadId(null); // Exit editing mode
+  };
+  
   const handleAddTask = () => {
       onAddRootTask(thread.id);
   }
@@ -111,12 +121,6 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
     completed: { bg: "bg-gray-100", text: "text-gray-700", dot: "bg-gray-500" },
   };
   const statusStyle = statusConfig[thread.status];
-
-  // STRATEGY: Synchronize the local `title` state with the `thread.title` prop.
-  // This ensures that if the title is updated from the parent, the local state reflects the change.
-  useEffect(() => {
-    setTitle(thread.title);
-  }, [thread.title]);
 
   // STRATEGY: This handler prevents clicks on interactive elements (buttons, inputs) within the card
   // from triggering the `onSelect` action for the entire card.
@@ -151,7 +155,19 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
               {/* STRATEGY: Implement inline editing for the thread title. When `editingThreadId` matches this thread,
                   render an input field; otherwise, render the title text. */}
               {editingThreadId === thread.id ? (
-                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} onBlur={handleUpdate} onKeyPress={(e) => e.key === "Enter" && handleUpdate()} className="text-base font-medium text-gray-900 flex-1 px-2 py-1 border-b-2 border-orange-500 focus:outline-none bg-transparent" autoFocus onClick={(e) => e.stopPropagation()}/>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  onBlur={handleUpdate}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleUpdate();
+                    if (e.key === 'Escape') handleCancelEdit();
+                  }}
+                  className="text-base font-medium text-gray-900 flex-1 px-2 py-1 border-b-2 border-orange-500 focus:outline-none bg-transparent"
+                  autoFocus
+                  onClick={(e) => e.stopPropagation()}
+                />
               ) : (
                 <h3 className="text-base font-medium text-gray-900" onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id);}}>{thread.title}</h3>
               )}
@@ -174,7 +190,6 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                   <div className={`w-1 h-1 rounded-full ${statusStyle.dot}`}></div>
                   <span className={`text-xs font-medium ${statusStyle.text}`}>{thread.status}</span>
                 </button>
-                {/* STRATEGY: The status menu is rendered conditionally and positioned absolutely relative to its button. */}
                 {isStatusMenuOpen && (
                   <div className="absolute top-full mt-1.5 w-24 bg-white rounded-md shadow-lg border border-gray-200 z-10">
                     {(Object.keys(THREAD_STATE_TRANSITIONS) as ThreadStatus[]).map((s) => (

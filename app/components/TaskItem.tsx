@@ -9,9 +9,10 @@
  * notes, as well as user interactions for editing, completion, and adding sub-tasks.
  *
  * @dependencies
- * - REACT: `useState`, `useEffect` for internal UI state management.
+ * - REACT: `useState`, `useMemo` for internal UI state management.
  * - LUCIDE-REACT: For all iconography (checkboxes, chevrons, etc.).
- * - TYPES: `Task` from the main page (`../page`).
+ * - NoteEditor: Component for rich text note editing.
+ * - TYPES: `Task` from the main page (`../types`).
  *
  * @invariants
  * 1. RECURSIVE STRUCTURE: The component renders itself for each of its `task.children`, passing
@@ -21,25 +22,19 @@
  *    from the `useWorkflowManager` hook (passed through `ThreadCard`).
  *
  * @state_management
- * - The component receives a large number of props that represent the global UI state (e.g.,
- *   `editingNote`, `addingChildTo`) and the functions to change that state.
- * - It manages a local piece of state, `editedNoteText`, to buffer input for the note-editing
- *   textarea, preventing re-renders of the entire application on each keystroke. This local
- *   state is synchronized with the global state via `useEffect` when editing begins.
+ * - `isNoteExpanded`: Local state to control the expanded/collapsed state of the note accordion.
+ * - `noteLineCount`: Memoized value for the number of lines in the note, used for accordion logic.
  *
  * @ai_note
- * This is a highly recursive and state-intensive component. The key points are:
- * - The `TaskItemProps` interface defines the large API this component consumes.
- * - The component renders itself within its own return statement, which is the core of the
- *   recursive display.
- * - The props are passed down to child `TaskItem`s using a spread operator pattern:
- *   `<TaskItem {...{...all_props, task: child, ...}} />`. This is a deliberate choice to
- *   manage the complexity of passing down the large number of props.
- * - There are multiple inline-editing states (`isEditingTask` for the title, `isEditing` for the
- *   note, `isAddingChild` for sub-tasks). Each has its own conditional rendering logic.
+ * - The note display now supports rich text rendering using `dangerouslySetInnerHTML`.
+ * - Notes longer than 3 lines are collapsed by default, with a "Show more"/"Show less" toggle.
+ * - Clicking the displayed note (excluding the "Show more/less" button) now correctly activates
+ *   the note editing mode.
+ * - Note editing is handled by the `NoteEditor` component, centralizing its state management.
  * =================================================================================================
  */
-import React, { useState, useEffect } from "react";
+import NoteEditor from "./NoteEditor";
+import { useState, useMemo } from "react";
 import {
   Plus,
   ChevronDown,
@@ -48,7 +43,6 @@ import {
   CheckCircle2,
   MessageSquare,
   StickyNote,
-  Pencil,
   Star,
 } from "lucide-react";
 import { Task } from "../types";
@@ -103,15 +97,21 @@ export const TaskItem: React.FC<TaskItemProps> = ({
   const hasChildren = task.children.length > 0;
   const isEditing = editingNote === task.id;
   const isAddingChild = addingChildTo === task.id;
-  const [editedNoteText, setEditedNoteText] = useState("");
   const isEditingTask = editingTaskId === task.id;
+  const [isNoteExpanded, setIsNoteExpanded] = useState(false);
+
+  const noteLineCount = useMemo(() => {
+    if (!task.note) return 0;
+    // Simple line counting based on list items, which is a good proxy for lines in this rich text context.
+    const matches = task.note.match(/<li>/g);
+    return matches ? matches.length : 1;
+  }, [task.note]);
 
   const handleSaveTaskText = () => {
-    // STRATEGY: Only commit the task text update if the text has changed and is not empty.
     if (editedTaskText.trim()) {
       updateTaskText(threadId, task.id, editedTaskText);
     } else {
-      setEditingTaskId(null); // Cancel edit if new text is empty
+      setEditingTaskId(null);
     }
   };
 
@@ -131,20 +131,10 @@ export const TaskItem: React.FC<TaskItemProps> = ({
     3: "text-red-500",
   };
 
-  // STRATEGY: Use a local state `editedNoteText` for the textarea to prevent re-renders on every keystroke.
-  // Sync this local state with the task's note only when the editing mode begins.
-  useEffect(() => {
-    if (isEditing) {
-      setEditedNoteText(task.note);
-    }
-  }, [isEditing, task.note]);
-
   return (
-    // STRATEGY: Indentation and a left border are applied based on the recursion `level` to create a visual hierarchy.
     <div className={`${level > 0 ? "ml-7 border-l border-orange-200 pl-4 py-0.5" : ""}`} key={`${threadId}-${task.id}`}>
       <div className="mb-1">
         <div className="flex items-start gap-3 group hover:bg-orange-50/30 px-3 py-2 rounded transition-colors">
-          {/* STRATEGY: The expand/collapse chevron is only rendered if the task has children. */}
           {hasChildren ? (
             <button onClick={() => toggleTask(task.id)} className="mt-0.5 text-gray-400 hover:text-orange-500 transition-colors flex-shrink-0">
               {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
@@ -158,7 +148,6 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           </button>
 
           <div className="flex-1 min-w-0">
-            {/* STRATEGY: Conditionally render an input for inline task text editing. */}
             {isEditingTask ? (
               <input
                 type="text"
@@ -184,34 +173,47 @@ export const TaskItem: React.FC<TaskItemProps> = ({
               </span>
             )}
 
-            {/* STRATEGY: Display the note only if it exists and the task is not in edit mode. */}
             {task.note && !isEditing && !isEditingTask && (
-              <div className="mt-2 text-xs leading-relaxed text-orange-900 bg-orange-100 px-3 py-2 rounded cursor-pointer hover:bg-orange-100/80 transition-colors" onClick={() => setEditingNote(task.id)}>
+              <div
+                className="mt-2 text-xs leading-relaxed text-orange-900 bg-orange-100 px-3 py-2 rounded"
+                onClick={() => setEditingNote(task.id)}
+              >
                 <div className="flex items-start gap-2">
                   <StickyNote className="w-3 h-3 text-orange-700 mt-0.5 flex-shrink-0" />
-                  <span>{task.note}</span>
+                  <div
+                    className={`prose prose-sm max-w-none ${!isNoteExpanded && noteLineCount > 3 ? 'max-h-12 overflow-hidden' : ''}`}
+                    dangerouslySetInnerHTML={{ __html: task.note }}
+                  />
                 </div>
+                {noteLineCount > 3 && (
+                  <button
+                    className="text-orange-600 text-xs mt-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsNoteExpanded(!isNoteExpanded);
+                    }}
+                  >
+                    {isNoteExpanded ? "Show less" : "Show more"}
+                  </button>
+                )}
               </div>
             )}
 
-            {/* STRATEGY: Conditionally render the note editing textarea. */}
             {isEditing && (
-              <div className="mt-3 space-y-2">
-                <textarea value={editedNoteText} onChange={(e) => setEditedNoteText(e.target.value)} className="w-full px-3 py-2 border border-orange-300 rounded text-xs resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white leading-relaxed" rows={3} placeholder="Add notes..." autoFocus />
-                <div className="flex gap-2">
-                  <button onClick={() => saveNote(threadId, task.id, editedNoteText)} className="px-3 py-1.5 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition-colors font-medium">Save</button>
-                  <button onClick={() => setEditingNote(null)} className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs rounded hover:bg-gray-200 transition-colors">Cancel</button>
-                </div>
-              </div>
+              <NoteEditor
+                initialContent={task.note}
+                threadId={threadId}
+                taskId={task.id}
+                saveNote={saveNote}
+                setEditingNote={setEditingNote}
+              />
             )}
           </div>
 
-          {/* STRATEGY: Action buttons appear on hover for a cleaner UI. */}
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
             <button onClick={handleCyclePriority} className={`p-1.5 rounded transition-colors ${priorityStyles[task.priority || 0]} hover:bg-orange-50`} title="Set priority">
               <Star className="w-3.5 h-3.5" fill={task.priority > 0 ? 'currentColor' : 'none'}/>
             </button>
-            {/* STRATEGY: The "Add Note" button is only shown if a note does not already exist. */}
             {!task.note && !isEditing && (
               <button onClick={() => setEditingNote(task.id)} className="p-1.5 text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded transition-colors" title="Add note">
                 <MessageSquare className="w-3.5 h-3.5" />
@@ -223,7 +225,6 @@ export const TaskItem: React.FC<TaskItemProps> = ({
           </div>
         </div>
 
-        {/* STRATEGY: Conditionally render the input form for adding a new sub-task. */}
         {isAddingChild && (
           <div className="ml-10 mt-2 flex gap-2">
             <input type="text" value={newChildText} onChange={(e) => setNewChildText(e.target.value)} placeholder="New subtask..." className="flex-1 px-3 py-2 border border-orange-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white" autoFocus onKeyPress={(e) => e.key === "Enter" && addChild(threadId, task.id)} />
@@ -232,7 +233,6 @@ export const TaskItem: React.FC<TaskItemProps> = ({
         )}
       </div>
 
-      {/* RECURSIVE RENDERING: If the task is expanded and has children, map over them and render a TaskItem for each. */}
       {isExpanded && hasChildren && (
         <div className="mt-1">
           {[...task.children].sort((a, b) => {
