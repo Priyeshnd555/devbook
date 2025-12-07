@@ -9,6 +9,7 @@
  *
  * @dependencies
  * - REACT: `useState` for internal UI state management.
+ * - FRAMER-MOTION: For animations, particularly for the collapsible UI.
  * - LUCIDE-REACT: For modern and consistent iconography.
  * - COMPONENT: `ProjectItem` (this file): The recursive component used to render each item in the tree.
  * - TYPES: `Project` from `../types`.
@@ -16,36 +17,47 @@
  * @invariants
  * 1. HIERARCHY: The component correctly renders a nested tree structure based on the `parentId`
  *    relations in the flat `projects` data record.
- * 2. CONTROLLED COMPONENT: All core data operations (add, rename, delete) are delegated to the
- *    parent component via callbacks (`onAddProject`, `onRenameProject`, etc.). This sidebar does
- *    not mutate the project data directly.
+ * 2. CONTROLLED COMPONENT: All core data operations (add, rename, delete) and its visibility state
+ *    are delegated to the parent component via callbacks (`onAddProject`, `onToggle`, etc.).
  *
  * @state_management
- * - It receives `projects` and `selectedProjectId` as props.
- * - It manages its own internal UI state:
- *   - `isCollapsed`: Toggles the sidebar between a full and an icon-only view.
- *   - `showInput`: Controls the visibility of the "Add New Root Project" input form.
+ * - It receives its visibility state (`isSidebarVisible`) and a toggle handler (`onToggle`) as props
+ *   from its parent, making it a controlled component regarding its collapsed/expanded state.
+ * - It manages its own internal UI state for the "Add New Root Project" input form (`showInput`).
  *
  * @ai_note
  * This file contains two components: `ProjectSidebar` (the main container) and `ProjectItem`
- * (the recursive unit). To understand how the tree is built, look at how `ProjectItem` renders
- * its children. The logic for switching between the expanded and collapsed (`isCollapsed`) views
- * is a key feature. Most of the complexity (inline editing, context menus) is within `ProjectItem`.
+ * (the recursive unit). The sidebar's visibility is controlled by the parent `page.tsx` component.
+ * The toggle button is now part of this component, absolutely positioned to "peek" out from the
+ * side, providing a clear UX affordance for collapsing and expanding the sidebar.
  * =================================================================================================
  */
 
-import React, { useState } from 'react';
-import { Folder, Plus, ChevronDown, ChevronRight, PanelLeftOpen, PanelLeftClose, FolderOpen, X, MoreVertical, Pencil, Trash2 } from 'lucide-react';
-import { Project } from '../types';
-
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Folder,
+  Plus,
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft,
+  FolderOpen,
+  X,
+  MoreVertical,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import { Project } from "../types";
 
 interface ProjectSidebarProps {
   projects: Record<string, Project>;
   onSelectProject: (projectId: string) => void;
   onAddProject: (name: string, parentId: string | null) => void;
-  onRenameProject?: (projectId:string, newName: string) => void;
-  onDeleteProject?: (projectId: string) => void;
+  onRenameProject: (projectId: string, newName: string) => void;
+  onDeleteProject: (projectId: string) => void;
   selectedProjectId: string | null;
+  isSidebarVisible: boolean;
+  onToggle: () => void;
 }
 
 /**
@@ -93,12 +105,23 @@ const ProjectItem: React.FC<{
   onRenameProject?: (projectId: string, newName: string) => void;
   onDeleteProject?: (projectId: string) => void;
   isCollapsed: boolean;
-}> = ({ project, projects, level, onSelectProject, selectedProjectId, onAddProject, onRenameProject, onDeleteProject, isCollapsed }) => {
-  
-  const children = Object.values(projects).filter(p => p.parentId === project.id);
+}> = ({
+  project,
+  projects,
+  level,
+  onSelectProject,
+  selectedProjectId,
+  onAddProject,
+  onRenameProject,
+  onDeleteProject,
+  isCollapsed,
+}) => {
+  const children = Object.values(projects).filter(
+    (p) => p.parentId === project.id
+  );
   const [isExpanded, setIsExpanded] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectName, setNewProjectName] = useState("");
   const [isHovered, setIsHovered] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -110,18 +133,18 @@ const ProjectItem: React.FC<{
   const handleAddNestedProject = () => {
     if (newProjectName.trim()) {
       onAddProject(newProjectName.trim(), project.id);
-      setNewProjectName('');
+      setNewProjectName("");
       setIsAdding(false);
       setIsExpanded(true);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleAddNestedProject();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setIsAdding(false);
-      setNewProjectName('');
+      setNewProjectName("");
     }
   };
 
@@ -142,16 +165,21 @@ const ProjectItem: React.FC<{
   // component via the `onDeleteProject` callback.
   const handleDelete = () => {
     // CONSTRAINT: Always confirm destructive actions with the user.
-    if (onDeleteProject && window.confirm(`Are you sure you want to delete "${project.name}" and all its sub-projects? This action cannot be undone.`)) {
+    if (
+      onDeleteProject &&
+      window.confirm(
+        `Are you sure you want to delete "${project.name}" and all its sub-projects? This action cannot be undone.`
+      )
+    ) {
       onDeleteProject(project.id);
     }
     setShowMenu(false);
   };
 
   const handleRenameKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleRename();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setIsRenaming(false);
       setRenameValue(project.name);
     }
@@ -166,8 +194,8 @@ const ProjectItem: React.FC<{
           onClick={() => onSelectProject(project.id)}
           className={`w-full p-2.5 rounded-lg transition-all group relative ${
             isSelected
-              ? 'bg-orange-50 text-orange-900 ring-1 ring-orange-100'
-              : 'hover:bg-slate-50 text-slate-600'
+              ? "bg-orange-50 text-orange-900 ring-1 ring-orange-100"
+              : "hover:bg-slate-50 text-slate-600"
           }`}
           title={project.name}
         >
@@ -194,8 +222,8 @@ const ProjectItem: React.FC<{
       <div
         className={`group relative flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer transition-all ${
           isSelected
-            ? 'bg-orange-50 text-orange-900 ring-1 ring-orange-100'
-            : 'hover:bg-slate-50 text-slate-700'
+            ? "bg-orange-50 text-orange-900 ring-1 ring-orange-100"
+            : "hover:bg-slate-50 text-slate-700"
         }`}
         style={{ paddingLeft: `${indentPx + 8}px` }}
         onClick={() => onSelectProject(project.id)}
@@ -204,14 +232,16 @@ const ProjectItem: React.FC<{
       >
         {/* Expand/Collapse Chevron */}
         {/* STRATEGY: This chevron is only visible if the item has children or if the user is currently adding a new child to it. */}
-        {(hasChildren || isAdding) ? (
+        {hasChildren || isAdding ? (
           <button
             onClick={(e) => {
               e.stopPropagation(); // CONSTRAINT: Prevent the click from also selecting the project.
               setIsExpanded(!isExpanded);
             }}
             className={`flex-shrink-0 p-0.5 rounded transition-colors ${
-              isSelected ? 'text-orange-700' : 'text-slate-400 hover:text-slate-600'
+              isSelected
+                ? "text-orange-700"
+                : "text-slate-400 hover:text-slate-600"
             }`}
           >
             {isExpanded ? (
@@ -225,11 +255,19 @@ const ProjectItem: React.FC<{
         )}
 
         {/* Folder Icon */}
-        <div className={`flex-shrink-0 transition-transform ${isHovered && !isSelected ? 'scale-110' : ''}`}>
+        <div
+          className={`flex-shrink-0 transition-transform ${
+            isHovered && !isSelected ? "scale-110" : ""
+          }`}
+        >
           {isSelected ? (
             <FolderOpen className="w-5 h-5 text-orange-600" />
           ) : (
-            <Folder className={`w-5 h-5 ${hasChildren ? 'text-orange-500' : 'text-slate-400'}`} />
+            <Folder
+              className={`w-5 h-5 ${
+                hasChildren ? "text-orange-500" : "text-slate-400"
+              }`}
+            />
           )}
         </div>
 
@@ -247,20 +285,24 @@ const ProjectItem: React.FC<{
             onClick={(e) => e.stopPropagation()} // CONSTRAINT: Prevent clicks on the input from selecting the project.
           />
         ) : (
-          <span className={`flex-1 truncate text-[15px] font-medium ${
-            isSelected ? 'text-orange-900' : 'text-slate-700'
-          }`}>
+          <span
+            className={`flex-1 truncate text-[15px] font-medium ${
+              isSelected ? "text-orange-900" : "text-slate-700"
+            }`}
+          >
             {project.name}
           </span>
         )}
 
         {/* Child Count Badge */}
         {hasChildren && !isRenaming && (
-          <span className={`flex-shrink-0 px-2 py-0.5 text-[11px] font-semibold rounded-full ${
-            isSelected 
-              ? 'bg-orange-100 text-orange-700'
-              : 'bg-slate-100 text-slate-600'
-          }`}>
+          <span
+            className={`flex-shrink-0 px-2 py-0.5 text-[11px] font-semibold rounded-full ${
+              isSelected
+                ? "bg-orange-100 text-orange-700"
+                : "bg-slate-100 text-slate-600"
+            }`}
+          >
             {children.length}
           </span>
         )}
@@ -276,10 +318,10 @@ const ProjectItem: React.FC<{
               }}
               className={`flex-shrink-0 p-1.5 rounded-md transition-all ${
                 showMenu
-                  ? 'bg-slate-200 text-slate-700'
+                  ? "bg-slate-200 text-slate-700"
                   : isSelected
-                  ? 'hover:bg-orange-100 text-orange-600 opacity-0 group-hover:opacity-100'
-                  : 'hover:bg-slate-100 text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100'
+                  ? "hover:bg-orange-100 text-orange-600 opacity-0 group-hover:opacity-100"
+                  : "hover:bg-slate-100 text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100"
               }`}
               title="Options"
             >
@@ -295,7 +337,7 @@ const ProjectItem: React.FC<{
                   className="fixed inset-0 z-10"
                   onClick={() => setShowMenu(false)}
                 />
-                
+
                 {/* Menu Content */}
                 <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20">
                   <button
@@ -335,8 +377,8 @@ const ProjectItem: React.FC<{
             }}
             className={`flex-shrink-0 p-1.5 rounded-md transition-all ${
               isSelected
-                ? 'hover:bg-orange-100 text-orange-600 opacity-0 group-hover:opacity-100'
-                : 'hover:bg-slate-100 text-slate-400 hover:text-orange-600 opacity-0 group-hover:opacity-100'
+                ? "hover:bg-orange-100 text-orange-600 opacity-0 group-hover:opacity-100"
+                : "hover:bg-slate-100 text-slate-400 hover:text-orange-600 opacity-0 group-hover:opacity-100"
             }`}
             title="Add nested project"
           >
@@ -349,7 +391,7 @@ const ProjectItem: React.FC<{
       {/* STRATEGY: If the item is expanded, recursively render its children and show the inline 'add' form if active. */}
       {isExpanded && (
         <div className="mt-0.5">
-          {children.map(child => (
+          {children.map((child) => (
             <ProjectItem
               key={child.id}
               project={child}
@@ -375,11 +417,11 @@ const ProjectItem: React.FC<{
                 type="text"
                 autoFocus
                 value={newProjectName}
-                onChange={e => setNewProjectName(e.target.value)}
+                onChange={(e) => setNewProjectName(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Project name..."
                 className="flex-1 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm"
-                onClick={e => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
               />
               <button
                 onClick={handleAddNestedProject}
@@ -391,7 +433,7 @@ const ProjectItem: React.FC<{
               <button
                 onClick={() => {
                   setIsAdding(false);
-                  setNewProjectName('');
+                  setNewProjectName("");
                 }}
                 className="p-1.5 bg-slate-200 text-slate-600 rounded-lg hover:bg-slate-300 transition-colors"
                 title="Cancel"
@@ -412,157 +454,176 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
   onAddProject,
   onRenameProject,
   onDeleteProject,
-  selectedProjectId
+  selectedProjectId,
+  isSidebarVisible,
+  onToggle,
 }) => {
-  const [newProjectName, setNewProjectName] = useState('');
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const isCollapsed = !isSidebarVisible;
   const [showInput, setShowInput] = useState(false);
 
   // STRATEGY: Filter for root projects (those without a parent) to start the tree rendering.
-  const rootProjects = Object.values(projects).filter(p => p.parentId === null);
+  const rootProjects = Object.values(projects).filter(
+    (p) => p.parentId === null
+  );
 
   const handleAddNewRootProject = () => {
     const trimmedName = newProjectName.trim();
     if (trimmedName) {
       onAddProject(trimmedName, null);
-      setNewProjectName('');
+      setNewProjectName("");
       setShowInput(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleAddNewRootProject();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setShowInput(false);
-      setNewProjectName('');
+      setNewProjectName("");
     }
   };
 
   return (
     <div
-      // STRATEGY: The width of the sidebar is dynamically changed using a CSS transition
-      // based on the `isCollapsed` state, creating a smooth animation.
-      className={`bg-white border-r border-slate-200/60 flex flex-col h-screen flex-shrink-0 transition-all duration-300 shadow-sm ${
-        isCollapsed ? 'w-16' : 'w-80'
+      className={`relative bg-white flex flex-col h-screen flex-shrink-0 transition-all duration-300 shadow-lg ${
+        isCollapsed ? "w-0 border-none" : "w-80 border-r border-slate-200/60"
       }`}
     >
-      {/* Header */}
-      <div className={`px-4 py-4 border-b border-slate-200/60 flex items-center gap-3 ${
-        isCollapsed ? 'justify-center' : 'justify-between'
-      }`}>
-        {!isCollapsed && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center shadow-sm">
-              <Folder className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Projects</h2>
-              <p className="text-[11px] text-slate-500">{rootProjects.length} workspace{rootProjects.length !== 1 ? 's' : ''}</p>
-            </div>
-          </div>
-        )}
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 rounded-lg hover:bg-slate-200 text-slate-600 transition-all hover:shadow-sm"
-          title={isCollapsed ? 'Expand' : 'Collapse'}
-        >
-          {isCollapsed ? (
-            <PanelLeftOpen className="w-5 h-5" />
-          ) : (
-            <PanelLeftClose className="w-5 h-5" />
-          )}
-        </button>
-      </div>
-
-      {/* Project List */}
-      <div className="flex-1 p-3 overflow-y-auto">
-        {rootProjects.length > 0 ? (
-          <div className="space-y-0.5">
-            {rootProjects.map(project => (
-              <ProjectItem
-                key={project.id}
-                project={project}
-                projects={projects}
-                level={0}
-                onSelectProject={onSelectProject}
-                selectedProjectId={selectedProjectId}
-                onAddProject={onAddProject}
-                onRenameProject={onRenameProject}
-                onDeleteProject={onDeleteProject}
-                isCollapsed={isCollapsed}
-              />
-            ))}
-          </div>
+      {/* STRATEGY: This toggle button is absolutely positioned to "peek" out from the edge of the sidebar.
+          This provides a clear, intuitive UX for collapsing/expanding the panel, directly attached to the
+          element it controls. It's animated with Framer Motion for better discoverability. */}
+      <motion.button
+        onClick={onToggle}
+        className="absolute top-1/2 -translate-y-1/2 z-10 bg-white border border-slate-300 rounded-full p-2 shadow-lg"
+        style={{ right: "-22px" }}
+        initial={{ scale: 0, x: -20 }}
+        animate={{ scale: 1, x: 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.5 }}
+        whileHover={{ scale: 1.15 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        {isCollapsed ? (
+          <ChevronRight className="w-5 h-5 text-slate-700" />
         ) : (
-          // STRATEGY: Show a helpful empty state message when there are no projects,
-          // but only if the sidebar is not collapsed.
-          !isCollapsed && (
-            <div className="text-center py-16 px-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Folder className="w-8 h-8 text-slate-400" />
-              </div>
-              <h3 className="text-sm font-semibold text-slate-700 mb-1">No projects yet</h3>
-              <p className="text-xs text-slate-500 mb-4">Create your first project to get started</p>
-              <button
-                onClick={() => setShowInput(true)}
-                className="text-xs text-orange-600 hover:text-orange-700 font-medium"
-              >
-                Create project →
-              </button>
-            </div>
-          )
+          <ChevronLeft className="w-5 h-5 text-slate-700" />
         )}
-      </div>
-
-      {/* Add New Root Project Form */}
-      {/* CONSTRAINT: The form for adding a new root project is not available when the sidebar is collapsed. */}
-      {!isCollapsed && (
-        <div className="p-3 border-t border-slate-200/60 bg-slate-50/50">
-          {/* STRATEGY: Conditionally show the input form or the "New Project" button based on `showInput` state. */}
-          {showInput ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Folder className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                <input
-                  type="text"
-                  autoFocus
-                  value={newProjectName}
-                  onChange={e => setNewProjectName(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder="New project name..."
-                  className="flex-1 px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm"
-                />
+      </motion.button>
+      <div className="h-full w-full flex flex-col overflow-hidden">
+        {/* Header */}
+        <div
+          className={`px-4 py-4 border-b border-slate-200/60 flex items-center gap-3`}
+        >
+          {!isCollapsed && (
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center shadow-sm">
+                <Folder className="w-4 h-4 text-white" />
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleAddNewRootProject}
-                  className="flex items-center gap-1.5 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors"
-                >
-                  Create Project
-                </button>
-                <button
-                  onClick={() => {
-                    setShowInput(false);
-                    setNewProjectName('');
-                  }}
-                  className="px-4 py-2 bg-slate-100 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors"
-                >
-                  Cancel
-                </button>
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Projects</h2>
+                <p className="text-[11px] text-slate-500">
+                  {rootProjects.length} workspace
+                  {rootProjects.length !== 1 ? "s" : ""}
+                </p>
               </div>
             </div>
-          ) : (
-            <button
-              onClick={() => setShowInput(true)}
-              className="flex items-center gap-1.5 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors w-full justify-center"
-            >
-              <Plus className="w-5 h-5" />
-              New Project
-            </button>
           )}
         </div>
-      )}
+
+        {/* Project List */}
+        <div className="flex-1 p-3 overflow-y-auto">
+          {rootProjects.length > 0 ? (
+            <div className="space-y-0.5">
+              {rootProjects.map((project) => (
+                <ProjectItem
+                  key={project.id}
+                  project={project}
+                  projects={projects}
+                  level={0}
+                  onSelectProject={onSelectProject}
+                  selectedProjectId={selectedProjectId}
+                  onAddProject={onAddProject}
+                  onRenameProject={onRenameProject}
+                  onDeleteProject={onDeleteProject}
+                  isCollapsed={isCollapsed}
+                />
+              ))}
+            </div>
+          ) : (
+            // STRATEGY: Show a helpful empty state message when there are no projects,
+            // but only if the sidebar is not collapsed.
+            !isCollapsed && (
+              <div className="text-center py-16 px-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Folder className="w-8 h-8 text-slate-400" />
+                </div>
+                <h3 className="text-sm font-semibold text-slate-700 mb-1">
+                  No projects yet
+                </h3>
+                <p className="text-xs text-slate-500 mb-4">
+                  Create your first project to get started
+                </p>
+                <button
+                  onClick={() => setShowInput(true)}
+                  className="text-xs text-orange-600 hover:text-orange-700 font-medium"
+                >
+                  Create project →
+                </button>
+              </div>
+            )
+          )}
+        </div>
+
+        {/* Add New Root Project Form */}
+        {/* CONSTRAINT: The form for adding a new root project is not available when the sidebar is collapsed. */}
+        {!isCollapsed && (
+          <div className="p-3 border-t border-slate-200/60 bg-slate-50/50">
+            {/* STRATEGY: Conditionally show the input form or the "New Project" button based on `showInput` state. */}
+            {showInput ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Folder className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <input
+                    type="text"
+                    autoFocus
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    placeholder="New project name..."
+                    className="flex-1 px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleAddNewRootProject}
+                    className="flex items-center gap-1.5 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors"
+                  >
+                    Create Project
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowInput(false);
+                      setNewProjectName("");
+                    }}
+                    className="px-4 py-2 bg-slate-100 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowInput(true)}
+                className="flex items-center gap-1.5 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors w-full justify-center"
+              >
+                <Plus className="w-5 h-5" />
+                New Project
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

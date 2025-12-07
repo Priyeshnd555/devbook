@@ -51,10 +51,9 @@ import React from "react";
 import { Plus } from "lucide-react";
 import { ThreadCard } from "./components/ThreadCard"; // Import ThreadCard
 import { motion, AnimatePresence } from "framer-motion";
-import ProjectSidebar from './components/ProjectSidebar';
-import useWorkflowManager from './hooks/useWorkflowManager';
-import { countAllTasks, countAllCompletedTasks } from './utils/taskUtils';
-
+import ProjectSidebar from "./components/ProjectSidebar";
+import useWorkflowManager from "./hooks/useWorkflowManager";
+import { countAllTasks, countAllCompletedTasks } from "./utils/taskUtils";
 
 // ============================================================================
 // COMPONENT CONTEXT: High-level overview of imported components for AI reference.
@@ -90,7 +89,6 @@ import { countAllTasks, countAllCompletedTasks } from './utils/taskUtils';
     - onUpdateTitle, onDelete, onUpdateStatus: Handlers for modifying the thread.
     - taskItemProps: A collection of props that are passed down to all child TaskItem components.
 */
-
 
 // ==========================================================================
 // MAIN COMPONENT RENDER: Assembles the top-level UI structure.
@@ -130,75 +128,114 @@ const NestedWorkflow = () => {
     renameProject,
     deleteProject,
   } = useWorkflowManager();
-  
+
+  // STRATEGY: The visibility of the sidebar is managed at this top-level component
+  // to allow other parts of the UI (like a main header button, if we had one) to control it.
+  // This state is passed down to the ProjectSidebar, making it a controlled component.
+  const [isSidebarVisible, setSidebarVisible] = React.useState(true);
+
   return (
     <div className="flex h-screen bg-gray-50 font-sans">
-      <ProjectSidebar 
+      <ProjectSidebar
         projects={projects}
         selectedProjectId={selectedProjectId}
         onAddProject={addProject}
         onSelectProject={handleSelectProject}
         onDeleteProject={deleteProject}
         onRenameProject={renameProject}
+        // STRATEGY: Pass state and a toggle handler to the sidebar.
+        // This makes the main page the source of truth for the sidebar's visibility state.
+        isSidebarVisible={isSidebarVisible}
+        onToggle={() => setSidebarVisible(!isSidebarVisible)}
       />
       <div className="flex-1 flex flex-col">
         <header className="bg-white border-b border-gray-200 shadow-xs z-20">
-            <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="max-w-7xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                <h1 className="text-lg font-semibold text-gray-900">Thread Notes</h1>
+              <div className="min-w-0">
+                <h1 className="text-lg font-semibold text-gray-900">
+                  Thread Notes
+                </h1>
                 <p className="text-xs text-gray-500 mt-0.5">
-                    Nested task tracking &bull; {globalTotalThreads} Threads &bull; {globalCompletedTasks}/{globalTotalTasks} Tasks
+                  Nested task tracking &bull; {globalTotalThreads} Threads
+                  &bull; {globalCompletedTasks}/{globalTotalTasks} Tasks
                 </p>
-                </div>
-                <button 
-                    onClick={() => setIsAddingThread(true)} 
-                    className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors disabled:bg-gray-400"
-                    // CONSTRAINT: New thread button is disabled if no project is selected to ensure threads are always associated with a project.
-                    disabled={!selectedProjectId}
-                    title={!selectedProjectId ? "Select a project to add a thread" : "Add new thread"}
-                >
+              </div>
+              <button
+                onClick={() => setIsAddingThread(true)}
+                className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors disabled:bg-gray-400"
+                // CONSTRAINT: New thread button is disabled if no project is selected to ensure threads are always associated with a project.
+                disabled={!selectedProjectId}
+                title={
+                  !selectedProjectId
+                    ? "Select a project to add a thread"
+                    : "Add new thread"
+                }
+              >
                 <Plus className="w-3.5 h-3.5" /> New Thread
-                </button>
+              </button>
             </div>
-            </div>
+          </div>
         </header>
 
         <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto px-6 py-4 w-full overflow-y-auto">
-            <div className="md:col-span-2">
+          <div className="md:col-span-2">
             {/* STRATEGY: Conditionally render the "Add New Thread" input form based on the `isAddingThread` state. */}
             {isAddingThread && (
-                <div className="mb-3 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">New thread</h3>
-                <input type="text" value={newThreadTitle} onChange={(e) => setNewThreadTitle(e.target.value)} placeholder="Title..." className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white" autoFocus onKeyPress={(e) => e.key === "Enter" && addThread()} />
+              <div className="mb-3 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <h3 className="text-sm font-medium text-gray-900 mb-2">
+                  New thread
+                </h3>
+                <input
+                  type="text"
+                  value={newThreadTitle}
+                  onChange={(e) => setNewThreadTitle(e.target.value)}
+                  placeholder="Title..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                  autoFocus
+                  onKeyPress={(e) => e.key === "Enter" && addThread()}
+                />
                 <div className="flex gap-2 mt-2">
-                    <button onClick={addThread} className="px-3 py-1.5 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 transition-colors font-medium">Create</button>
-                    <button onClick={() => { setIsAddingThread(false); setNewThreadTitle(""); }} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded text-xs hover:bg-gray-200 transition-colors">Cancel</button>
+                  <button
+                    onClick={addThread}
+                    className="px-3 py-1.5 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 transition-colors font-medium"
+                  >
+                    Create
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsAddingThread(false);
+                      setNewThreadTitle("");
+                    }}
+                    className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded text-xs hover:bg-gray-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
                 </div>
-                </div>
+              </div>
             )}
 
             <div className="space-y-3">
-                {/* STRATEGY: Use AnimatePresence for smooth entry/exit animations of thread cards. */}
-                <AnimatePresence>
+              {/* STRATEGY: Use AnimatePresence for smooth entry/exit animations of thread cards. */}
+              <AnimatePresence>
                 {/* STRATEGY: Map over `filteredThreadOrder` to render ThreadCard components. This ensures UI updates reflect filtering/sorting logic from useWorkflowManager. */}
                 {filteredThreadOrder.map((threadId, index) => {
-                const thread = threads[threadId];
-                // CONSTRAINT: Ensure 'thread' object exists before rendering; a null check prevents rendering issues if a thread is unexpectedly missing.
-                if(!thread) return null;
-                const totalTasks = countAllTasks(thread.tasks);
-                const completedTasks = countAllCompletedTasks(thread.tasks);
-                return (
+                  const thread = threads[threadId];
+                  // CONSTRAINT: Ensure 'thread' object exists before rendering; a null check prevents rendering issues if a thread is unexpectedly missing.
+                  if (!thread) return null;
+                  const totalTasks = countAllTasks(thread.tasks);
+                  const completedTasks = countAllCompletedTasks(thread.tasks);
+                  return (
                     // STRATEGY: Use Framer Motion for layout animations on thread cards, providing a dynamic user experience.
                     <motion.div
-                    key={thread.id}
-                    layout
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -50}}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                      key={thread.id}
+                      layout
+                      initial={{ opacity: 0, y: 50 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -50 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
                     >
-                        <ThreadCard 
+                      <ThreadCard
                         thread={thread}
                         threadNumber={index + 1}
                         totalTaskCount={totalTasks}
@@ -206,11 +243,11 @@ const NestedWorkflow = () => {
                         // STRATEGY: Highlight the currently selected thread for visual feedback.
                         isSelected={selectedThreadId === thread.id}
                         onSelect={() => handleSelectThread(thread.id)}
-                        isThreadExpanded={expandedThreads.has(thread.id)} 
-                        toggleThread={toggleThread} 
-                        onUpdateTitle={updateThreadTitle} 
-                        onDelete={deleteThread} 
-                        onAddRootTask={addRootTaskToThread} 
+                        isThreadExpanded={expandedThreads.has(thread.id)}
+                        toggleThread={toggleThread}
+                        onUpdateTitle={updateThreadTitle}
+                        onDelete={deleteThread}
+                        onAddRootTask={addRootTaskToThread}
                         onUpdateStatus={updateThreadStatus}
                         addingSessionTo={addingSessionTo}
                         setAddingSessionTo={setAddingSessionTo}
@@ -218,46 +255,57 @@ const NestedWorkflow = () => {
                         editingThreadId={editingThreadId}
                         setEditingThreadId={setEditingThreadId}
                         taskItemProps={taskItemProps}
-                        />
+                      />
                     </motion.div>
-                );
+                  );
                 })}
-                </AnimatePresence>
+              </AnimatePresence>
             </div>
-            </div>
-            <div className="md:col-span-1">
+          </div>
+          <div className="md:col-span-1">
             {/* CONSTRAINT: The session log sidebar is sticky to remain visible during scrolling. */}
             <div className="sticky top-6">
-                {/* STRATEGY: Conditionally render session log details or a placeholder message based on whether a thread is selected. */}
-                {selectedThread ? (
+              {/* STRATEGY: Conditionally render session log details or a placeholder message based on whether a thread is selected. */}
+              {selectedThread ? (
                 <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-                    <div className="p-4 border-b border-gray-100">
-                    <h2 className="text-base font-medium text-gray-900">Session Log</h2>
-                    <p className="text-xs text-gray-500 mt-0.5 truncate">{selectedThread.title}</p>
-                    </div>
-                    <div className="p-4 space-y-3 max-h-[calc(100vh-18rem)] overflow-y-auto">
+                  <div className="p-4 border-b border-gray-100">
+                    <h2 className="text-base font-medium text-gray-900">
+                      Session Log
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">
+                      {selectedThread.title}
+                    </p>
+                  </div>
+                  <div className="p-4 space-y-3 max-h-[calc(100vh-18rem)] overflow-y-auto">
                     {/* STRATEGY: Display individual session notes or a message if no sessions are logged for the selected thread. */}
                     {selectedThread.sessions.length > 0 ? (
-                        selectedThread.sessions.map((session, idx) => (
-                        <div key={`${selectedThread.id}-session-${idx}`} className="bg-gray-50 rounded p-3 text-xs border border-gray-200">
-                            <div className="text-gray-500 mb-1.5 font-medium">{session.date} at {session.time}</div>
-                            <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">{session.notes}</div>
+                      selectedThread.sessions.map((session, idx) => (
+                        <div
+                          key={`${selectedThread.id}-session-${idx}`}
+                          className="bg-gray-50 rounded p-3 text-xs border border-gray-200"
+                        >
+                          <div className="text-gray-500 mb-1.5 font-medium">
+                            {session.date} at {session.time}
+                          </div>
+                          <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                            {session.notes}
+                          </div>
                         </div>
-                        ))
+                      ))
                     ) : (
-                        <div className="py-10 text-center text-xs text-gray-400">
+                      <div className="py-10 text-center text-xs text-gray-400">
                         <p>No sessions logged for this thread.</p>
-                        </div>
+                      </div>
                     )}
-                    </div>
+                  </div>
                 </div>
-                ) : (
+              ) : (
                 <div className="py-20 text-center text-sm text-gray-400">
-                    <p>Select a thread to view its session log.</p>
+                  <p>Select a thread to view its session log.</p>
                 </div>
-                )}
+              )}
             </div>
-            </div>
+          </div>
         </main>
       </div>
     </div>
