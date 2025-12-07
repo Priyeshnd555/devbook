@@ -98,7 +98,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
   const isEditing = editingNote === task.id;
   const isAddingChild = addingChildTo === task.id;
   const isEditingTask = editingTaskId === task.id;
-  const [isNoteExpanded, setIsNoteExpanded] = useState(false);
+  const [isNoteExpanded, setIsNoteExpanded] = useState(true);
 
   const noteLineCount = useMemo(() => {
     if (!task.note) return 0;

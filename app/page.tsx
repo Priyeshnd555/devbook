@@ -136,7 +136,7 @@ const NestedWorkflow = () => {
   // STRATEGY: The visibility of the sidebar is managed at this top-level component
   // to allow other parts of the UI (like a main header button, if we had one) to control it.
   // This state is passed down to the ProjectSidebar, making it a controlled component.
-  const [isSidebarVisible, setSidebarVisible] = React.useState(true);
+  const [isSidebarVisible, setSidebarVisible] = React.useState(false);
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans">
