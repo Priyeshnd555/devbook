@@ -895,41 +895,45 @@ const useWorkflowManager = () => {
 
   // long list of individual props through multiple component layers (prop drilling).
 
-  const taskItemProps: Omit<TaskItemProps, "task" | "threadId" | "level"> = {
-    expandedTasks,
+    const taskItemProps: Omit<TaskItemProps, "task" | "threadId" | "level"> = {
 
-    editingNote,
+      expandedTasks,
 
-    addingChildTo,
+      editingNote,
 
-    editingTaskId,
+      addingChildTo,
 
-    editedTaskText,
+      editingTaskId,
 
-    toggleTask,
+      editedTaskText,
 
-    toggleTaskDone,
+      showCompleted,
 
-    setEditingNote,
+      toggleTask,
 
-    saveNote,
+      toggleTaskDone,
 
-    setAddingChildTo,
+      setEditingNote,
 
-    newChildText,
+      saveNote,
 
-    setNewChildText,
+      setAddingChildTo,
 
-    addChild,
+      newChildText,
 
-    setEditingTaskId,
+      setNewChildText,
 
-    setEditedTaskText,
+      addChild,
 
-    updateTaskText,
+      setEditingTaskId,
 
-    setTaskPriority,
-  };
+      setEditedTaskText,
+
+      updateTaskText,
+
+      setTaskPriority,
+
+    };
 
   return {
     // ================== CORE DATA STATE ==================
