@@ -9,7 +9,7 @@
  * list of root-level tasks for that thread.
  *
  * @dependencies
- * - REACT: `useState`, `useEffect` for internal UI state management.
+ * - REACT: `useState`, `useEffect`, `useMemo` for internal UI state management.
  * - LUCIDE-REACT: For all iconography.
  * - COMPONENT: `TaskItem`: Renders each individual task within the card.
  * - TYPES: `Thread`, `ThreadStatus`, and other related types from `../types`.
@@ -26,6 +26,7 @@
  *   `sessionNotes` for the "Log Session" input.
  * - The `title` is also managed in local state to allow for inline editing, but it's synchronized
  *   with the parent's `thread.title` prop via a `useEffect`.
+ * - `visibleTasks` is a memoized variable that filters tasks based on the `showCompleted` prop.
  *
  * @ai_note
  * This is a key presentational component. The main areas of logic to understand are:
@@ -33,6 +34,7 @@
  * - The conditional rendering of the "Log Session" form (`isAddingSession`).
  * - The conditional rendering of the task list when the thread is expanded (`isThreadExpanded`).
  * - How it passes the `taskItemProps` object down to each `TaskItem`.
+ * - The filtering logic for `visibleTasks` based on the `showCompleted` prop.
  * =================================================================================================
  */
 import React, { useState } from "react";
@@ -68,6 +70,7 @@ export interface ThreadCardProps {
   editingThreadId: string | null;
   setEditingThreadId: (id: string | null) => void;
   taskItemProps: Omit<TaskItemProps, 'task' | 'threadId' | 'level'>;
+  showCompleted: boolean;
 }
 
 export const ThreadCard: React.FC<ThreadCardProps> = ({
@@ -89,11 +92,34 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
   editingThreadId,
   setEditingThreadId,
   taskItemProps,
+  showCompleted,
 }) => {
   const isAddingSession = addingSessionTo === thread.id;
   const [title, setTitle] = useState<string>(thread.title); // Initialize with prop
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const [sessionNotes, setSessionNotes] = useState<string>("");
+  const sortedTasks = React.useMemo(() => {
+    return [...thread.tasks].sort((a, b) => {
+      if ((b.priority || 0) !== (a.priority || 0)) {
+        return (b.priority || 0) - (a.priority || 0);
+      }
+      const aDone = isTaskFullyCompleted(a);
+      const bDone = isTaskFullyCompleted(b);
+      if (aDone !== bDone) {
+        return aDone ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [thread.tasks]);
+
+    // STRATEGY: Filter tasks based on the `showCompleted` prop. If `showCompleted` is false,
+    // only tasks that are not fully completed (including sub-tasks) are shown.
+  const visibleTasks = React.useMemo(() => {
+    if (showCompleted) {
+      return sortedTasks;
+    }
+    return sortedTasks.filter(task => !isTaskFullyCompleted(task));
+  }, [sortedTasks, showCompleted]);
 
   const handleUpdate = () => {
     if (title.trim()) {
@@ -235,23 +261,13 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
               </div>
             )}
 
-            {thread.tasks.length > 0 ? (
+            {visibleTasks.length > 0 ? (
               <div className="space-y-0.5">{
-                [...thread.tasks].sort((a, b) => {
-                  if ((b.priority || 0) !== (a.priority || 0)) {
-                    return (b.priority || 0) - (a.priority || 0);
-                  }
-                  const aDone = isTaskFullyCompleted(a);
-                  const bDone = isTaskFullyCompleted(b);
-                  if (aDone !== bDone) {
-                    return aDone ? 1 : -1;
-                  }
-                  return 0;
-                }).map((task) => <TaskItem key={`${thread.id}-${task.id}`} {...taskItemProps} task={task} threadId={thread.id} />)
+                visibleTasks.map((task) => <TaskItem key={`${thread.id}-${task.id}`} {...taskItemProps} task={task} threadId={thread.id} showCompleted={showCompleted} />)
               }</div>
             ) : (
               // STRATEGY: Display a helpful empty state message if there are no tasks.
-              <div className="py-6 text-center text-xs text-gray-400"><p>No tasks. Add one to begin.</p></div>
+              <div className="py-6 text-center text-xs text-gray-400"><p>No tasks to show.</p></div>
             )}
           </div>
         </>

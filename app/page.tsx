@@ -48,12 +48,13 @@
 // =================================================================================================
 
 import React from "react";
-import { Plus } from "lucide-react";
+import { Plus, Eye, EyeOff } from "lucide-react";
 import { ThreadCard } from "./components/ThreadCard"; // Import ThreadCard
 import { motion, AnimatePresence } from "framer-motion";
 import ProjectSidebar from "./components/ProjectSidebar";
 import useWorkflowManager from "./hooks/useWorkflowManager";
 import { countAllTasks, countAllCompletedTasks } from "./utils/taskUtils";
+import { Switch } from "@headlessui/react";
 
 // ============================================================================
 // COMPONENT CONTEXT: High-level overview of imported components for AI reference.
@@ -92,6 +93,7 @@ import { countAllTasks, countAllCompletedTasks } from "./utils/taskUtils";
     - isThreadExpanded: A boolean to control the visibility of the thread's content.
     - onUpdateTitle, onDelete, onUpdateStatus: Handlers for modifying the thread.
     - taskItemProps: A collection of props that are passed down to all child TaskItem components.
+    - showCompleted: A boolean to control the visibility of completed tasks.
 */
 
 // ==========================================================================
@@ -114,6 +116,8 @@ const NestedWorkflow = () => {
     newThreadTitle,
     addingSessionTo,
     editingThreadId,
+    showCompleted,
+    setShowCompleted,
     addProject,
     handleSelectProject,
     setIsAddingThread,
@@ -165,6 +169,32 @@ const NestedWorkflow = () => {
                   &bull; {globalCompletedTasks}/{globalTotalTasks} Tasks
                 </p>
               </div>
+              <div className="flex items-center gap-4">
+              {/* STRATEGY: Add a toggle switch to allow users to show or hide completed tasks.
+                  The state is managed by useWorkflowManager and persisted via usePersistentState. */}
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={showCompleted}
+                  onChange={setShowCompleted}
+                  className={`${
+                    showCompleted ? "bg-orange-600" : "bg-gray-200"
+                  } relative inline-flex h-5 w-9 items-center rounded-full transition-colors`}
+                >
+                  <span
+                    className={`${
+                      showCompleted ? "translate-x-5" : "translate-x-1"
+                    } inline-block h-3 w-3 transform rounded-full bg-white transition-transform`}
+                  />
+                </Switch>
+                {showCompleted ? (
+                  <Eye className="h-4 w-4 text-gray-600" />
+                ) : (
+                  <EyeOff className="h-4 w-4 text-gray-400" />
+                )}
+                <span className="text-xs text-gray-500">
+                  {showCompleted ? "Visible" : "Hidden"}
+                </span>
+              </div>
               <button
                 onClick={() => setIsAddingThread(true)}
                 className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors disabled:bg-gray-400"
@@ -179,6 +209,7 @@ const NestedWorkflow = () => {
                 <Plus className="w-3.5 h-3.5" /> New Thread
               </button>
             </div>
+          </div>
           </div>
         </header>
 
@@ -259,6 +290,8 @@ const NestedWorkflow = () => {
                         editingThreadId={editingThreadId}
                         setEditingThreadId={setEditingThreadId}
                         taskItemProps={taskItemProps}
+                        // STRATEGY: Pass down the showCompleted state to allow ThreadCard to filter tasks.
+                        showCompleted={showCompleted}
                       />
                     </motion.div>
                   );

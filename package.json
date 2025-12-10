@@ -12,6 +12,7 @@
     "deploy": "gh-pages -d out --nojekyll"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.9",
     "@tiptap/pm": "^3.13.0",
     "@tiptap/react": "^3.13.0",
     "@tiptap/starter-kit": "^3.13.0",

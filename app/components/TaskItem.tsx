@@ -24,6 +24,7 @@
  * @state_management
  * - `isNoteExpanded`: Local state to control the expanded/collapsed state of the note accordion.
  * - `noteLineCount`: Memoized value for the number of lines in the note, used for accordion logic.
+ * - `visibleChildren`: Memoized value that filters sub-tasks based on the `showCompleted` prop.
  *
  * @ai_note
  * - The note display now supports rich text rendering using `dangerouslySetInnerHTML`.
@@ -31,6 +32,8 @@
  * - Clicking the displayed note (excluding the "Show more/less" button) now correctly activates
  *   the note editing mode.
  * - Note editing is handled by the `NoteEditor` component, centralizing its state management.
+ * - The filtering logic for `visibleChildren` based on the `showCompleted` prop ensures that
+ *   the visibility of completed tasks is consistent throughout the task hierarchy.
  * =================================================================================================
  */
 import NoteEditor from "./NoteEditor";
@@ -57,6 +60,7 @@ export interface TaskItemProps {
   addingChildTo: string | null;
   editingTaskId: string | null;
   editedTaskText: string;
+  showCompleted: boolean;
   toggleTask: (taskId: string) => void;
   toggleTaskDone: (threadId: string, taskId: string) => void;
   setEditingNote: (id: string | null) => void;
@@ -71,28 +75,30 @@ export interface TaskItemProps {
   setTaskPriority: (threadId: string, taskId: string, priority: number) => void;
 }
 
-export const TaskItem: React.FC<TaskItemProps> = ({
-  task,
-  threadId,
-  level = 0,
-  expandedTasks,
-  editingNote,
-  addingChildTo,
-  editingTaskId,
-  editedTaskText,
-  toggleTask,
-  toggleTaskDone,
-  setEditingNote,
-  saveNote,
-  setAddingChildTo,
-  newChildText,
-  setNewChildText,
-  addChild,
-  setEditingTaskId,
-  setEditedTaskText,
-  updateTaskText,
-  setTaskPriority,
-}) => {
+export const TaskItem: React.FC<TaskItemProps> = (props) => {
+    const {
+        task,
+        threadId,
+        level = 0,
+        showCompleted,
+        expandedTasks,
+        editingNote,
+        addingChildTo,
+        editingTaskId,
+        editedTaskText,
+        toggleTask,
+        toggleTaskDone,
+        setEditingNote,
+        saveNote,
+        setAddingChildTo,
+        newChildText,
+        setNewChildText,
+        addChild,
+        setEditingTaskId,
+        setEditedTaskText,
+        updateTaskText,
+        setTaskPriority,
+      } = props;
   const isExpanded = expandedTasks.has(task.id);
   const hasChildren = task.children.length > 0;
   const isEditing = editingNote === task.id;
@@ -130,6 +136,27 @@ export const TaskItem: React.FC<TaskItemProps> = ({
     2: "text-yellow-400",
     3: "text-red-500",
   };
+
+  // STRATEGY: Recursively filter sub-tasks based on the `showCompleted` prop, ensuring that
+  // the visibility of completed tasks is consistent throughout the task hierarchy.
+  const visibleChildren = useMemo(() => {
+    const sortedChildren = [...task.children].sort((a, b) => {
+        if ((b.priority || 0) !== (a.priority || 0)) {
+          return (b.priority || 0) - (a.priority || 0);
+        }
+        const aDone = isTaskFullyCompleted(a);
+        const bDone = isTaskFullyCompleted(b);
+        if (aDone !== bDone) {
+          return aDone ? 1 : -1;
+        }
+        return 0;
+      });
+
+    if (showCompleted) {
+      return sortedChildren;
+    }
+    return sortedChildren.filter(child => !isTaskFullyCompleted(child));
+  }, [task.children, showCompleted]);
 
   return (
     <div className={`${level > 0 ? "ml-7 border-l border-orange-200 pl-4 py-0.5" : ""}`} key={`${threadId}-${task.id}`}>
@@ -235,39 +262,31 @@ export const TaskItem: React.FC<TaskItemProps> = ({
 
       {isExpanded && hasChildren && (
         <div className="mt-1">
-          {[...task.children].sort((a, b) => {
-            if ((b.priority || 0) !== (a.priority || 0)) {
-              return (b.priority || 0) - (a.priority || 0);
-            }
-            const aDone = isTaskFullyCompleted(a);
-            const bDone = isTaskFullyCompleted(b);
-            if (aDone !== bDone) {
-              return aDone ? 1 : -1;
-            }
-            return 0;
-          }).map((child) => (
-            <TaskItem key={`${threadId}-${child.id}`} {...{...{
-              task,
-              threadId,
-              level: level + 1,
-              expandedTasks,
-              editingNote,
-              addingChildTo,
-              editingTaskId,
-              editedTaskText,
-              toggleTask,
-              toggleTaskDone,
-              setEditingNote,
-              saveNote,
-              setAddingChildTo,
-              newChildText,
-              setNewChildText,
-              addChild,
-              setEditingTaskId,
-              setEditedTaskText,
-              updateTaskText,
-              setTaskPriority,
-            }, task: child }} />
+          {visibleChildren.map((child) => (
+            <TaskItem
+              key={`${threadId}-${child.id}`}
+              task={child}
+              threadId={threadId}
+              level={level + 1}
+              showCompleted={showCompleted}
+              expandedTasks={expandedTasks}
+              editingNote={editingNote}
+              addingChildTo={addingChildTo}
+              editingTaskId={editingTaskId}
+              editedTaskText={editedTaskText}
+              toggleTask={toggleTask}
+              toggleTaskDone={toggleTaskDone}
+              setEditingNote={setEditingNote}
+              saveNote={saveNote}
+              setAddingChildTo={setAddingChildTo}
+              newChildText={newChildText}
+              setNewChildText={setNewChildText}
+              addChild={addChild}
+              setEditingTaskId={setEditingTaskId}
+              setEditedTaskText={setEditedTaskText}
+              updateTaskText={updateTaskText}
+              setTaskPriority={setTaskPriority}
+            />
           ))}
         </div>
       )}
