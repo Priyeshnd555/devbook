@@ -37,7 +37,7 @@
 
 import { useState, useEffect } from "react";
 
-const usePersistentState = <T extends object>(
+const usePersistentState = <T>(
   key: string,
   initialValue: T
 ): [T, React.Dispatch<React.SetStateAction<T>>] => {
