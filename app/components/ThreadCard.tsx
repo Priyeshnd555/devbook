@@ -55,7 +55,6 @@ import { TaskItem, TaskItemProps } from "./TaskItem"; // Import TaskItem and its
 import { Thread, THREAD_STATE_TRANSITIONS, ThreadStatus } from "../types";
 import { isTaskFullyCompleted } from "../utils/taskUtils";
 
-// =================================================================================================
 // CONTEXT ANCHOR: DUAL-VISIBILITY SYSTEM IMPLEMENTATION (in ThreadCard.tsx)
 // =================================================================================================
 // PURPOSE: To explain how this component implements the dual-visibility system for completed tasks.
@@ -71,8 +70,9 @@ import { isTaskFullyCompleted } from "../utils/taskUtils";
 //      ensures the global setting acts as an override.
 //
 // 2. RENDERING THE LOCAL TOGGLE:
-//    - It renders a `Switch` component that allows the user to toggle the `localShowCompleted` state.
-//    - CONSTRAINT: This `Switch` is only rendered if the global `showCompleted` is `false`. This
+//    - It renders a clickable `Eye` or `EyeOff` icon that allows the user to toggle the
+//      `localShowCompleted` state for this specific thread.
+//    - CONSTRAINT: This icon is only rendered if the global `showCompleted` is `false`. This
 //      prevents user confusion by hiding the local toggle when the global override is active.
 //
 // 3. FILTERING AND PASSING STATE:
@@ -278,24 +278,19 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                   exit={{ opacity: 0, width: 0 }}
                   className="flex items-center gap-2 overflow-hidden"
                 >
-                  <Switch
-                    checked={localShowCompleted}
-                    onChange={onToggleLocalShowCompleted}
-                    className={`${
-                      localShowCompleted ? "bg-orange-600" : "bg-gray-200"
-                    } relative inline-flex h-5 w-9 items-center rounded-full transition-colors headless-switch`}
+                  {/* STRATEGY: Replaced Switch with a clickable icon for better UX and consistency.
+                      The Eye/EyeOff icon now directly triggers the local completed task visibility toggle. */}
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleLocalShowCompleted(); }}
+                    className="p-1 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
+                    title={localShowCompleted ? "Hide completed tasks" : "Show completed tasks"}
                   >
-                    <span
-                      className={`${
-                        localShowCompleted ? "translate-x-5" : "translate-x-1"
-                      } inline-block h-3 w-3 transform rounded-full bg-white transition-transform`}
-                    />
-                  </Switch>
-                  {localShowCompleted ? (
+                    {localShowCompleted ? (
                       <Eye className="h-4 w-4 text-gray-600" />
                     ) : (
                       <EyeOff className="h-4 w-4 text-gray-400" />
                     )}
+                  </button>
                 </motion.div>
               )}
               </AnimatePresence>
