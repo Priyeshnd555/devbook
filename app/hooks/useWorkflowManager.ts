@@ -160,6 +160,18 @@ const useWorkflowManager = () => {
     false
   );
 
+  const [localShowCompleted, setLocalShowCompleted] = usePersistentState<Record<string, boolean>>(
+    "localShowCompleted",
+    {}
+  );
+  const toggleThreadShowCompleted = (threadId: string) => {
+    setLocalShowCompleted(prev => ({
+      ...prev,
+      [threadId]: !(prev[threadId] ?? false),
+    }));
+  };
+
+
   useEffect(() => {
     // STRATEGY: Handles application initialization and data integrity checks on mount.
 
@@ -968,112 +980,223 @@ const useWorkflowManager = () => {
 
     editedTaskText,
 
-    editingNote,
+    
 
-    addingChildTo,
+        editingNote,
 
-    newChildText,
+    
 
-    // ================== DERIVED STATE ==================
+        addingChildTo,
 
-    selectedThread,
+    
 
-    descendantProjectIds,
+        newChildText,
 
-    filteredThreadOrder,
+    
 
-    globalTotalThreads,
+        // ================== DERIVED STATE ==================
 
-    globalTotalTasks,
+    
 
-    globalCompletedTasks,
+        selectedThread,
 
-    showCompleted,
+    
 
-    // ================== PROP COLLECTIONS ==================
+        descendantProjectIds,
 
-    taskItemProps,
+    
 
-    // ================== STATE SETTERS & ACTIONS ==================
+        filteredThreadOrder,
 
-    // Projects
+    
 
-    addProject,
+        globalTotalThreads,
 
-    handleSelectProject,
+    
 
-    renameProject,
+        globalTotalTasks,
 
-    deleteProject,
+    
 
-    setProjects,
+        globalCompletedTasks,
 
-    setSelectedProjectId,
+    
 
-    // Threads
+        showCompleted,
 
-    addThread,
+        localShowCompleted,
 
-    handleSelectThread,
+    
 
-    updateThreadTitle,
+        // ================== PROP COLLECTIONS ==================
 
-    updateThreadStatus,
+    
 
-    deleteThread,
+        taskItemProps,
 
-    toggleThread,
+    
 
-    setThreads,
+        // ================== STATE SETTERS & ACTIONS ==================
 
-    setThreadOrder,
+    
 
-    setExpandedThreads,
+        // Projects
 
-    setIsAddingThread,
+    
 
-    setNewThreadTitle,
+        addProject,
 
-    setEditingThreadId,
+    
 
-    setSelectedThreadId,
+        handleSelectProject,
 
-    // Tasks
+    
 
-    addRootTaskToThread,
+        renameProject,
 
-    addChild,
+    
 
-    toggleTask,
+        deleteProject,
 
-    toggleTaskDone,
+    
 
-    saveNote,
+        setProjects,
 
-    updateTaskText,
+    
 
-    setExpandedTasks,
+        setSelectedProjectId,
 
-    setEditingNote,
+    
 
-    setAddingChildTo,
-    setNewChildText,
+        // Threads
 
-    setEditingTaskId,
+    
 
-    setEditedTaskText,
+        addThread,
 
-    setTaskPriority,
+    
 
-    // Sessions
+        handleSelectThread,
 
-    addSession,
+    
 
-    setAddingSessionTo,
+        updateThreadTitle,
 
-    setShowCompleted,
-  };
-};
+    
+
+        updateThreadStatus,
+
+    
+
+        deleteThread,
+
+    
+
+        toggleThread,
+
+    
+
+        setThreads,
+
+    
+
+        setThreadOrder,
+
+    
+
+        setExpandedThreads,
+
+    
+
+        setIsAddingThread,
+
+    
+
+        setNewThreadTitle,
+
+    
+
+        setEditingThreadId,
+
+    
+
+        setSelectedThreadId,
+
+        toggleThreadShowCompleted,
+
+    
+
+        // Tasks
+
+    
+
+        addRootTaskToThread,
+
+    
+
+        addChild,
+
+    
+
+        toggleTask,
+
+    
+
+        toggleTaskDone,
+
+    
+
+        saveNote,
+
+    
+
+        updateTaskText,
+
+    
+
+        setExpandedTasks,
+
+    
+
+        setEditingNote,
+
+    
+
+        setAddingChildTo,
+
+        setNewChildText,
+
+    
+
+        setEditingTaskId,
+
+    
+
+        setEditedTaskText,
+
+    
+
+        setTaskPriority,
+
+    
+
+        // Sessions
+
+    
+
+        addSession,
+
+    
+
+        setAddingSessionTo,
+
+    
+
+        setShowCompleted,
+
+      };
+
+    };
 
 export default useWorkflowManager;
 

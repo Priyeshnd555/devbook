@@ -184,6 +184,38 @@ import HeaderActions from "./components/HeaderActions";
            It is displayed as an overlay and contains controls for theme and other preferences.
 */
 
+// =================================================================================================
+// CONTEXT ANCHOR: DUAL-VISIBILITY SYSTEM FOR COMPLETED TASKS
+// =================================================================================================
+// PURPOSE: To explain the two-tiered system for controlling the visibility of completed tasks,
+//          providing both a global override and a per-thread toggle for fine-grained control.
+//
+// OVERVIEW:
+// The application employs a dual-state system for managing task visibility:
+//
+// 1. GLOBAL `showCompleted` (Boolean):
+//    - SOURCE: `useWorkflowManager` -> `HeaderActions.tsx`
+//    - EFFECT: Acts as a master switch. When `true`, all completed tasks in all threads are
+//      visible, and the per-thread toggles are hidden to prevent conflicting states.
+//    - AI-NOTE: This is the primary, high-level control for task visibility.
+//
+// 2. LOCAL `localShowCompleted` (Record<string, boolean>):
+//    - SOURCE: `useWorkflowManager` -> `page.tsx` -> `ThreadCard.tsx`
+//    - EFFECT: A dictionary where each key is a `thread.id` and the value is a boolean. It allows
+//      a user to show/hide completed tasks for a *specific thread*.
+//    - CONSTRAINT: This toggle is only visible and functional when the global `showCompleted`
+//      is `false`. This creates a clear hierarchy of control.
+//
+// DATA FLOW:
+// - `useWorkflowManager` manages both `showCompleted` and `localShowCompleted` states.
+// - This component (`page.tsx`) retrieves both states from the hook.
+// - It passes the global `showCompleted` state to `HeaderActions` for the master toggle.
+// - It passes the global `showCompleted`, the specific `localShowCompleted[thread.id]` value,
+//   and the `toggleThreadShowCompleted` handler down to each `ThreadCard`.
+// - `ThreadCard` then uses these props to determine the final visibility of its tasks and to
+//   render the local toggle switch.
+// =================================================================================================
+
 // ==========================================================================
 // MAIN COMPONENT RENDER: Assembles the top-level UI structure.
 // This is now a "dumb" component that receives all state and handlers from the useWorkflowManager hook.
@@ -223,6 +255,8 @@ const NestedWorkflow = () => {
     taskItemProps,
     renameProject,
     deleteProject,
+    localShowCompleted,
+    toggleThreadShowCompleted,
   } = useWorkflowManager();
 
   // STRATEGY: The visibility of the sidebar is managed at this top-level component
@@ -366,8 +400,13 @@ const NestedWorkflow = () => {
                         editingThreadId={editingThreadId}
                         setEditingThreadId={setEditingThreadId}
                         taskItemProps={taskItemProps}
-                        // STRATEGY: Pass down the showCompleted state to allow ThreadCard to filter tasks.
+                        // STRATEGY: Pass down the global `showCompleted` state. This acts as a master override for all threads.
                         showCompleted={showCompleted}
+                        // STRATEGY: Pass down the thread-specific visibility state from the `localShowCompleted` dictionary.
+                        // The nullish coalescing operator `??` ensures a default of `false` if the thread has no entry yet.
+                        localShowCompleted={localShowCompleted[thread.id] ?? false}
+                        // STRATEGY: Pass down the handler to toggle the local visibility state for this specific thread.
+                        onToggleLocalShowCompleted={() => toggleThreadShowCompleted(thread.id)}
                       />
                     </motion.div>
                   );

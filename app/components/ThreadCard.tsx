@@ -46,11 +46,40 @@ import {
   Zap,
   Pencil,
   Trash2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
+import { Switch } from "@headlessui/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { TaskItem, TaskItemProps } from "./TaskItem"; // Import TaskItem and its props
 import { Thread, THREAD_STATE_TRANSITIONS, ThreadStatus } from "../types";
 import { isTaskFullyCompleted } from "../utils/taskUtils";
 
+// =================================================================================================
+// CONTEXT ANCHOR: DUAL-VISIBILITY SYSTEM IMPLEMENTATION (in ThreadCard.tsx)
+// =================================================================================================
+// PURPOSE: To explain how this component implements the dual-visibility system for completed tasks.
+//
+// ROLE:
+// This component is the primary user interface for the dual-visibility system. It receives both
+// the global and local visibility states from its parent (`page.tsx`) and is responsible for:
+//
+// 1. CALCULATING FINAL VISIBILITY:
+//    - It combines the global `showCompleted` and the thread-specific `localShowCompleted` props
+//      into a single `finalShowCompleted` boolean. This determines the actual visibility of tasks.
+//    - The logic is simple: `const finalShowCompleted = showCompleted || localShowCompleted;`. This
+//      ensures the global setting acts as an override.
+//
+// 2. RENDERING THE LOCAL TOGGLE:
+//    - It renders a `Switch` component that allows the user to toggle the `localShowCompleted` state.
+//    - CONSTRAINT: This `Switch` is only rendered if the global `showCompleted` is `false`. This
+//      prevents user confusion by hiding the local toggle when the global override is active.
+//
+// 3. FILTERING AND PASSING STATE:
+//    - It uses the `finalShowCompleted` value to filter the `visibleTasks` array.
+//    - It passes the `finalShowCompleted` value down to its child `TaskItem` components, ensuring
+//      the visibility state propagates correctly through the component tree.
+// =================================================================================================
 export interface ThreadCardProps {
   thread: Thread;
   threadNumber: number;
@@ -70,7 +99,12 @@ export interface ThreadCardProps {
   editingThreadId: string | null;
   setEditingThreadId: (id: string | null) => void;
   taskItemProps: Omit<TaskItemProps, 'task' | 'threadId' | 'level'>;
+  /** Global visibility state for completed tasks. When true, it overrides the local setting. */
   showCompleted: boolean;
+  /** Thread-specific visibility state for completed tasks. Only effective when `showCompleted` is false. */
+  localShowCompleted: boolean;
+  /** Callback function to toggle the `localShowCompleted` state for this specific thread. */
+  onToggleLocalShowCompleted: () => void;
 }
 
 export const ThreadCard: React.FC<ThreadCardProps> = ({
@@ -93,6 +127,8 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
   setEditingThreadId,
   taskItemProps,
   showCompleted,
+  localShowCompleted,
+  onToggleLocalShowCompleted,
 }) => {
   const isAddingSession = addingSessionTo === thread.id;
   const [title, setTitle] = useState<string>(thread.title); // Initialize with prop
@@ -112,14 +148,21 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
     });
   }, [thread.tasks]);
 
-    // STRATEGY: Filter tasks based on the `showCompleted` prop. If `showCompleted` is false,
-    // only tasks that are not fully completed (including sub-tasks) are shown.
+  // STRATEGY: Determine the definitive visibility state. If the global `showCompleted` is true,
+  // it takes precedence. Otherwise, the thread-specific `localShowCompleted` is used.
+  // This boolean is the single source of truth for visibility within this card.
+  const finalShowCompleted = showCompleted || localShowCompleted;
+
+  // STRATEGY: Memoize the list of visible tasks. If `finalShowCompleted` is true, show all sorted tasks.
+  // Otherwise, filter out tasks that are fully completed (including all their sub-tasks).
+  // This filtering is delegated to the `isTaskFullyCompleted` utility function.
   const visibleTasks = React.useMemo(() => {
-    if (showCompleted) {
+    if (finalShowCompleted) {
       return sortedTasks;
     }
     return sortedTasks.filter(task => !isTaskFullyCompleted(task));
-  }, [sortedTasks, showCompleted]);
+  }, [sortedTasks, finalShowCompleted]);
+
 
   const handleUpdate = () => {
     if (title.trim()) {
@@ -153,7 +196,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
   const handleCardClick = (e: React.MouseEvent) => {
     // CONSTRAINT: Only trigger `onSelect` if the click target is not an interactive element.
     if (e.target instanceof HTMLElement) {
-      if (e.target.closest('button, input')) {
+      if (e.target.closest('button, input, .headless-switch')) {
         return;
       }
     }
@@ -224,6 +267,38 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                   </div>
                 )}
               </div>
+              {/* STRATEGY: The local visibility toggle is only shown if the global `showCompleted` is false.
+                  This prevents UI confusion by hiding the redundant local control when the global override is active.
+                  It is animated with Framer Motion for a smooth appearance/disappearance. */}
+              <AnimatePresence>
+              {!showCompleted && (
+                <motion.div 
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 'auto' }}
+                  exit={{ opacity: 0, width: 0 }}
+                  className="flex items-center gap-2 overflow-hidden"
+                >
+                  <Switch
+                    checked={localShowCompleted}
+                    onChange={onToggleLocalShowCompleted}
+                    className={`${
+                      localShowCompleted ? "bg-orange-600" : "bg-gray-200"
+                    } relative inline-flex h-5 w-9 items-center rounded-full transition-colors headless-switch`}
+                  >
+                    <span
+                      className={`${
+                        localShowCompleted ? "translate-x-5" : "translate-x-1"
+                      } inline-block h-3 w-3 transform rounded-full bg-white transition-transform`}
+                    />
+                  </Switch>
+                  {localShowCompleted ? (
+                      <Eye className="h-4 w-4 text-gray-600" />
+                    ) : (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    )}
+                </motion.div>
+              )}
+              </AnimatePresence>
             </div>
           </div>
 
@@ -263,7 +338,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
 
             {visibleTasks.length > 0 ? (
               <div className="space-y-0.5">{
-                visibleTasks.map((task) => <TaskItem key={`${thread.id}-${task.id}`} {...taskItemProps} task={task} threadId={thread.id} showCompleted={showCompleted} />)
+                visibleTasks.map((task) => <TaskItem key={`${thread.id}-${task.id}`} {...taskItemProps} task={task} threadId={thread.id} showCompleted={finalShowCompleted} />)
               }</div>
             ) : (
               // STRATEGY: Display a helpful empty state message if there are no tasks.
