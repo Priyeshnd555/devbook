@@ -212,9 +212,9 @@ const useWorkflowManager = () => {
 
     //    migration to handle older data structures.
 
-    const threadsNeedMigration =
+        const threadsNeedMigration =
       Array.isArray(threads) ||
-      Object.values(threads).some((t) => !t.projectId);
+      Object.values(threads).some((t) => typeof t === 'object' && t !== null && !('projectId' in t));
 
     if (threadsNeedMigration && Object.keys(projects).length > 0) {
       let inboxId = (Object.values(projects) as Project[]).find(
@@ -225,31 +225,33 @@ const useWorkflowManager = () => {
         inboxId = "proj-inbox";
       }
 
+      // Define a utility function to normalize thread data
+      const normalizeThread = (thread: Partial<Thread>, inboxId: string): Thread => {
+          return {
+              id: thread.id || `thread-${Date.now()}`, // Ensure ID exists
+              projectId: thread.projectId || inboxId,
+              title: thread.title || 'Migrated Thread',
+              status: thread.status || 'active',
+              lastWorked: thread.lastWorked || new Date().toISOString().split("T")[0],
+              tasks: thread.tasks || [],
+              sessions: thread.sessions || [],
+          };
+      };
+
       setThreads((currentThreads) => {
         const migratedThreads: ThreadsState = {};
 
         if (Array.isArray(currentThreads)) {
-          // Handle the case where threads is an array of strings (old format)
-
-          (currentThreads as any[]).forEach((thread: any) => {
-            if (typeof thread === "object" && thread.id) {
-              migratedThreads[thread.id] = {
-                ...thread,
-                projectId: thread.projectId || inboxId!,
-              };
+          (currentThreads as Array<Partial<Thread>>).forEach((thread) => {
+            if (typeof thread === "object" && thread !== null && thread.id) {
+              migratedThreads[thread.id] = normalizeThread(thread, inboxId!);
             }
           });
         } else {
-          // Handle the case where threads is an object but some threads are missing projectId
-
           Object.keys(currentThreads).forEach((id) => {
             const thread = currentThreads[id];
-
-            if (typeof thread === "object" && thread.id) {
-              migratedThreads[id] = {
-                ...thread,
-                projectId: thread.projectId || inboxId!,
-              };
+            if (typeof thread === "object" && thread !== null && thread.id) {
+                migratedThreads[id] = normalizeThread(thread, inboxId!);
             }
           });
         }
