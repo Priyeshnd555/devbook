@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Thread Note",
   description: "Nested Note",
-  icons: "https://priyeshnd555.github.io/devbook/logo-threadnote.svg",
+  icons: "https://priyeshnd555.github.io/devbook/newLogo.png",
 };
 
 // =================================================================================================
