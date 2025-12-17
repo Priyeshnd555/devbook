@@ -58,17 +58,24 @@
 //   - Components used raw Tailwind classes like `bg-gray-50`.
 //   - No support for global theme switching.
 //
-// # GENERATION 2: Semantic Variables & Dark Mode (Current State)
+// # GENERATION 2: Semantic Variables & Dark Mode (Intermediate State)
 //   - IMPLEMENTATION:
 //     1. `app/globals.css`: Defines CSS variables for colors (e.g., `--color-primary`) for both
 //        root (light) and `.dark` scopes.
-//     2. `tailwind.config.js`: Configured with `darkMode: 'class'` and extended theme to map
-//        utility classes (e.g., `bg-primary`) to these CSS variables.
-//     3. `app/providers/ThemeProvider.tsx`: Wraps the application to manage the `dark` class
-//        on the `<html>` element based on user preference or system default.
+//     2. `tailwind.config.js`: Configured with `darkMode: 'class'` class mapping.
+//     3. `app/providers/ThemeProvider.tsx`: Wraps the application to manage the `dark` class.
+//
+// # GENERATION 3: Dynamic Custom Colors (Current State)
+//   - FEATURE: User can select preset colors (Orange, Green, Blue) or a Custom Color via picker.
+//   - LOGIC: 
+//     - `data-color='orange|green|blue'` handles presets via CSS overrides.
+//     - `data-color='custom'` triggers dynamic injection of calculated CSS variables (via JS) 
+//       directly onto the root element, bypassing `globals.css` presets for that specific mode.
 //
 // STRATEGY:
-// - STYLE INJECTION: The `ThemeProvider` injects the `dark` class into `document.documentElement`.
+// - STYLE INJECTION: The `ThemeProvider` injects the `dark` class and `data-color` attribute.
+// - DYNAMIC CALCULATION: `themeUtils.ts` converts user Hex selection to HSL and generates variants
+//   (primary, hover, light background, text) to maintain contrast and consistency automatically.
 // - COMPONENT USAGE: Components (like this page) use semantic classes (e.g., `bg-background`, `text-text-primary`)
 //   instead of hardcoded colors. This allows them to automatically adapt when the class changes.
 // - INTERACTION: The `SettingsModal` calls `setTheme` from `useTheme` context to toggle the mode.

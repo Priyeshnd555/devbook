@@ -2,32 +2,26 @@
 // =================================================================================================
 // CONTEXT ANCHOR: SETTINGS MODAL (app/components/SettingsModal.tsx)
 // =================================================================================================
-// PURPOSE: This component renders a modal dialog for application-wide settings, such as theme adjustments.
-// It is designed to be displayed as an overlay on top of the main application content.
+// PURPOSE: This component renders a modal dialog for application-wide settings, including:
+//          - Dark/Light Mode Toggle
+//          - Accent Color Selection (Presets + Custom Picker)
+//          - Font Size (Placeholder)
 //
 // DEPENDENCIES:
-// - REACT: For component state and lifecycle management.
-// - FRAMER-MOTION: Used for smooth entry and exit animations of the modal.
-// - LUCIDE-REACT: Provides the 'X' icon for the close button.
-// - @headlessui/react: Used for accessible Switch (toggle) and Listbox (dropdown) components.
-//
-// INVARIANTS:
-// - The modal's visibility is controlled exclusively by the `isOpen` prop passed from its parent.
-// - The modal always calls the `onClose` function to signal a close request; it does not manage its own visibility state.
+// - REACT: Component state.
+// - FRAMER-MOTION: Animations.
+// - @headlessui/react: Accessible UI primitives.
+// - useTheme: Hook for global theme state.
 //
 // STRATEGY:
-// - The component uses a fixed-position div as a backdrop to cover the screen and capture outside clicks to close the modal.
-// - The main modal panel (`motion.div`) stops event propagation (`onClick={(e) => e.stopPropagation()}`)
-//   to prevent the modal from closing when a user clicks inside it.
-// - AnimatePresence from Framer Motion handles the unmounting of the component, allowing exit animations to complete.
-// - The settings controls inside (e.g., for dark mode, font size) currently manage their own local state.
-//   In a real implementation, they would likely be connected to a global state manager or context.
+// - PRESETS: Renders a list of predefined color buttons.
+// - CUSTOM PICKER: Uses a visually distinct button (conic gradient) with a hidden native color input
+//   to allow infinite color choice while maintaining a custom UI appearance.
 // =================================================================================================
 
 import React from "react";
-import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check } from "lucide-react";
+import { X, Check, Plus } from "lucide-react";
 import { Switch, Listbox } from "@headlessui/react";
 import { useTheme, ThemeColor } from "../providers/ThemeProvider";
 
@@ -134,14 +128,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                   ))}
                   
                   {/* Custom Color Picker */}
-                  <div className="relative flex items-center justify-center">
+                  <div className="relative flex items-center justify-center ml-2 pl-2 border-l border-border">
                     <button
                         onClick={() => setThemeColor("custom")}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 transition-transform hover:scale-110 ${themeColor === "custom" ? "ring-2 ring-offset-2 ring-text-primary" : ""}`}
+                        className={`group relative w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 overflow-hidden ${themeColor === "custom" ? "ring-2 ring-offset-2 ring-text-primary" : ""}`}
                          aria-label="Select Custom theme"
+                         style={{ background: 'conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)' }}
                     >
-                         {themeColor === "custom" && (
-                            <Check className="w-4 h-4 text-white" />
+                         {/* Visual overlay to make it look button-like but show the rainbow */}
+                         <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
+                         
+                         {themeColor === "custom" ? (
+                            <Check className="w-4 h-4 text-white drop-shadow-md z-10" />
+                          ) : (
+                            <Plus className="w-4 h-4 text-white drop-shadow-md z-10 opacity-70 group-hover:opacity-100" />
                           )}
                     </button>
                     {/* Hidden input overlay that triggers on click? Or just separate input? 

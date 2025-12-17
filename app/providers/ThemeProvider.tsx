@@ -38,9 +38,12 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 // =================================================================================================
 // CONTEXT ANCHOR: THEME PROVIDER
 // =================================================================================================
-// PURPOSE: Manages the global application theme state (light/dark/system) and persists it.
-// DEPENDENCIES: React (Context, Effects), Window.localStorage, Window.matchMedia.
-// INVARIANTS: Theme is always one of "light", "dark", or "system". DOM always reflects current effective theme.
+// PURPOSE: Manages global application theme state (light/dark/system) and Accent Colors (preset/custom).
+// DEPENDENCIES: React, Window.localStorage, Window.matchMedia, themeUtils (for custom generation).
+// INVARIANTS: 
+// - Theme is always one of "light", "dark", "system".
+// - ThemeColor is "orange", "green", "blue", or "custom". 
+// - If "custom", proper CSS variables are injected into :root style.
 // =================================================================================================
 export function ThemeProvider({
   children,
