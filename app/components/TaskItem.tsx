@@ -205,7 +205,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
             )}
 
             {/* Note Section - Always rendered via NoteEditor for seamless transition */}
-            {task.note && (
+            {(task.note || isEditing) && (
               <NoteEditor
                 initialContent={task.note}
                 threadId={threadId}
