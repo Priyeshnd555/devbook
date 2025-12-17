@@ -3,21 +3,28 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "dark" | "light" | "system";
+export type ThemeColor = "orange" | "green" | "blue";
 
 interface ThemeProviderProps {
   children: React.ReactNode;
   defaultTheme?: Theme;
+  defaultColor?: ThemeColor;
   storageKey?: string;
+  colorStorageKey?: string;
 }
 
 interface ThemeProviderState {
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  themeColor: ThemeColor;
+  setThemeColor: (color: ThemeColor) => void;
 }
 
 const initialState: ThemeProviderState = {
   theme: "system",
   setTheme: () => null,
+  themeColor: "orange",
+  setThemeColor: () => null,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -32,7 +39,9 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  storageKey = "vite-ui-theme",
+  defaultColor = "orange",
+  storageKey = "devbook-theme",
+  colorStorageKey = "devbook-color-theme",
   ...props
 }: ThemeProviderProps) {
   // STRATEGY: Initialize state lazily to avoid hydration mismatch.
@@ -45,8 +54,14 @@ export function ThemeProvider({
     return defaultTheme;
   });
 
+  const [themeColor, setThemeColor] = useState<ThemeColor>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem(colorStorageKey) as ThemeColor) || defaultColor;
+    }
+    return defaultColor;
+  });
+
   // STRATEGY: Effect updates the DOM class list whenever the theme changes.
-  // This ensures the visual style matches the state immediately.
   useEffect(() => {
     const root = window.document.documentElement;
 
@@ -65,11 +80,22 @@ export function ThemeProvider({
     root.classList.add(theme);
   }, [theme]);
 
+  // STRATEGY: Effect updates the DOM data-color attribute whenever the color changes.
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.setAttribute("data-color", themeColor);
+  }, [themeColor]);
+
   const value = {
     theme,
     setTheme: (theme: Theme) => {
       localStorage.setItem(storageKey, theme);
       setTheme(theme);
+    },
+    themeColor,
+    setThemeColor: (color: ThemeColor) => {
+      localStorage.setItem(colorStorageKey, color);
+      setThemeColor(color);
     },
   };
 

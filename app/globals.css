@@ -58,6 +58,38 @@
     --color-warning: 60 96% 65%;  
 }
 
+/* ================================================================================================= */
+/* COLOR THEMES (Data Attribute Overrides)                                                           */
+/* ================================================================================================= */
+
+/* GREEN THEME */
+[data-color='green'] {
+  --color-primary: 142 71% 45%;      /* #22c55e (green-500) */
+  --color-primary-hover: 142 76% 36%; /* #16a34a (green-600) */
+  --color-primary-light: 142 69% 94%; /* #dcfce7 (green-100) */
+  --color-primary-text: 145 80% 25%;  /* #14532d (green-900) */
+}
+[data-color='green'].dark {
+  --color-primary: 142 71% 45%; 
+  --color-primary-hover: 142 71% 55%; 
+  --color-primary-light: 142 71% 20%; 
+  --color-primary-text: 142 71% 80%;
+}
+
+/* BLUE THEME */
+[data-color='blue'] {
+  --color-primary: 217 91% 60%;      /* #3b82f6 (blue-500) */
+  --color-primary-hover: 221 83% 53%; /* #2563eb (blue-600) */
+  --color-primary-light: 214 94% 93%; /* #dbeafe (blue-100) */
+  --color-primary-text: 224 76% 30%;  /* #1e3a8a (blue-900) */
+}
+[data-color='blue'].dark {
+  --color-primary: 217 91% 60%;
+  --color-primary-hover: 217 91% 70%;
+  --color-primary-light: 217 91% 20%;
+  --color-primary-text: 217 91% 80%;
+}
+
 @theme inline {
   /* Mapping semantic names to HSL variables */
   /* Usage: bg-background (maps to --color-background), text-foreground (maps to --color-text-primary) */

@@ -25,10 +25,11 @@
 // =================================================================================================
 
 import React from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { Switch, Listbox } from "@headlessui/react";
-import { useTheme } from "../providers/ThemeProvider";
+import { useTheme, ThemeColor } from "../providers/ThemeProvider";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -42,7 +43,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   // We map the global 'theme' string to a binary 'isDarkMode' boolean for the Switch component.
   // 'system' theme is treated as not-dark (false) for the toggle state unless resolved,
   // but here we simplify to: dark state is triggered only by explicit 'dark' theme.
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, themeColor, setThemeColor } = useTheme();
   
   // CONSTRAINT: Simple toggle logic assuming 'dark' vs 'light'. 
   // 'system' resets to default, but the toggle forces explicit choice.
@@ -52,6 +53,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     // STRATEGY: Explicitly set light or dark, overriding system preference.
     setTheme(checked ? "dark" : "light");
   };
+
+  const colors: { name: string; value: ThemeColor; bgClass: string }[] = [
+    { name: "Orange", value: "orange", bgClass: "bg-orange-500" },
+    { name: "Green", value: "green", bgClass: "bg-green-500" },
+    { name: "Blue", value: "blue", bgClass: "bg-blue-500" },
+  ];
 
   const [fontSize, setFontSize] = React.useState("Normal");
   const fontSizes = ["Small", "Normal", "Large"];
@@ -104,6 +111,28 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                   />
                 </Switch>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-sm text-text-primary">
+                  Accent Color
+                </span>
+                <div className="flex items-center gap-2">
+                  {colors.map((color) => (
+                    <button
+                      key={color.value}
+                      onClick={() => setThemeColor(color.value)}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 ${
+                        color.bgClass
+                      } ${themeColor === color.value ? "ring-2 ring-offset-2 ring-text-primary" : ""}`}
+                      aria-label={`Select ${color.name} theme`}
+                    >
+                      {themeColor === color.value && (
+                        <Check className="w-4 h-4 text-white" />
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Font Size Dropdown */}
