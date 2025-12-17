@@ -60,11 +60,12 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 
 
   return (
-    <div className="mt-1 ml-0.5 space-y-2">
+    // Match Read View Styles: mt-1 ml-0.5 bg-primary/5 rounded-md px-2 py-1 -mx-2
+    <div className="mt-1 ml-0.5 -mx-2 px-2 py-1 bg-primary/5 rounded-md group/editor">
       <div className="">
          <RichTextEditor content={editedNoteText} onUpdate={setEditedNoteText} />
       </div>
-      <div className="flex gap-2 animate-in fade-in duration-200">
+      <div className="flex gap-2 animate-in fade-in duration-200 mt-2">
         <button
           onClick={() => saveNote(threadId, taskId, editedNoteText)}
           className="px-3 py-1.5 bg-primary text-white text-xs rounded hover:bg-primary-hover transition-colors font-medium shadow-sm"

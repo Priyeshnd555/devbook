@@ -209,9 +209,8 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
                 className="mt-1 ml-0.5 group/note bg-primary/5 rounded-md px-2 py-1 -mx-2"
                 onClick={() => setEditingNote(task.id)}
               >
-                <div className="flex items-start gap-2 cursor-text transition-colors">
-                  {/* Icon stays subtle to not compete with text */}
-                  <StickyNote className="w-3.5 h-3.5 mt-1 flex-shrink-0 text-text-secondary/70 group-hover/note:text-primary transition-colors" />
+                <div className="cursor-text transition-colors">
+                  {/* Icon removed for seamless edit transition; background color provides distinction */}
                   <div
                     className={`prose prose-sm max-w-none 
                       text-sm leading-6 text-text-primary break-words
