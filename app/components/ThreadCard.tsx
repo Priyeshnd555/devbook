@@ -326,8 +326,23 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
             {/* STRATEGY: The input for adding a new root task is shown only when the user has clicked the "Add task" button. */}
             {taskItemProps.addingChildTo === `${thread.id}-root` && (
               <div className="mb-3 flex gap-2">
-                <input type="text" value={taskItemProps.newChildText} onChange={(e) => taskItemProps.setNewChildText(e.target.value)} placeholder="New task..." className="flex-1 px-3 py-2 border border-primary/30 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-surface text-text-primary" autoFocus onKeyPress={(e) => e.key === "Enter" && handleAddTask()} />
-                <button onClick={handleAddTask} className="px-3 py-2 bg-primary text-white rounded text-sm hover:bg-primary-hover transition-colors font-medium">Add</button>
+                <input 
+                  type="text" 
+                  value={taskItemProps.newChildText} 
+                  onChange={(e) => taskItemProps.setNewChildText(e.target.value)} 
+                  placeholder="New task..." 
+                  className="flex-1 px-3 py-2 border border-primary/30 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-surface text-text-primary" 
+                  autoFocus 
+                  onKeyPress={(e) => e.key === "Enter" && handleAddTask()}
+                  onBlur={() => taskItemProps.setAddingChildTo(null)}
+                />
+                <button 
+                  onMouseDown={(e) => e.preventDefault()} // Prevent button from stealing focus so onBlur doesn't fire before onClick
+                  onClick={handleAddTask} 
+                  className="px-3 py-2 bg-primary text-white rounded text-sm hover:bg-primary-hover transition-colors font-medium"
+                >
+                  Add
+                </button>
               </div>
             )}
 
