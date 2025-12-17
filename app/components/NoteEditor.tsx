@@ -60,8 +60,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 
 
   return (
-    <div className="mt-3 space-y-2">
-      <div className="shadow-sm rounded border border-primary/10 bg-surface">
+    <div className="mt-1 ml-0.5 space-y-2">
+      <div className="">
          <RichTextEditor content={editedNoteText} onUpdate={setEditedNoteText} />
       </div>
       <div className="flex gap-2 animate-in fade-in duration-200">

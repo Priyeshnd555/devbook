@@ -100,7 +100,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onUpdate, onBl
     editorProps: {
       attributes: {
         class:
-          "w-full px-3 py-2 text-xs resize-none focus:outline-none bg-surface text-text-primary leading-relaxed min-h-[80px]",
+          "w-full px-0 py-0 text-sm resize-none focus:outline-none bg-transparent text-text-primary leading-6 min-h-[auto]",
       },
     },
   });

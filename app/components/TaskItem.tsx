@@ -34,6 +34,10 @@
  * - Note editing is handled by the `NoteEditor` component, centralizing its state management.
  * - The filtering logic for `visibleChildren` based on the `showCompleted` prop ensures that
  *   the visibility of completed tasks is consistent throughout the task hierarchy.
+ * - **Generation 5 Update**: Notes now support "Notion-like" interactions:
+ *   - Seamless styling (text-sm, leading-6).
+ *   - Auto-save on blur removed (explicit Save/Cancel restored).
+ *   - List and URL formatting explicitly handled via CSS injections in `prose`.
  * =================================================================================================
  */
 import NoteEditor from "./NoteEditor";
@@ -202,19 +206,26 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
 
             {task.note && !isEditing && !isEditingTask && (
               <div
-                className="mt-2 text-xs leading-relaxed text-primary-text bg-primary-light px-3 py-2 rounded"
+                className="mt-1 ml-0.5 group/note bg-primary/5 rounded-md px-2 py-1 -mx-2"
                 onClick={() => setEditingNote(task.id)}
               >
-                <div className="flex items-start gap-2">
-                  <StickyNote className="w-3 h-3 text-primary-text mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-2 cursor-text transition-colors">
+                  {/* Icon stays subtle to not compete with text */}
+                  <StickyNote className="w-3.5 h-3.5 mt-1 flex-shrink-0 text-text-secondary/70 group-hover/note:text-primary transition-colors" />
                   <div
-                    className={`prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${!isNoteExpanded && noteLineCount > 3 ? 'max-h-12 overflow-hidden' : ''}`}
+                    className={`prose prose-sm max-w-none 
+                      text-sm leading-6 text-text-primary break-words
+                      [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 
+                      [&_p]:my-1 [&_li]:my-0
+                      [&_a]:text-primary [&_a]:underline [&_a]:hover:text-primary-hover
+                      ${!isNoteExpanded && noteLineCount > 6 ? 'max-h-32 overflow-hidden mask-fade-bottom' : ''}`}
                     dangerouslySetInnerHTML={{ __html: task.note }}
                   />
                 </div>
-                {noteLineCount > 3 && (
+                {/* Show more button appears if helpful */}
+                {noteLineCount > 6 && (
                   <button
-                    className="text-primary text-xs mt-2"
+                    className="text-xs font-medium text-text-secondary hover:text-primary mt-1 ml-6"
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsNoteExpanded(!isNoteExpanded);
