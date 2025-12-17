@@ -51,77 +51,31 @@
 // =================================================================================================
 // CONTEXT ANCHOR: CSS & THEMING STRATEGY
 // =================================================================================================
-// PURPOSE: To provide AI context on the existing styling approach and outline a strategy for
-//          implementing a user-configurable theming system (e.g., color modes, font sizes).
+// PURPOSE: To document the evolved styling approach, specifically the user-configurable dark theme.
 //
-// CURRENT APPROACH:
-// - STYLING FRAMEWORK: Tailwind CSS is used exclusively for styling.
-// - METHODOLOGY: Utility classes (e.g., `bg-gray-50`, `text-lg`, `border-b`) are applied directly
-//   within the JSX of the components. This approach is excellent for rapid prototyping and co-locating
-//   styles with markup.
-// - HARDCODED VALUES: Specific theme colors (e.g., `bg-orange-600`) and sizes are hardcoded
-//   throughout the application, which makes global theme changes difficult.
+// EVOLUTIONARY FOOTPRINT:
+// # GENERATION 1: Utility-first, hardcoded values (Initial State)
+//   - Components used raw Tailwind classes like `bg-gray-50`.
+//   - No support for global theme switching.
 //
-// GOAL: Evolve the current system to support dynamic theming, allowing users to change the primary
-//       color and increase/decrease the base font size.
+// # GENERATION 2: Semantic Variables & Dark Mode (Current State)
+//   - IMPLEMENTATION:
+//     1. `app/globals.css`: Defines CSS variables for colors (e.g., `--color-primary`) for both
+//        root (light) and `.dark` scopes.
+//     2. `tailwind.config.js`: Configured with `darkMode: 'class'` and extended theme to map
+//        utility classes (e.g., `bg-primary`) to these CSS variables.
+//     3. `app/providers/ThemeProvider.tsx`: Wraps the application to manage the `dark` class
+//        on the `<html>` element based on user preference or system default.
 //
-// HIGH-LEVEL STRATEGY:
-// The core strategy is to abstract design tokens (colors, fonts) into CSS variables and
-// configure Tailwind to use them. This decouples the design from the component structure, enabling
-// dynamic changes via JavaScript.
+// STRATEGY:
+// - STYLE INJECTION: The `ThemeProvider` injects the `dark` class into `document.documentElement`.
+// - COMPONENT USAGE: Components (like this page) use semantic classes (e.g., `bg-background`, `text-text-primary`)
+//   instead of hardcoded colors. This allows them to automatically adapt when the class changes.
+// - INTERACTION: The `SettingsModal` calls `setTheme` from `useTheme` context to toggle the mode.
 //
-// LOW-LEVEL IMPLEMENTATION PLAN:
-//
-// 1. DEFINE THEME TOKENS WITH CSS VARIABLES:
-//    - WHERE: `app/globals.css`
-//    - WHAT: Define a base set of CSS custom properties within a `:root` selector. This creates
-//      the default theme. For a dark mode, define overrides within a `[data-theme='dark']` selector.
-//    - EXAMPLE (`globals.css`):
-//      :root {
-//        --color-primary: 24 99% 55%; /* hsl(24 99% 55%) -> orange-600 */
-//        --color-background: 210 40% 98%; /* hsl(210 40% 98%) -> gray-50 */
-//        --color-text-primary: 222 47% 11%; /* hsl(222 47% 11%) -> gray-900 */
-//        --font-base-size: 16px;
-//      }
-//      [data-theme='dark'] {
-//        --color-primary: 24 99% 55%;
-//        --color-background: 222 47% 11%;
-//        --color-text-primary: 210 40% 98%;
-//      }
-//
-// 2. INTEGRATE TOKENS WITH TAILWIND CSS:
-//    - WHERE: `tailwind.config.js`
-//    - WHAT: Modify the `theme.extend` object to make Tailwind aware of the CSS variables.
-//      Use the `hsl(var(--variable-name))` format to ensure colors are applied correctly.
-//    - EXAMPLE (`tailwind.config.js`):
-//      theme: {
-//        extend: {
-//          colors: {
-//            primary: 'hsl(var(--color-primary))',
-//            background: 'hsl(var(--color-background))',
-//            'text-primary': 'hsl(var(--color-text-primary))',
-//          },
-//        },
-//      },
-//
-// 3. REFACTOR COMPONENTS TO USE SEMANTIC CLASSES:
-//    - WHERE: Throughout all `.tsx` components (e.g., this file, `ThreadCard.tsx`).
-//    - WHAT: Replace hardcoded utility classes with the new, semantic theme classes.
-//    - BEFORE: className="bg-orange-600 text-gray-900"
-//    - AFTER:  className="bg-primary text-text-primary"
-//
-// 4. IMPLEMENT THEME & FONT SIZE CONTROLS:
-//    - WHERE: A new settings component or a global state provider (e.g., `useWorkflowManager` or a new `useThemeManager` hook).
-//    - WHAT:
-//      - For Color Theme: Use React state to toggle a `data-theme` attribute on the `document.documentElement` (`<html>` tag).
-//      - For Font Size: Use React state to dynamically set the `font-size` property on `document.documentElement`. Because Tailwind's `rem` units are relative to the root font size, all `rem`-based styles will scale automatically.
-//    - EXAMPLE (JS/TSX):
-//      React.useEffect(() => {
-//        // For color theme
-//        document.documentElement.setAttribute('data-theme', theme); // 'light' or 'dark'
-//        // For font size
-//        document.documentElement.style.fontSize = `${baseFontSize}px`; // e.g., 16, 18, etc.
-//      }, [theme, baseFontSize]);
+// KEY INVARIANTS:
+// - All color-related classes must be semantic (e.g., `bg-surface` not `bg-white`) to support theming.
+// - Layout dimensions and spacing remain handled by standard Tailwind utilities.
 // =================================================================================================
 
 import React from "react";
