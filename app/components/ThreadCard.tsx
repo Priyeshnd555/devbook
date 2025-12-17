@@ -54,6 +54,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { TaskItem, TaskItemProps } from "./TaskItem"; // Import TaskItem and its props
 import { Thread, THREAD_STATE_TRANSITIONS, ThreadStatus } from "../types";
 import { isTaskFullyCompleted } from "../utils/taskUtils";
+import { formatRelativeDate, formatFullDate } from "../utils/dateUtils";
 
 // CONTEXT ANCHOR: DUAL-VISIBILITY SYSTEM IMPLEMENTATION (in ThreadCard.tsx)
 // =================================================================================================
@@ -248,7 +249,10 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
             </div>
 
             <div className="flex items-center gap-4 text-xs text-text-secondary ml-12">
-              <div className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-text-secondary/70 flex-shrink-0" /> <span className="truncate">{thread.lastWorked}</span></div>
+              <div className="flex items-center gap-1.5" title={`Last worked on: ${formatFullDate(thread.lastWorked)}`}>
+                <Clock className="w-3.5 h-3.5 text-text-secondary/70 flex-shrink-0" /> 
+                <span className="truncate">{formatRelativeDate(thread.lastWorked)}</span>
+              </div>
               <div className="flex items-center gap-2">
                 <span className="font-medium text-text-secondary/90">{completedTaskCount}/{totalTaskCount}</span>
                 {/* STRATEGY: The progress bar width is dynamically calculated based on task completion percentage. */}

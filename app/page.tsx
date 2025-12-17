@@ -98,6 +98,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ProjectSidebar from "./components/ProjectSidebar";
 import useWorkflowManager from "./hooks/useWorkflowManager";
 import { countAllTasks, countAllCompletedTasks } from "./utils/taskUtils";
+import { formatRelativeDate } from "./utils/dateUtils";
 import SettingsModal from "./components/SettingsModal";
 import HeaderActions from "./components/HeaderActions";
 
@@ -403,8 +404,8 @@ const NestedWorkflow = () => {
                           key={`${selectedThread.id}-session-${idx}`}
                           className="bg-background rounded p-3 text-xs border border-border break-words"
                         >
-                          <div className="text-text-secondary mb-1.5 font-medium">
-                            {session.date} at {session.time}
+                          <div className="text-text-secondary mb-1.5 font-medium" title={`${session.date} at ${session.time}`}>
+                            {formatRelativeDate(session.date)} at {session.time}
                           </div>
                           <div className="text-text-primary leading-relaxed whitespace-pre-wrap">
                             {session.notes}
