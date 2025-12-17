@@ -1,4 +1,3 @@
-"use client";
 
 // =================================================================================================
 // CONTEXT ANCHOR: SETTINGS MODAL (app/components/SettingsModal.tsx)
@@ -29,6 +28,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { Switch, Listbox } from "@headlessui/react";
+import { useTheme } from "../providers/ThemeProvider";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -36,10 +36,23 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
-  // STRATEGY: These state variables are local placeholders.
-  // A real implementation would lift this state up to a global context or hook
-  // to actually apply the theme changes to the application.
-  const [darkMode, setDarkMode] = React.useState(false);
+
+  
+  // STRATEGY: Connect to global ThemeProvider.
+  // We map the global 'theme' string to a binary 'isDarkMode' boolean for the Switch component.
+  // 'system' theme is treated as not-dark (false) for the toggle state unless resolved,
+  // but here we simplify to: dark state is triggered only by explicit 'dark' theme.
+  const { theme, setTheme } = useTheme();
+  
+  // CONSTRAINT: Simple toggle logic assuming 'dark' vs 'light'. 
+  // 'system' resets to default, but the toggle forces explicit choice.
+  const isDarkMode = theme === "dark";
+
+  const handleThemeChange = (checked: boolean) => {
+    // STRATEGY: Explicitly set light or dark, overriding system preference.
+    setTheme(checked ? "dark" : "light");
+  };
+
   const [fontSize, setFontSize] = React.useState("Normal");
   const fontSizes = ["Small", "Normal", "Large"];
 
@@ -79,15 +92,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                   Dark Mode
                 </span>
                 <Switch
-                  checked={darkMode}
-                  onChange={setDarkMode}
+                  checked={isDarkMode}
+                  onChange={handleThemeChange}
                   className={`${
-                    darkMode ? "bg-primary" : "bg-border"
+                    isDarkMode ? "bg-primary" : "bg-border"
                   } relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
                 >
                   <span
                     className={`${
-                      darkMode ? "translate-x-6" : "translate-x-1"
+                      isDarkMode ? "translate-x-6" : "translate-x-1"
                     } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                   />
                 </Switch>

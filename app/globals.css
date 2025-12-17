@@ -27,8 +27,13 @@
   --color-warning: 45 100% 50%; /* #FFC107 */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
+/* ================================================================================================= */
+/* CONTEXT ANCHOR: DARK THEME VARIABLES                                                              */
+/* ================================================================================================= */
+/* PURPOSE: Defines CSS variables for dark mode.                                                     */
+/* STRATEGY: Uses .dark class instead of media queries to allow manual toggle overriding system.     */
+/* ================================================================================================= */
+.dark {
     /* HSL Channel definitions - Dark Theme */
     --color-primary: 24 99% 55%;   /* Keep primary consistent or adjust slightly */
     --color-primary-hover: 24 99% 65%; 
@@ -51,30 +56,6 @@
     --color-danger-text: 2 95% 85%; 
     
     --color-warning: 60 96% 65%;  
-  }
-}
-
-/* Data attribute override for manual toggling if needed later */
-[data-theme='dark'] {
-  --color-primary: 24 99% 55%;
-  --color-primary-hover: 24 99% 65%;
-  --color-primary-light: 24 40% 20%;
-  --color-primary-text: 24 99% 80%;
-
-  --color-accent: 198 90% 70%;
-  --color-background: 0 0% 7%;
-  --color-surface: 0 0% 12%;
-  --color-text-primary: 0 0% 88%;
-  --color-text-secondary: 0 0% 63%;
-  --color-border: 0 0% 22%;
-  --color-shadow: 0 0% 0%;
-  --color-success: 124 39% 57%;
-  
-  --color-danger: 2 85% 63%;
-  --color-danger-bg: 0 40% 20%;
-  --color-danger-text: 2 95% 85%;
-  
-  --color-warning: 60 96% 65%;
 }
 
 @theme inline {

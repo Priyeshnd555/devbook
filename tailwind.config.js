@@ -13,6 +13,9 @@ const config = {
   plugins: [
     typography,
   ],
+  // STRATEGY: 'class' mode enables manual toggling of dark mode via the 'dark' class on HTML tag.
+  // This is required for the user-controlled switch to work independently of system preference.
+  darkMode: 'class',
 }
 
 export default config;

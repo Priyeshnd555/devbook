@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+import { ThemeProvider } from "./providers/ThemeProvider";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -18,17 +20,29 @@ export const metadata: Metadata = {
   icons: "devbook/logo-threadnote.svg",
 };
 
+// =================================================================================================
+// CONTEXT ANCHOR: ROOT LAYOUT
+// =================================================================================================
+// PURPOSE: Defines the global shell for the application, including fonts, metadata, and providers.
+// DEPENDENCIES: Next.js/Font, Global CSS, ThemeProvider.
+// INVARIANTS: This layout persists across all routes.
+// =================================================================================================
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ThemeProvider
+          storageKey="devbook-theme"
+          defaultTheme="system"
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
