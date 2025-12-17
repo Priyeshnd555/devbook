@@ -38,6 +38,7 @@ interface NoteEditorProps {
   initialContent: string;
   threadId: string;
   taskId: string;
+  isEditing: boolean;
   saveNote: (threadId: string, taskId: string, text: string) => void;
   setEditingNote: (id: string | null) => void;
 }
@@ -46,6 +47,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   initialContent,
   threadId,
   taskId,
+  isEditing,
   saveNote,
   setEditingNote,
 }) => {
@@ -56,29 +58,59 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   // The linter might still complain, but this is a necessary synchronization.
   useEffect(() => {
     setEditedNoteText(initialContent);
+    setEditedNoteText(initialContent);
   }, [initialContent]);
 
+  // When switching to edit mode, ensure local state is fresh (though simple sync handles most)
+  // When switching OUT of edit mode, we might want to reset to initialContent if cancelled?
+  // Current logic: Cancel just hides buttons. RichTextEditor stays ensuring seamlessness.
+  // If we cancel, we should probably reset text.
+  useEffect(() => {
+      if (!isEditing) {
+          setEditedNoteText(initialContent);
+      }
+  }, [isEditing, initialContent]);
 
   return (
     // Match Read View Styles: mt-1 ml-0.5 bg-primary/5 rounded-md px-2 py-1 -mx-2
-    <div className="mt-1 ml-0.5 -mx-2 px-2 py-1 bg-primary/5 rounded-md group/editor">
+    // Added onClick to trigger edit mode when in read mode
+    <div 
+      className={`mt-1 ml-0.5 -mx-2 px-2 py-1 bg-primary/5 rounded-md group/editor transition-colors ${!isEditing ? 'cursor-text hover:bg-primary/10' : ''}`}
+      onClick={(e) => {
+        if (!isEditing) {
+          setEditingNote(taskId); // Parent handles this state update
+        }
+      }}
+    >
       <div className="">
-         <RichTextEditor content={editedNoteText} onUpdate={setEditedNoteText} />
+         <RichTextEditor 
+            content={editedNoteText} 
+            editable={isEditing}
+            onUpdate={setEditedNoteText} 
+         />
       </div>
-      <div className="flex gap-2 animate-in fade-in duration-200 mt-2">
-        <button
-          onClick={() => saveNote(threadId, taskId, editedNoteText)}
-          className="px-3 py-1.5 bg-primary text-white text-xs rounded hover:bg-primary-hover transition-colors font-medium shadow-sm"
+      {isEditing && (
+        <div 
+          className="flex gap-2 animate-in fade-in duration-200 mt-2"
+          onClick={(e) => e.stopPropagation()} // Prevent bubbling
         >
-          Save
-        </button>
-        <button
-          onClick={() => setEditingNote(null)}
-          className="px-3 py-1.5 bg-background text-text-secondary text-xs border border-border rounded hover:bg-surface transition-colors shadow-sm"
-        >
-          Cancel
-        </button>
-      </div>
+          <button
+            onClick={() => saveNote(threadId, taskId, editedNoteText)}
+            className="px-3 py-1.5 bg-primary text-white text-xs rounded hover:bg-primary-hover transition-colors font-medium shadow-sm"
+          >
+            Save
+          </button>
+          <button
+            onClick={() => {
+                setEditingNote(null);
+                setEditedNoteText(initialContent); // Reset on cancel
+            }}
+            className="px-3 py-1.5 bg-background text-text-secondary text-xs border border-border rounded hover:bg-surface transition-colors shadow-sm"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -204,45 +204,15 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
               </span>
             )}
 
-            {task.note && !isEditing && !isEditingTask && (
-              <div
-                className="mt-1 ml-0.5 group/note bg-primary/5 rounded-md px-2 py-1 -mx-2"
-                onClick={() => setEditingNote(task.id)}
-              >
-                <div className="cursor-text transition-colors">
-                  {/* Icon removed for seamless edit transition; background color provides distinction */}
-                  <div
-                    className={`prose prose-sm max-w-none 
-                      text-sm leading-6 text-text-primary break-words
-                      [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 
-                      [&_p]:my-1 [&_li]:my-0
-                      [&_a]:text-primary [&_a]:underline [&_a]:hover:text-primary-hover
-                      ${!isNoteExpanded && noteLineCount > 6 ? 'max-h-32 overflow-hidden mask-fade-bottom' : ''}`}
-                    dangerouslySetInnerHTML={{ __html: task.note }}
-                  />
-                </div>
-                {/* Show more button appears if helpful */}
-                {noteLineCount > 6 && (
-                  <button
-                    className="text-xs font-medium text-text-secondary hover:text-primary mt-1 ml-6"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsNoteExpanded(!isNoteExpanded);
-                    }}
-                  >
-                    {isNoteExpanded ? "Show less" : "Show more"}
-                  </button>
-                )}
-              </div>
-            )}
-
-            {isEditing && (
+            {/* Note Section - Always rendered via NoteEditor for seamless transition */}
+            {task.note && (
               <NoteEditor
                 initialContent={task.note}
                 threadId={threadId}
                 taskId={task.id}
                 saveNote={saveNote}
                 setEditingNote={setEditingNote}
+                isEditing={isEditing}
               />
             )}
           </div>

@@ -37,10 +37,11 @@
 import { useEditor, EditorContent, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Bold, Italic, List, ListOrdered } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface RichTextEditorProps {
   content: string;
+  editable?: boolean;
   onUpdate: (html: string) => void;
   onBlur?: () => void;
 }
@@ -86,10 +87,13 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
   );
 };
 
-const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onUpdate, onBlur }) => {
+const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, editable = true, onUpdate, onBlur }) => {
+  const clickPosRef = useRef<number | null>(null);
+
   const editor = useEditor({
     extensions: [StarterKit],
     content: content,
+    editable: editable,
     onUpdate: ({ editor }) => {
       onUpdate(editor.getHTML());
     },
@@ -100,7 +104,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onUpdate, onBl
     editorProps: {
       attributes: {
         class:
-          "w-full px-0 py-0 text-sm resize-none focus:outline-none bg-transparent text-text-primary leading-6 min-h-[auto]",
+          "w-full px-0 py-0 text-sm resize-none focus:outline-none bg-transparent text-text-primary leading-6 min-h-[auto] prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_p]:my-1 [&_li]:my-0 [&_a]:text-primary [&_a]:underline [&_a]:hover:text-primary-hover",
       },
     },
   });
@@ -112,9 +116,41 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onUpdate, onBl
     }
   }, [content, editor]);
 
+  // Update editable state dynamically
+  useEffect(() => {
+    if (editor && editor.isEditable !== editable) {
+      editor.setEditable(editable);
+      
+      // Restore cursor position if entering edit mode from a click
+      if (editable) {
+        if (clickPosRef.current !== null) {
+           // We use setTextAreaSelection/focus to place the cursor exactly
+           editor.commands.setTextSelection(clickPosRef.current);
+           editor.commands.focus();
+           clickPosRef.current = null;
+        } else {
+           // Fallback to end if no specific position tracked
+           editor.commands.focus('end');
+        }
+      }
+    }
+  }, [editable, editor]);
+
+  const handleContainerClick = (e: React.MouseEvent) => {
+    // Only capture position if currently read-only (preparing to switch to edit)
+    if (!editable && editor) {
+      // Tiptap's posAtCoords returns { pos, inside }
+      // We map the mouse coordinates to the document position
+      const posInfo = editor.view.posAtCoords({ left: e.clientX, top: e.clientY });
+      if (posInfo) {
+        clickPosRef.current = posInfo.pos;
+      }
+    }
+  };
+
   return (
-    <div>
-      <MenuBar editor={editor} />
+    <div onClick={handleContainerClick}>
+      {editable && <MenuBar editor={editor} />}
       <EditorContent editor={editor} />
     </div>
   );
