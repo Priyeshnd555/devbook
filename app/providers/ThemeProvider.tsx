@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "dark" | "light" | "system";
 export type ThemeColor = "orange" | "green" | "blue" | "custom";
+export type FontSize = "small" | "normal" | "large";
 import { generateThemeVariables } from "../utils/themeUtils";
 
 interface ThemeProviderProps {
@@ -13,6 +14,8 @@ interface ThemeProviderProps {
   storageKey?: string;
   colorStorageKey?: string;
   defaultCustomColor?: string;
+  defaultFontSize?: FontSize;
+  fontSizeStorageKey?: string;
 }
 
 interface ThemeProviderState {
@@ -22,6 +25,8 @@ interface ThemeProviderState {
   setThemeColor: (color: ThemeColor) => void;
   customColor: string;
   setCustomColor: (color: string) => void;
+  fontSize: FontSize;
+  setFontSize: (size: FontSize) => void;
 }
 
 const initialState: ThemeProviderState = {
@@ -31,6 +36,8 @@ const initialState: ThemeProviderState = {
   setThemeColor: () => null,
   customColor: "#FB8500", // Default orange hex
   setCustomColor: () => null,
+  fontSize: "normal",
+  setFontSize: () => null,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -38,11 +45,12 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 // =================================================================================================
 // CONTEXT ANCHOR: THEME PROVIDER
 // =================================================================================================
-// PURPOSE: Manages global application theme state (light/dark/system) and Accent Colors (preset/custom).
+// PURPOSE: Manages global application theme state (light/dark/system), Accent Colors (preset/custom), and Font Size.
 // DEPENDENCIES: React, Window.localStorage, Window.matchMedia, themeUtils (for custom generation).
 // INVARIANTS: 
 // - Theme is always one of "light", "dark", "system".
-// - ThemeColor is "orange", "green", "blue", or "custom". 
+// - ThemeColor is "orange", "green", "blue", or "custom".
+// - FontSize is "small", "normal", "large".
 // - If "custom", proper CSS variables are injected into :root style.
 // =================================================================================================
 export function ThemeProvider({
@@ -50,8 +58,10 @@ export function ThemeProvider({
   defaultTheme = "system",
   defaultColor = "orange",
   defaultCustomColor = "#FB8500",
+  defaultFontSize = "normal",
   storageKey = "devbook-theme",
   colorStorageKey = "devbook-color-theme",
+  fontSizeStorageKey = "devbook-font-size",
   ...props
 }: ThemeProviderProps) {
   // STRATEGY: Initialize state lazily to avoid hydration mismatch.
@@ -76,6 +86,13 @@ export function ThemeProvider({
       return localStorage.getItem(`${colorStorageKey}-custom`) || defaultCustomColor;
     }
     return defaultCustomColor;
+  });
+
+  const [fontSize, setFontSize] = useState<FontSize>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem(fontSizeStorageKey) as FontSize) || defaultFontSize;
+    }
+    return defaultFontSize;
   });
 
   // STRATEGY: Effect updates the DOM class list whenever the theme changes.
@@ -118,6 +135,19 @@ export function ThemeProvider({
     }
   }, [themeColor, customColor]);
 
+  // STRATEGY: Effect updates the root font size.
+  // Tailwind uses 'rem', so changing the root font-size scales the entire UI.
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (fontSize === "small") {
+      root.style.fontSize = "14px";
+    } else if (fontSize === "large") {
+      root.style.fontSize = "18px";
+    } else {
+      root.style.fontSize = "16px";
+    }
+  }, [fontSize]);
+
   const value = {
     theme,
     setTheme: (theme: Theme) => {
@@ -133,6 +163,11 @@ export function ThemeProvider({
     setCustomColor: (color: string) => {
       localStorage.setItem(`${colorStorageKey}-custom`, color);
       setCustomColor(color);
+    },
+    fontSize,
+    setFontSize: (size: FontSize) => {
+      localStorage.setItem(fontSizeStorageKey, size);
+      setFontSize(size);
     },
   };
 

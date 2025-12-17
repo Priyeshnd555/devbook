@@ -5,7 +5,7 @@
 // PURPOSE: This component renders a modal dialog for application-wide settings, including:
 //          - Dark/Light Mode Toggle
 //          - Accent Color Selection (Presets + Custom Picker)
-//          - Font Size (Placeholder)
+//          - Font Size Adjustment
 //
 // DEPENDENCIES:
 // - REACT: Component state.
@@ -37,7 +37,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   // We map the global 'theme' string to a binary 'isDarkMode' boolean for the Switch component.
   // 'system' theme is treated as not-dark (false) for the toggle state unless resolved,
   // but here we simplify to: dark state is triggered only by explicit 'dark' theme.
-  const { theme, setTheme, themeColor, setThemeColor, customColor, setCustomColor } = useTheme();
+  const { theme, setTheme, themeColor, setThemeColor, customColor, setCustomColor, fontSize, setFontSize } = useTheme();
   
   // CONSTRAINT: Simple toggle logic assuming 'dark' vs 'light'. 
   // 'system' resets to default, but the toggle forces explicit choice.
@@ -54,9 +54,26 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     { name: "Blue", value: "blue", bgClass: "bg-blue-500" },
   ];
 
-  const [fontSize, setFontSize] = React.useState("Normal");
+  // Helper to map global 'fontSize' (lowercase) to UI display (Capitalized)
+  const getDisplayFontSize = () => {
+    switch (fontSize) {
+      case "small": return "Small";
+      case "large": return "Large";
+      case "normal": default: return "Normal";
+    }
+  };
+
+  const handleFontSizeChange = (value: string) => {
+    switch (value) {
+      case "Small": setFontSize("small"); break;
+      case "Large": setFontSize("large"); break;
+      default: setFontSize("normal"); break;
+    }
+  };
+
   const fontSizes = ["Small", "Normal", "Large"];
 
+  if (!isOpen) return null;
   return (
     <AnimatePresence>
       {isOpen && (
@@ -170,26 +187,49 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 <span className="font-medium text-sm text-text-primary">
                   Font Size
                 </span>
-                <div className="w-40">
-                  <Listbox value={fontSize} onChange={setFontSize}>
+                <div className="w-32 relative">
+                  <Listbox value={getDisplayFontSize()} onChange={handleFontSizeChange}>
                     <div className="relative">
-                      <Listbox.Button className="relative w-full cursor-default rounded-md bg-surface py-1.5 pl-3 pr-10 text-left text-sm text-text-primary border border-border focus:outline-none focus:ring-2 focus:ring-primary">
-                        <span className="block truncate">{fontSize}</span>
+                      <Listbox.Button className="relative w-full cursor-default rounded-lg py-2 pl-3 pr-10 text-left bg-background border border-border text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm">
+                        <span className="block truncate">{getDisplayFontSize()}</span>
+                        <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                          <svg
+                            className="h-4 w-4 text-text-secondary"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </span>
                       </Listbox.Button>
-                      <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-surface py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-10">
-                        {fontSizes.map((size) => (
+                      <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-surface border border-border py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-50">
+                        {fontSizes.map((size, personIdx) => (
                           <Listbox.Option
-                            key={size}
+                            key={personIdx}
                             className={({ active }) =>
-                              `relative cursor-default select-none py-2 pl-4 pr-4 ${
-                                active
-                                  ? "bg-primary-light text-primary-text"
-                                  : "text-text-primary"
+                              `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                active ? "bg-primary/10 text-primary" : "text-text-primary"
                               }`
                             }
-                            value={size}
+                            value={size} // This passes "Small" | "Normal" | "Large" to onChange
                           >
-                            {size}
+                            {({ selected }) => (
+                              <>
+                                <span
+                                  className={`block truncate ${
+                                    selected ? "font-medium" : "font-normal"
+                                  }`}
+                                >
+                                  {size}
+                                </span>
+                                {selected ? (
+                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary">
+                                    <Check className="h-4 w-4" aria-hidden="true" />
+                                  </span>
+                                ) : null}
+                              </>
+                            )}
                           </Listbox.Option>
                         ))}
                       </Listbox.Options>
