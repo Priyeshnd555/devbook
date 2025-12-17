@@ -72,8 +72,14 @@
 //     - `data-color='custom'` triggers dynamic injection of calculated CSS variables (via JS) 
 //       directly onto the root element, bypassing `globals.css` presets for that specific mode.
 //
+// # GENERATION 4: Global Accessibility & Font Scaling (Current State)
+//   - FEATURE: User can adjust global font size (Small/Normal/Large).
+//   - LOGIC: `ThemeProvider` updates root `font-size` (14px/16px/18px). Since Tailwind uses `rem`,
+//     the entire UI scales proportionally.
+//   - FIXES: Session log overflow handled via `break-words`.
+//
 // STRATEGY:
-// - STYLE INJECTION: The `ThemeProvider` injects the `dark` class and `data-color` attribute.
+// - STYLE INJECTION: The `ThemeProvider` injects the `dark` class, `data-color` attribute, and root `font-size`.
 // - DYNAMIC CALCULATION: `themeUtils.ts` converts user Hex selection to HSL and generates variants
 //   (primary, hover, light background, text) to maintain contrast and consistency automatically.
 // - COMPONENT USAGE: Components (like this page) use semantic classes (e.g., `bg-background`, `text-text-primary`)
