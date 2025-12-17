@@ -61,17 +61,19 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 
   return (
     <div className="mt-3 space-y-2">
-      <RichTextEditor content={editedNoteText} onUpdate={setEditedNoteText} />
-      <div className="flex gap-2">
+      <div className="shadow-sm rounded border border-primary/10 bg-surface">
+         <RichTextEditor content={editedNoteText} onUpdate={setEditedNoteText} />
+      </div>
+      <div className="flex gap-2 animate-in fade-in duration-200">
         <button
           onClick={() => saveNote(threadId, taskId, editedNoteText)}
-          className="px-3 py-1.5 bg-primary text-white text-xs rounded hover:bg-primary-hover transition-colors font-medium"
+          className="px-3 py-1.5 bg-primary text-white text-xs rounded hover:bg-primary-hover transition-colors font-medium shadow-sm"
         >
           Save
         </button>
         <button
           onClick={() => setEditingNote(null)}
-          className="px-3 py-1.5 bg-background text-text-secondary text-xs rounded hover:bg-surface transition-colors"
+          className="px-3 py-1.5 bg-background text-text-secondary text-xs border border-border rounded hover:bg-surface transition-colors shadow-sm"
         >
           Cancel
         </button>

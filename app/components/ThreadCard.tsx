@@ -323,32 +323,34 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
       {isThreadExpanded && (
         <>
           <div className="p-4">
-            <button onClick={() => taskItemProps.setAddingChildTo(`${thread.id}-root`)} className="flex items-center gap-1.5 text-primary hover:text-primary-hover text-xs font-medium mb-3 transition-colors">
-              <Plus className="w-3.5 h-3.5" /> Add task
-            </button>
-
-            {/* STRATEGY: The input for adding a new root task is shown only when the user has clicked the "Add task" button. */}
-            {taskItemProps.addingChildTo === `${thread.id}-root` && (
-              <div className="mb-3 flex gap-2">
-                <input 
-                  type="text" 
-                  value={taskItemProps.newChildText} 
-                  onChange={(e) => taskItemProps.setNewChildText(e.target.value)} 
-                  placeholder="New task..." 
-                  className="flex-1 px-3 py-2 border border-primary/30 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-surface text-text-primary" 
-                  autoFocus 
-                  onKeyPress={(e) => e.key === "Enter" && handleAddTask()}
-                  onBlur={() => taskItemProps.setAddingChildTo(null)}
-                />
-                <button 
-                  onMouseDown={(e) => e.preventDefault()} // Prevent button from stealing focus so onBlur doesn't fire before onClick
-                  onClick={handleAddTask} 
-                  className="px-3 py-2 bg-primary text-white rounded text-sm hover:bg-primary-hover transition-colors font-medium"
-                >
-                  Add
-                </button>
-              </div>
-            )}
+            {/* STRATEGY: Persistent, seamless "New task" input at the bottom.
+                This allows for rapid-fire data entry (Notion-style). 
+                Pressing Enter adds the task and keeps focus. */}
+            {/* STRATEGY: Persistent, seamless "New task" input at the bottom.
+                This allows for rapid-fire data entry (Notion-style). 
+                Pressing Enter adds the task and keeps focus. */}
+            <div className="group flex items-center gap-3 px-3 opacity-60 hover:opacity-100 focus-within:opacity-100 transition-opacity">
+               {/* Spacer to match chevron slot in TaskItem */}
+               <div className="w-4 flex-shrink-0"></div>
+               {/* Plus icon matches Checkbox size (w-5) */}
+               <Plus className="w-5 h-5 text-text-secondary" />
+               <input
+                 type="text"
+                 value={taskItemProps.newChildText}
+                 onChange={(e) => taskItemProps.setNewChildText(e.target.value)}
+                 onFocus={() => taskItemProps.setAddingChildTo(`${thread.id}-root`)}
+                 // CONSTRAINT: We only want to add on Enter.
+                 onKeyDown={(e) => {
+                   if (e.key === "Enter") {
+                     handleAddTask();
+                     // STRATEGY: Keep focus on this input after adding for rapid entry.
+                     // The handleAddTask clears the text but doesn't blur.
+                   }
+                 }}
+                 placeholder="New task..."
+                 className="flex-1 py-1.5 bg-transparent text-sm border-none focus:outline-none focus:ring-0 placeholder:text-text-secondary/60 text-text-primary"
+               />
+            </div>
 
             {visibleTasks.length > 0 ? (
               <div className="space-y-0.5">{

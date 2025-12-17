@@ -208,7 +208,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
                 <div className="flex items-start gap-2">
                   <StickyNote className="w-3 h-3 text-primary-text mt-0.5 flex-shrink-0" />
                   <div
-                    className={`prose prose-sm max-w-none ${!isNoteExpanded && noteLineCount > 3 ? 'max-h-12 overflow-hidden' : ''}`}
+                    className={`prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${!isNoteExpanded && noteLineCount > 3 ? 'max-h-12 overflow-hidden' : ''}`}
                     dangerouslySetInnerHTML={{ __html: task.note }}
                   />
                 </div>
@@ -253,9 +253,32 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
         </div>
 
         {isAddingChild && (
-          <div className="ml-10 mt-2 flex gap-2">
-            <input type="text" value={newChildText} onChange={(e) => setNewChildText(e.target.value)} placeholder="New subtask..." className="flex-1 px-3 py-2 border border-primary/30 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-surface text-text-primary" autoFocus onKeyPress={(e) => e.key === "Enter" && addChild(threadId, task.id)} />
-            <button onClick={() => addChild(threadId, task.id)} className="px-3 py-2 bg-primary text-white rounded text-sm hover:bg-primary-hover transition-colors font-medium">Add</button>
+          <div className="ml-10 mt-1 mb-2 flex items-center gap-2 animate-in fade-in duration-200">
+             <div className="w-1.5 h-1.5 rounded-full bg-primary/40 flex-shrink-0" />
+            <input
+              type="text"
+              value={newChildText}
+              onChange={(e) => setNewChildText(e.target.value)}
+              placeholder="New subtask..."
+              className="flex-1 py-1 bg-transparent text-sm border-b border-primary/20 focus:outline-none focus:border-primary text-text-primary placeholder:text-text-secondary/50"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                    addChild(threadId, task.id);
+                }
+                if (e.key === "Escape") {
+                    setAddingChildTo(null);
+                    setNewChildText("");
+                }
+              }}
+              onBlur={() => {
+                // Only close if empty. If user clicked away but had text, maybe save? 
+                // For now, let's just close if empty to mimic Notion behavior (it cleans up empty blocks).
+                if (!newChildText.trim()) {
+                    setAddingChildTo(null);
+                }
+              }}
+            />
           </div>
         )}
       </div>

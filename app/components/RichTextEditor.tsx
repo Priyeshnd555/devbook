@@ -42,6 +42,7 @@ import { useEffect } from "react";
 interface RichTextEditorProps {
   content: string;
   onUpdate: (html: string) => void;
+  onBlur?: () => void;
 }
 
 const MenuBar = ({ editor }: { editor: Editor | null }) => {
@@ -50,30 +51,34 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
   }
 
   return (
-    <div className="flex items-center space-x-2 p-2 bg-surface border border-b-0 border-primary/30 rounded-t">
+    <div className="flex items-center space-x-1 p-1 bg-surface/50 border-b border-primary/5 rounded-t">
       <button
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => editor.chain().focus().toggleBold().run()}
         disabled={!editor.can().chain().focus().toggleBold().run()}
-        className={editor.isActive("bold") ? "bg-primary-light p-1 rounded" : "p-1"}
+        className={`p-1 rounded transition-colors ${editor.isActive("bold") ? "bg-primary/20 text-primary" : "text-text-secondary hover:bg-primary/10 hover:text-primary"}`}
       >
         <Bold className="w-4 h-4" />
       </button>
       <button
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => editor.chain().focus().toggleItalic().run()}
         disabled={!editor.can().chain().focus().toggleItalic().run()}
-        className={editor.isActive("italic") ? "bg-primary-light p-1 rounded" : "p-1"}
+        className={`p-1 rounded transition-colors ${editor.isActive("italic") ? "bg-primary/20 text-primary" : "text-text-secondary hover:bg-primary/10 hover:text-primary"}`}
       >
         <Italic className="w-4 h-4" />
       </button>
       <button
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
-        className={editor.isActive("bulletList") ? "bg-primary-light p-1 rounded" : "p-1"}
+        className={`p-1 rounded transition-colors ${editor.isActive("bulletList") ? "bg-primary/20 text-primary" : "text-text-secondary hover:bg-primary/10 hover:text-primary"}`}
       >
         <List className="w-4 h-4" />
       </button>
       <button
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        className={editor.isActive("orderedList") ? "bg-primary-light p-1 rounded" : "p-1"}
+        className={`p-1 rounded transition-colors ${editor.isActive("orderedList") ? "bg-primary/20 text-primary" : "text-text-secondary hover:bg-primary/10 hover:text-primary"}`}
       >
         <ListOrdered className="w-4 h-4" />
       </button>
@@ -81,18 +86,21 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
   );
 };
 
-const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onUpdate }) => {
+const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onUpdate, onBlur }) => {
   const editor = useEditor({
     extensions: [StarterKit],
     content: content,
     onUpdate: ({ editor }) => {
       onUpdate(editor.getHTML());
     },
+    onBlur: () => {
+       if (onBlur) onBlur();
+    },
     immediatelyRender: false, // Added to prevent hydration mismatches during SSR
     editorProps: {
       attributes: {
         class:
-          "w-full px-3 py-2 border border-primary/30 rounded-b text-xs resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-surface text-text-primary leading-relaxed",
+          "w-full px-3 py-2 text-xs resize-none focus:outline-none bg-surface text-text-primary leading-relaxed min-h-[80px]",
       },
     },
   });
