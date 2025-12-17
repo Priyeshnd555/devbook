@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Thread Note",
   description: "Nested Note",
-  icons: "/logo-threadnote.svg",
+  icons: "devbook/logo-threadnote.svg",
 };
 
 export default function RootLayout({

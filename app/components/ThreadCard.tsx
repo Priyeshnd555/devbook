@@ -49,7 +49,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import { Switch } from "@headlessui/react";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { TaskItem, TaskItemProps } from "./TaskItem"; // Import TaskItem and its props
 import { Thread, THREAD_STATE_TRANSITIONS, ThreadStatus } from "../types";

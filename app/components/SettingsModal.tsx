@@ -25,7 +25,7 @@
 //   In a real implementation, they would likely be connected to a global state manager or context.
 // =================================================================================================
 
-import React, { Fragment } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { Switch, Listbox } from "@headlessui/react";

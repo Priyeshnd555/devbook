@@ -20,7 +20,7 @@
 // - This component is self-contained and receives all necessary state and handlers as props from `page.tsx`.
 // =================================================================================================
 
-import React, { Fragment } from "react";
+import React from "react";
 import { Menu, Switch } from "@headlessui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MoreVertical, Settings, Eye, EyeOff } from "lucide-react";
