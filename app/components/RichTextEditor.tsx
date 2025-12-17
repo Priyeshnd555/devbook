@@ -30,6 +30,11 @@
  *   hydration in Next.js applications, avoiding potential SSR issues.
  * - A `useEffect` hook is used to update the Tiptap editor's content when the `content` prop
  *   from the parent component changes, ensuring the editor remains synchronized with external state.
+ * - **Generation 5 Update**:
+ *   - Supports `editable` prop to toggle read-only mode without unmounting.
+ *   - Implements "Smart Cursor" logic: uses `posAtCoords` to detect click position in read-only mode
+ *     and restores the cursor to that exact index upon entering edit mode.
+ *   - Uses persistent prose formatting classes for consistent list/link rendering.
  * =================================================================================================
  */
 "use client";

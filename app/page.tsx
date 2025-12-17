@@ -78,20 +78,11 @@
 //     the entire UI scales proportionally.
 //   - FIXES: Session log overflow handled via `break-words`.
 //
-// * - **Generation 4: Global Accessibility & Font Scaling**
-// *   - Introduction of `themeUtils.ts` and `useTheme` hook.
-// *   - Dynamic `rem` scaling on `html` root.
-// *   - Fixed session log overflow with `break-words`.
-// *
-// * - **Generation 5: Notion-like Layout & Interactions**
-// *   - "Seamless" editing transitions (Editor styles match Read styles).
-// *   - Rapid-fire task entry (Persistent inputs, Enter handling).
-// *   - Explicit Note Control (Save/Cancel) with high-readability typography.
-// *   - `dateUtils.ts` for relative date formatting.
-// *
-// * @key_components `font-size` (14px/16px/18px). Since Tailwind uses `rem`,
-//     the entire UI scales proportionally.
-//   - FIXES: Session log overflow handled via `break-words`.
+// # GENERATION 5: Notion-like Layout & Interactions (Current State)
+//   - "Seamless" editing transitions (Editor styles match Read styles).
+//   - Rapid-fire task entry (Persistent inputs, Enter handling).
+//   - Explicit Note Control (Save/Cancel) with high-readability typography.
+//   - `dateUtils.ts` for relative date formatting.
 //
 // STRATEGY:
 // - STYLE INJECTION: The `ThemeProvider` injects the `dark` class, `data-color` attribute, and root `font-size`.

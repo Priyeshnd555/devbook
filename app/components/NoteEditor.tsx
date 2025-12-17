@@ -27,6 +27,10 @@
  * - The `useEffect` ensures that if the parent `TaskItem` updates the `initialContent` prop
  *   (e.g., if the user switches tasks while in edit mode), the editor's content is correctly
  *   re-initialized.
+ * - **Generation 5 Update**:
+ *   - Now maintains a persistent `RichTextEditor` instance in both read and edit modes.
+ *   - Manages "Seamless Transition" by matching container metrics (negative margins, padding) to the read view.
+ *   - Handles "Click-to-Edit" interaction locally.
  * =================================================================================================
  */
 "use client";
