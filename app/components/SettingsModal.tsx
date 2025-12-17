@@ -58,14 +58,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.95, y: 20, opacity: 0 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4"
+            className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4"
             onClick={(e) => e.stopPropagation()} // CONSTRAINT: Prevents modal from closing when clicking inside the panel.
           >
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800">Settings</h2>
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-lg font-semibold text-text-primary">Settings</h2>
               <button
                 onClick={onClose}
-                className="p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                className="p-1 rounded-full text-text-secondary hover:bg-background hover:text-text-primary transition-colors"
                 aria-label="Close settings"
               >
                 <X className="h-5 w-5" />
@@ -75,14 +75,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             <div className="p-6 space-y-6">
               {/* Dark Mode Toggle */}
               <div className="flex items-center justify-between">
-                <span className="font-medium text-sm text-gray-700">
+                <span className="font-medium text-sm text-text-primary">
                   Dark Mode
                 </span>
                 <Switch
                   checked={darkMode}
                   onChange={setDarkMode}
                   className={`${
-                    darkMode ? "bg-primary" : "bg-gray-200"
+                    darkMode ? "bg-primary" : "bg-border"
                   } relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
                 >
                   <span
@@ -95,16 +95,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
 
               {/* Font Size Dropdown */}
               <div className="flex items-center justify-between">
-                <span className="font-medium text-sm text-gray-700">
+                <span className="font-medium text-sm text-text-primary">
                   Font Size
                 </span>
                 <div className="w-40">
                   <Listbox value={fontSize} onChange={setFontSize}>
                     <div className="relative">
-                      <Listbox.Button className="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-sm text-gray-900 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary">
+                      <Listbox.Button className="relative w-full cursor-default rounded-md bg-surface py-1.5 pl-3 pr-10 text-left text-sm text-text-primary border border-border focus:outline-none focus:ring-2 focus:ring-primary">
                         <span className="block truncate">{fontSize}</span>
                       </Listbox.Button>
-                      <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-10">
+                      <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-surface py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-10">
                         {fontSizes.map((size) => (
                           <Listbox.Option
                             key={size}
@@ -112,7 +112,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                               `relative cursor-default select-none py-2 pl-4 pr-4 ${
                                 active
                                   ? "bg-primary-light text-primary-text"
-                                  : "text-gray-900"
+                                  : "text-text-primary"
                               }`
                             }
                             value={size}
@@ -127,7 +127,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-right">
+            <div className="px-4 py-3 bg-background border-t border-border text-right">
                 <button
                     onClick={onClose}
                     className="px-4 py-2 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 transition-colors font-medium"

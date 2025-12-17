@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  /* Light Theme (Default) */
-  --color-primary: 24 99% 55%;   /* #FB8500 origin: orange-600 */
-  --color-primary-hover: 17 99% 48%; /* #ea580c origin: orange-700 appx */
-  --color-primary-light: 32 98% 93%; /* #ffedd5 origin: orange-100 appx */
-  --color-primary-text: 15 79% 34%; /* #c2410c origin: orange-700 text appx */
+  /* HSL Channel definitions - Light Theme (Default) */
+  --color-primary: 24 99% 55%;   /* #FB8500 */
+  --color-primary-hover: 17 99% 48%; /* #ea580c */
+  --color-primary-light: 32 98% 93%; /* #ffedd5 */
+  --color-primary-text: 15 79% 34%; /* #c2410c */
 
   --color-accent: 201 98% 41%;   /* #0288D1 */
   
@@ -21,37 +21,40 @@
   --color-success: 135 63% 41%; /* #28A745 */
   
   --color-danger: 355 70% 54%;  /* #DC3545 */
-  --color-danger-bg: 0 93% 94%; /* #fee2e2 origin: red-100 */
-  --color-danger-text: 0 74% 42%; /* #b91c1c origin: red-700 */
+  --color-danger-bg: 0 93% 94%; /* #fee2e2 */
+  --color-danger-text: 0 74% 42%; /* #b91c1c */
 
   --color-warning: 45 100% 50%; /* #FFC107 */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-primary: 24 99% 55%;   /* #FB8500 */
-    --color-primary-hover: 24 99% 65%; /* lighter for dark mode hover */
-    --color-primary-light: 24 40% 20%; /* dark orange background */
-    --color-primary-text: 24 99% 80%; /* light orange text */
+    /* HSL Channel definitions - Dark Theme */
+    --color-primary: 24 99% 55%;   /* Keep primary consistent or adjust slightly */
+    --color-primary-hover: 24 99% 65%; 
+    --color-primary-light: 24 40% 20%; 
+    --color-primary-text: 24 99% 80%; 
     
-    --color-accent: 198 90% 70%;   /* #4FC3F7 */
+    --color-accent: 198 90% 70%; 
     --color-background: 0 0% 7%;  /* #121212 */
     --color-surface: 0 0% 12%;    /* #1F1F1F */
+    
     --color-text-primary: 0 0% 88%; /* #E0E0E0 */
-    --color-text-secondary: 0 0% 63%; /* #A0A0A0 */
-    --color-border: 0 0% 22%;     /* #383838 */
-    --color-shadow: 0 0% 0%;      /* #000000 */
-    --color-success: 124 39% 57%; /* #66BB6A */
+    --color-text-secondary: 0 0% 63%; 
     
-    --color-danger: 2 85% 63%;    /* #EF5350 */
-    --color-danger-bg: 0 40% 20%; /* dark red background */
-    --color-danger-text: 2 95% 85%; /* light red text */
+    --color-border: 0 0% 22%;     
+    --color-shadow: 0 0% 0%;      
+    --color-success: 124 39% 57%; 
     
-    --color-warning: 60 96% 65%;  /* #FFEE58 */
+    --color-danger: 2 85% 63%;    
+    --color-danger-bg: 0 40% 20%; 
+    --color-danger-text: 2 95% 85%; 
+    
+    --color-warning: 60 96% 65%;  
   }
 }
 
-/* To allow user override for dark mode, if desired, using data-theme attribute */
+/* Data attribute override for manual toggling if needed later */
 [data-theme='dark'] {
   --color-primary: 24 99% 55%;
   --color-primary-hover: 24 99% 65%;
@@ -75,11 +78,12 @@
 }
 
 @theme inline {
-  --color-background: var(--color-background);
-  --color-foreground: var(--color-text-primary);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-
+  /* Mapping semantic names to HSL variables */
+  /* Usage: bg-background (maps to --color-background), text-foreground (maps to --color-text-primary) */
+  
+  --color-background: hsl(var(--color-background));
+  --color-foreground: hsl(var(--color-text-primary));
+  
   --color-primary: hsl(var(--color-primary));
   --color-primary-hover: hsl(var(--color-primary-hover));
   --color-primary-light: hsl(var(--color-primary-light));
@@ -101,12 +105,16 @@
   --color-danger-text: hsl(var(--color-danger-text));
   
   --color-warning: hsl(var(--color-warning));
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background); /* Using the mapped theme variable */
+  color: var(--color-foreground); /* Using the mapped theme variable */
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for theme switching */
 }
 
 .ProseMirror ul {

@@ -187,7 +187,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
   const statusConfig: Record<ThreadStatus, { bg: string, text: string, dot: string }> = {
     active: { bg: "bg-primary-light", text: "text-primary-text", dot: "bg-primary" },
     blocked: { bg: "bg-danger-bg", text: "text-danger-text", dot: "bg-danger" },
-    completed: { bg: "bg-gray-100", text: "text-gray-700", dot: "bg-gray-500" },
+    completed: { bg: "bg-background", text: "text-text-secondary", dot: "bg-text-secondary" },
   };
   const statusStyle = statusConfig[thread.status];
 
@@ -205,20 +205,20 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
 
   return (
     <div 
-      className={`bg-white rounded-lg border mb-4 shadow-sm transition-all ${isSelected ? 'border-primary/60 shadow-md' : 'border-gray-200'}`}
+      className={`bg-surface rounded-lg border mb-4 shadow-sm transition-all ${isSelected ? 'border-primary/60 shadow-md' : 'border-border'}`}
       key={thread.id}
     >
       <div 
-        className="p-4 border-b border-gray-100 cursor-pointer" 
+        className="p-4 border-b border-border cursor-pointer" 
         onClick={handleCardClick}
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 group mb-3">
-              <span className="flex-shrink-0 w-6 text-center text-xs font-mono text-gray-400" title={`Thread ${threadNumber}`}>
+              <span className="flex-shrink-0 w-6 text-center text-xs font-mono text-text-secondary" title={`Thread ${threadNumber}`}>
                 {threadNumber}.
               </span>
-              <button onClick={(e) => { e.stopPropagation(); toggleThread(thread.id); }} className="text-gray-400 hover:text-primary transition-colors flex-shrink-0">
+              <button onClick={(e) => { e.stopPropagation(); toggleThread(thread.id); }} className="text-text-secondary hover:text-primary transition-colors flex-shrink-0">
                 {isThreadExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
               </button>
               {/* STRATEGY: Implement inline editing for the thread title. When `editingThreadId` matches this thread,
@@ -233,26 +233,26 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                     if (e.key === 'Enter') handleUpdate();
                     if (e.key === 'Escape') handleCancelEdit();
                   }}
-                  className="text-base font-medium text-gray-900 flex-1 px-2 py-1 border-b-2 border-primary focus:outline-none bg-transparent"
+                  className="text-base font-medium text-text-primary flex-1 px-2 py-1 border-b-2 border-primary focus:outline-none bg-transparent"
                   autoFocus
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
-                <h3 className="text-base font-medium text-gray-900" onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id);}}>{thread.title}</h3>
+                <h3 className="text-base font-medium text-text-primary" onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id);}}>{thread.title}</h3>
               )}
               {/* STRATEGY: Action buttons (edit, delete) are hidden until the user hovers over the title area. */}
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 flex-shrink-0">
-                <button onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id);}} className="p-1 text-gray-400 hover:text-primary transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                <button onClick={(e) => { e.stopPropagation(); onDelete(thread.id);}} className="p-1 text-gray-400 hover:text-danger transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id);}} className="p-1 text-text-secondary hover:text-primary transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                <button onClick={(e) => { e.stopPropagation(); onDelete(thread.id);}} className="p-1 text-text-secondary hover:text-danger transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 text-xs text-gray-500 ml-12">
-              <div className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" /> <span className="truncate">{thread.lastWorked}</span></div>
+            <div className="flex items-center gap-4 text-xs text-text-secondary ml-12">
+              <div className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-text-secondary/70 flex-shrink-0" /> <span className="truncate">{thread.lastWorked}</span></div>
               <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-600">{completedTaskCount}/{totalTaskCount}</span>
+                <span className="font-medium text-text-secondary/90">{completedTaskCount}/{totalTaskCount}</span>
                 {/* STRATEGY: The progress bar width is dynamically calculated based on task completion percentage. */}
-                <div className="bg-gray-200 rounded-full h-1 w-16"><div className="bg-primary h-1 rounded-full transition-all" style={{ width: `${totalTaskCount > 0 ? (completedTaskCount / totalTaskCount) * 100 : 0}%` }}></div></div>
+                <div className="bg-border rounded-full h-1 w-16"><div className="bg-primary h-1 rounded-full transition-all" style={{ width: `${totalTaskCount > 0 ? (completedTaskCount / totalTaskCount) * 100 : 0}%` }}></div></div>
               </div>
               <div className="relative">
                 <button onClick={(e) => { e.stopPropagation(); setIsStatusMenuOpen(!isStatusMenuOpen);}} onBlur={() => setIsStatusMenuOpen(false)} className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${statusStyle.bg} flex-shrink-0`}>
@@ -260,9 +260,9 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                   <span className={`text-xs font-medium ${statusStyle.text}`}>{thread.status}</span>
                 </button>
                 {isStatusMenuOpen && (
-                  <div className="absolute top-full mt-1.5 w-24 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                  <div className="absolute top-full mt-1.5 w-24 bg-surface rounded-md shadow-lg border border-border z-10">
                     {(Object.keys(THREAD_STATE_TRANSITIONS) as ThreadStatus[]).map((s) => (
-                      <button key={s} onMouseDown={() => { onUpdateStatus(thread.id, s); setIsStatusMenuOpen(false);}} className="block w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 capitalize">{s}</button>
+                      <button key={s} onMouseDown={() => { onUpdateStatus(thread.id, s); setIsStatusMenuOpen(false);}} className="block w-full text-left px-3 py-1.5 text-xs text-text-primary hover:bg-background capitalize">{s}</button>
                     ))}
                   </div>
                 )}
@@ -282,13 +282,13 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                       The Eye/EyeOff icon now directly triggers the local completed task visibility toggle. */}
                   <button
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleLocalShowCompleted(); }}
-                    className="p-1 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
+                    className="p-1 rounded-full hover:bg-background transition-colors focus:outline-none"
                     title={localShowCompleted ? "Hide completed tasks" : "Show completed tasks"}
                   >
                     {localShowCompleted ? (
-                      <Eye className="h-4 w-4 text-gray-600" />
+                      <Eye className="h-4 w-4 text-text-secondary" />
                     ) : (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
+                      <EyeOff className="h-4 w-4 text-text-secondary/60" />
                     )}
                   </button>
                 </motion.div>
@@ -305,12 +305,12 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
 
       {/* STRATEGY: The "Log Session" form is conditionally rendered below the header when `isAddingSession` is true for this specific thread. */}
       {isAddingSession && (
-        <div className="p-4 bg-gray-50 border-b border-gray-100">
-          <h4 className="text-sm font-medium text-gray-900 mb-2">Work session</h4>
-          <textarea value={sessionNotes} onChange={(e) => setSessionNotes(e.target.value)} placeholder="What did you work on?" className="w-full p-3 border border-gray-300 rounded text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white" rows={2} autoFocus/>
+        <div className="p-4 bg-background border-b border-border">
+          <h4 className="text-sm font-medium text-text-primary mb-2">Work session</h4>
+          <textarea value={sessionNotes} onChange={(e) => setSessionNotes(e.target.value)} placeholder="What did you work on?" className="w-full p-3 border border-border rounded text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-surface text-text-primary" rows={2} autoFocus/>
           <div className="flex gap-2 mt-2">
             <button onClick={() => {onAddSession(thread.id, sessionNotes); setSessionNotes('')}} className="px-3 py-1.5 bg-primary text-white rounded text-xs hover:bg-primary-hover transition-colors font-medium">Save</button>
-            <button onClick={() => { setAddingSessionTo(null); setSessionNotes(""); }} className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-xs hover:bg-gray-300 transition-colors">Cancel</button>
+            <button onClick={() => { setAddingSessionTo(null); setSessionNotes(""); }} className="px-3 py-1.5 bg-background text-text-secondary border border-border rounded text-xs hover:bg-surface transition-colors">Cancel</button>
           </div>
         </div>
       )}
@@ -326,7 +326,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
             {/* STRATEGY: The input for adding a new root task is shown only when the user has clicked the "Add task" button. */}
             {taskItemProps.addingChildTo === `${thread.id}-root` && (
               <div className="mb-3 flex gap-2">
-                <input type="text" value={taskItemProps.newChildText} onChange={(e) => taskItemProps.setNewChildText(e.target.value)} placeholder="New task..." className="flex-1 px-3 py-2 border border-primary/30 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white" autoFocus onKeyPress={(e) => e.key === "Enter" && handleAddTask()} />
+                <input type="text" value={taskItemProps.newChildText} onChange={(e) => taskItemProps.setNewChildText(e.target.value)} placeholder="New task..." className="flex-1 px-3 py-2 border border-primary/30 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-surface text-text-primary" autoFocus onKeyPress={(e) => e.key === "Enter" && handleAddTask()} />
                 <button onClick={handleAddTask} className="px-3 py-2 bg-primary text-white rounded text-sm hover:bg-primary-hover transition-colors font-medium">Add</button>
               </div>
             )}
@@ -337,7 +337,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
               }</div>
             ) : (
               // STRATEGY: Display a helpful empty state message if there are no tasks.
-              <div className="py-6 text-center text-xs text-gray-400"><p>No tasks to show.</p></div>
+              <div className="py-6 text-center text-xs text-text-secondary"><p>No tasks to show.</p></div>
             )}
           </div>
         </>

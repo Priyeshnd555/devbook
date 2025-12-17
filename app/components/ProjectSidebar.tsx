@@ -195,7 +195,7 @@ const ProjectItem: React.FC<{
           className={`w-full p-2.5 rounded-lg transition-all group relative ${
             isSelected
               ? "bg-primary-light text-primary-text ring-1 ring-primary/20"
-              : "hover:bg-slate-50 text-slate-600"
+              : "hover:bg-background text-text-secondary"
           }`}
           title={project.name}
         >
@@ -223,7 +223,7 @@ const ProjectItem: React.FC<{
         className={`group relative flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer transition-all ${
           isSelected
             ? "bg-primary-light text-primary-text ring-1 ring-primary/20"
-            : "hover:bg-slate-50 text-slate-700"
+            : "hover:bg-background text-text-primary"
         }`}
         style={{ paddingLeft: `${indentPx + 8}px` }}
         onClick={() => onSelectProject(project.id)}
@@ -241,7 +241,7 @@ const ProjectItem: React.FC<{
             className={`flex-shrink-0 p-0.5 rounded transition-colors ${
               isSelected
                 ? "text-primary-text"
-                : "text-slate-400 hover:text-slate-600"
+                : "text-text-secondary hover:text-text-primary"
             }`}
           >
             {isExpanded ? (
@@ -265,7 +265,7 @@ const ProjectItem: React.FC<{
           ) : (
             <Folder
               className={`w-5 h-5 ${
-                hasChildren ? "text-primary" : "text-slate-400"
+                hasChildren ? "text-primary" : "text-text-secondary"
               }`}
             />
           )}
@@ -280,14 +280,14 @@ const ProjectItem: React.FC<{
             onChange={(e) => setRenameValue(e.target.value)}
             onKeyDown={handleRenameKeyPress}
             onBlur={handleRename}
-            className="flex-1 px-2 py-1 text-[15px] font-medium bg-white border border-primary/30 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+            className="flex-1 px-2 py-1 text-[15px] font-medium bg-surface border border-primary/30 rounded focus:outline-none focus:ring-2 focus:ring-primary"
             autoFocus
             onClick={(e) => e.stopPropagation()} // CONSTRAINT: Prevent clicks on the input from selecting the project.
           />
         ) : (
           <span
             className={`flex-1 truncate text-[15px] font-medium ${
-              isSelected ? "text-primary-text" : "text-slate-700"
+              isSelected ? "text-primary-text" : "text-text-primary"
             }`}
           >
             {project.name}
@@ -300,7 +300,7 @@ const ProjectItem: React.FC<{
             className={`flex-shrink-0 px-2 py-0.5 text-[11px] font-semibold rounded-full ${
               isSelected
                 ? "bg-primary-light text-primary-text"
-                : "bg-slate-100 text-slate-600"
+                : "bg-background text-text-secondary"
             }`}
           >
             {children.length}
@@ -318,10 +318,10 @@ const ProjectItem: React.FC<{
               }}
               className={`flex-shrink-0 p-1.5 rounded-md transition-all ${
                 showMenu
-                  ? "bg-slate-200 text-slate-700"
+                  ? "bg-border text-text-primary"
                   : isSelected
                   ? "hover:bg-primary-light text-primary opacity-0 group-hover:opacity-100"
-                  : "hover:bg-slate-100 text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100"
+                  : "hover:bg-background text-text-secondary hover:text-text-primary opacity-0 group-hover:opacity-100"
               }`}
               title="Options"
             >
@@ -339,7 +339,7 @@ const ProjectItem: React.FC<{
                 />
 
                 {/* Menu Content */}
-                <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20">
+                <div className="absolute right-0 top-full mt-1 w-40 bg-surface rounded-lg shadow-lg border border-border py-1 z-20">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -347,7 +347,7 @@ const ProjectItem: React.FC<{
                       setIsRenaming(true);
                       setShowMenu(false);
                     }}
-                    className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-background flex items-center gap-2"
                   >
                     <Pencil className="w-4 h-4" />
                     Rename
@@ -378,7 +378,7 @@ const ProjectItem: React.FC<{
             className={`flex-shrink-0 p-1.5 rounded-md transition-all ${
               isSelected
                 ? "hover:bg-primary-light text-primary opacity-0 group-hover:opacity-100"
-                : "hover:bg-slate-100 text-slate-400 hover:text-primary opacity-0 group-hover:opacity-100"
+                : "hover:bg-background text-text-secondary hover:text-primary opacity-0 group-hover:opacity-100"
             }`}
             title="Add nested project"
           >
@@ -412,7 +412,7 @@ const ProjectItem: React.FC<{
               className="mt-1 mb-2 flex items-center gap-2 px-2 py-2"
               style={{ paddingLeft: `${indentPx + 28}px` }}
             >
-              <Folder className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              <Folder className="w-4 h-4 text-text-secondary flex-shrink-0" />
               <input
                 type="text"
                 autoFocus
@@ -435,7 +435,7 @@ const ProjectItem: React.FC<{
                   setIsAdding(false);
                   setNewProjectName("");
                 }}
-                className="p-1.5 bg-slate-200 text-slate-600 rounded-lg hover:bg-slate-300 transition-colors"
+                className="p-1.5 bg-border text-text-secondary rounded-lg hover:bg-surface transition-colors"
                 title="Cancel"
               >
                 <X className="w-4 h-4" />
@@ -487,8 +487,8 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
 
   return (
     <div
-      className={`relative bg-white flex flex-col h-screen flex-shrink-0 transition-all duration-300 shadow-lg ${
-        isCollapsed ? "w-0 border-none" : "w-80 border-r border-slate-200/60"
+      className={`relative bg-surface flex flex-col h-screen flex-shrink-0 transition-all duration-300 shadow-lg ${
+        isCollapsed ? "w-0 border-none" : "w-80 border-r border-border"
       }`}
     >
       {/* STRATEGY: This toggle button is absolutely positioned to "peek" out from the edge of the sidebar.
@@ -496,7 +496,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
           element it controls. It's animated with Framer Motion for better discoverability. */}
       <motion.button
         onClick={onToggle}
-        className="absolute top-1/2 -translate-y-1/2 z-10 bg-white border border-slate-300 rounded-full p-2 shadow-lg"
+        className="absolute top-1/2 -translate-y-1/2 z-10 bg-surface border border-border rounded-full p-2 shadow-lg"
         style={{ right: "-22px" }}
         initial={{ scale: 0, x: -20 }}
         animate={{ scale: 1, x: 0 }}
@@ -507,13 +507,13 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
         {isCollapsed ? (
           <ChevronRight className="w-5 h-5 text-slate-700" />
         ) : (
-          <ChevronLeft className="w-5 h-5 text-slate-700" />
+          <ChevronLeft className="w-5 h-5 text-text-secondary" />
         )}
       </motion.button>
       <div className="h-full w-full flex flex-col overflow-hidden">
         {/* Header */}
         <div
-          className={`px-4 py-4 border-b border-slate-200/60 flex items-center gap-3`}
+          className={`px-4 py-4 border-b border-border flex items-center gap-3`}
         >
           {!isCollapsed && (
             <div className="flex items-center gap-2">
@@ -521,8 +521,8 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                 <Folder className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-slate-900">Projects</h2>
-                <p className="text-[11px] text-slate-500">
+                <h2 className="text-base font-bold text-text-primary">Projects</h2>
+                <p className="text-[11px] text-text-secondary">
                   {rootProjects.length} workspace
                   {rootProjects.length !== 1 ? "s" : ""}
                 </p>
@@ -555,13 +555,13 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
             // but only if the sidebar is not collapsed.
             !isCollapsed && (
               <div className="text-center py-16 px-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Folder className="w-8 h-8 text-slate-400" />
+                <div className="w-16 h-16 bg-gradient-to-br from-background to-border rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Folder className="w-8 h-8 text-text-secondary" />
                 </div>
-                <h3 className="text-sm font-semibold text-slate-700 mb-1">
+                <h3 className="text-sm font-semibold text-text-primary mb-1">
                   No projects yet
                 </h3>
-                <p className="text-xs text-slate-500 mb-4">
+                <p className="text-xs text-text-secondary mb-4">
                   Create your first project to get started
                 </p>
                 <button
@@ -578,12 +578,12 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
         {/* Add New Root Project Form */}
         {/* CONSTRAINT: The form for adding a new root project is not available when the sidebar is collapsed. */}
         {!isCollapsed && (
-          <div className="p-3 border-t border-slate-200/60 bg-slate-50/50">
+          <div className="p-3 border-t border-border bg-background">
             {/* STRATEGY: Conditionally show the input form or the "New Project" button based on `showInput` state. */}
             {showInput ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Folder className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <Folder className="w-4 h-4 text-text-secondary flex-shrink-0" />
                   <input
                     type="text"
                     autoFocus
@@ -591,7 +591,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                     onChange={(e) => setNewProjectName(e.target.value)}
                     onKeyDown={handleKeyPress}
                     placeholder="New project name..."
-                    className="flex-1 px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent shadow-sm"
+                    className="flex-1 px-3 py-2 text-sm bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent shadow-sm"
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -606,7 +606,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                       setShowInput(false);
                       setNewProjectName("");
                     }}
-                    className="px-4 py-2 bg-slate-100 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-200 transition-colors"
+                    className="px-4 py-2 bg-background text-text-secondary text-sm font-medium rounded-lg hover:bg-border transition-colors"
                   >
                     Cancel
                   </button>

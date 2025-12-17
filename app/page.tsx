@@ -270,7 +270,7 @@ const NestedWorkflow = () => {
   const [isSettingsModalOpen, setSettingsModalOpen] = React.useState(false);
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans">
+    <div className="flex h-screen bg-background font-sans">
       <ProjectSidebar
         projects={projects}
         selectedProjectId={selectedProjectId}
@@ -284,14 +284,14 @@ const NestedWorkflow = () => {
         onToggle={() => setSidebarVisible(!isSidebarVisible)}
       />
       <div className="flex-1 flex flex-col">
-        <header className="bg-white border-b border-gray-200 shadow-xs z-20">
+        <header className="bg-surface border-b border-border shadow-xs z-20">
           <div className="max-w-7xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between gap-4">
                <div className="min-w-0">
-                <h1 className="text-lg font-semibold text-gray-900">
+                <h1 className="text-lg font-semibold text-text-primary">
                   Thread Notes
                 </h1>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-text-secondary mt-0.5">
                   Nested task tracking &bull; {globalTotalThreads} Threads
                   &bull; {globalCompletedTasks}/{globalTotalTasks} Tasks
                 </p>
@@ -300,7 +300,7 @@ const NestedWorkflow = () => {
               <div className="flex items-center gap-2">
                 <button
                     onClick={() => setIsAddingThread(true)}
-                    className="flex items-center gap-2 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-primary-hover transition-colors disabled:bg-gray-400"
+                    className="flex items-center gap-2 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     // CONSTRAINT: New thread button is disabled if no project is selected to ensure threads are always associated with a project.
                     disabled={!selectedProjectId}
                     title={
@@ -327,8 +327,8 @@ const NestedWorkflow = () => {
           <div className="md:col-span-2">
             {/* STRATEGY: Conditionally render the "Add New Thread" input form based on the `isAddingThread` state. */}
             {isAddingThread && (
-              <div className="mb-3 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">
+              <div className="mb-3 p-4 bg-surface rounded-lg border border-border shadow-sm">
+                <h3 className="text-sm font-medium text-text-primary mb-2">
                   New thread
                 </h3>
                 <input
@@ -336,7 +336,7 @@ const NestedWorkflow = () => {
                   value={newThreadTitle}
                   onChange={(e) => setNewThreadTitle(e.target.value)}
                   placeholder="Title..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white"
+                  className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-text-primary"
                   autoFocus
                   onKeyPress={(e) => e.key === "Enter" && addThread()}
                 />
@@ -352,7 +352,7 @@ const NestedWorkflow = () => {
                       setIsAddingThread(false);
                       setNewThreadTitle("");
                     }}
-                    className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded text-xs hover:bg-gray-200 transition-colors"
+                    className="px-3 py-1.5 bg-background text-text-secondary border border-border rounded text-xs hover:bg-surface transition-colors"
                   >
                     Cancel
                   </button>
@@ -419,12 +419,12 @@ const NestedWorkflow = () => {
             <div className="sticky top-6">
               {/* STRATEGY: Conditionally render session log details or a placeholder message based on whether a thread is selected. */}
               {selectedThread ? (
-                <div className={`bg-white rounded-lg border mb-4 shadow-sm transition-all ${selectedThreadId === selectedThread.id ? 'border-primary/60 shadow-md' : 'border-gray-200'}`}>
-                  <div className="p-4 border-b border-gray-100">
-                    <h2 className="text-base font-medium text-gray-900">
+                <div className={`bg-surface rounded-lg border mb-4 shadow-sm transition-all ${selectedThreadId === selectedThread.id ? 'border-primary/60 shadow-md' : 'border-border'}`}>
+                  <div className="p-4 border-b border-border">
+                    <h2 className="text-base font-medium text-text-primary">
                       Session Log
                     </h2>
-                    <p className="text-xs text-gray-500 mt-0.5 truncate">
+                    <p className="text-xs text-text-secondary mt-0.5 truncate">
                       {selectedThread.title}
                     </p>
                   </div>
@@ -434,25 +434,25 @@ const NestedWorkflow = () => {
                       selectedThread.sessions.map((session, idx) => (
                         <div
                           key={`${selectedThread.id}-session-${idx}`}
-                          className="bg-gray-50 rounded p-3 text-xs border border-gray-200"
+                          className="bg-background rounded p-3 text-xs border border-border"
                         >
-                          <div className="text-gray-500 mb-1.5 font-medium">
+                          <div className="text-text-secondary mb-1.5 font-medium">
                             {session.date} at {session.time}
                           </div>
-                          <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                          <div className="text-text-primary leading-relaxed whitespace-pre-wrap">
                             {session.notes}
                           </div>
                         </div>
                       ))
                     ) : (
-                      <div className="py-10 text-center text-xs text-gray-400">
+                      <div className="py-10 text-center text-xs text-text-secondary">
                         <p>No sessions logged for this thread.</p>
                       </div>
                     )}
                   </div>
                 </div>
               ) : (
-                <div className="py-20 text-center text-sm text-gray-400">
+                <div className="py-20 text-center text-sm text-text-secondary">
                   <p>Select a thread to view its session log.</p>
                 </div>
               )}

@@ -39,7 +39,7 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({
   return (
     <Menu as="div" className="relative inline-block text-left">
       <div>
-        <Menu.Button className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75">
+        <Menu.Button className="p-2 rounded-full text-text-secondary hover:bg-background hover:text-text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75">
           <MoreVertical className="h-5 w-5" aria-hidden="true" />
         </Menu.Button>
       </div>
@@ -50,7 +50,7 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: -10 }}
           transition={true}
-          className="absolute right-0 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+          className="absolute right-0 mt-2 w-56 origin-top-right divide-y divide-border rounded-md bg-surface shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
         >
           <div className="px-1 py-1">
             <Menu.Item>
@@ -58,13 +58,13 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({
                 <div
                   className={`${
                     active ? "bg-primary-light" : ""
-                  } group flex w-full items-center justify-between rounded-md px-2 py-2 text-sm text-gray-900 transition-colors`}
+                  } group flex w-full items-center justify-between rounded-md px-2 py-2 text-sm text-text-primary transition-colors`}
                 >
                   <div className="flex items-center">
                     {showCompleted ? (
-                      <Eye className="mr-2 h-5 w-5 text-gray-600" />
+                      <Eye className="mr-2 h-5 w-5 text-text-secondary" />
                     ) : (
-                      <EyeOff className="mr-2 h-5 w-5 text-gray-400" />
+                      <EyeOff className="mr-2 h-5 w-5 text-text-secondary/60" />
                     )}
                     Show Completed
                   </div>
@@ -72,7 +72,7 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({
                     checked={showCompleted}
                     onChange={onToggleShowCompleted}
                     className={`${
-                      showCompleted ? "bg-primary" : "bg-gray-200"
+                      showCompleted ? "bg-primary" : "bg-border"
                     } relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
                   >
                     <span
@@ -92,10 +92,10 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({
                   onClick={onOpenSettings}
                   className={`${
                     active ? "bg-primary-light" : ""
-                  } group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900 transition-colors`}
+                  } group flex w-full items-center rounded-md px-2 py-2 text-sm text-text-primary transition-colors`}
                 >
                   <Settings
-                    className="mr-2 h-5 w-5 text-gray-500"
+                    className="mr-2 h-5 w-5 text-text-secondary"
                     aria-hidden="true"
                   />
                   Settings

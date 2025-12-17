@@ -50,7 +50,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
   }
 
   return (
-    <div className="flex items-center space-x-2 p-2 bg-white border border-b-0 border-primary/30 rounded-t">
+    <div className="flex items-center space-x-2 p-2 bg-surface border border-b-0 border-primary/30 rounded-t">
       <button
         onClick={() => editor.chain().focus().toggleBold().run()}
         disabled={!editor.can().chain().focus().toggleBold().run()}
@@ -92,7 +92,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onUpdate }) =>
     editorProps: {
       attributes: {
         class:
-          "w-full px-3 py-2 border border-primary/30 rounded-b text-xs resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white leading-relaxed",
+          "w-full px-3 py-2 border border-primary/30 rounded-b text-xs resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-surface text-text-primary leading-relaxed",
       },
     },
   });
