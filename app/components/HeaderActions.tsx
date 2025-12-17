@@ -57,7 +57,7 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({
               {({ active }) => (
                 <div
                   className={`${
-                    active ? "bg-gray-100" : ""
+                    active ? "bg-primary-light" : ""
                   } group flex w-full items-center justify-between rounded-md px-2 py-2 text-sm text-gray-900 transition-colors`}
                 >
                   <div className="flex items-center">
@@ -72,7 +72,7 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({
                     checked={showCompleted}
                     onChange={onToggleShowCompleted}
                     className={`${
-                      showCompleted ? "bg-orange-600" : "bg-gray-200"
+                      showCompleted ? "bg-primary" : "bg-gray-200"
                     } relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
                   >
                     <span
@@ -91,7 +91,7 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({
                 <button
                   onClick={onOpenSettings}
                   className={`${
-                    active ? "bg-gray-100" : ""
+                    active ? "bg-primary-light" : ""
                   } group flex w-full items-center rounded-md px-2 py-2 text-sm text-gray-900 transition-colors`}
                 >
                   <Settings

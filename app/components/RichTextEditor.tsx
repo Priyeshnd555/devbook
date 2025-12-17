@@ -50,30 +50,30 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
   }
 
   return (
-    <div className="flex items-center space-x-2 p-2 bg-white border border-b-0 border-orange-300 rounded-t">
+    <div className="flex items-center space-x-2 p-2 bg-white border border-b-0 border-primary/30 rounded-t">
       <button
         onClick={() => editor.chain().focus().toggleBold().run()}
         disabled={!editor.can().chain().focus().toggleBold().run()}
-        className={editor.isActive("bold") ? "bg-orange-200 p-1 rounded" : "p-1"}
+        className={editor.isActive("bold") ? "bg-primary-light p-1 rounded" : "p-1"}
       >
         <Bold className="w-4 h-4" />
       </button>
       <button
         onClick={() => editor.chain().focus().toggleItalic().run()}
         disabled={!editor.can().chain().focus().toggleItalic().run()}
-        className={editor.isActive("italic") ? "bg-orange-200 p-1 rounded" : "p-1"}
+        className={editor.isActive("italic") ? "bg-primary-light p-1 rounded" : "p-1"}
       >
         <Italic className="w-4 h-4" />
       </button>
       <button
         onClick={() => editor.chain().focus().toggleBulletList().run()}
-        className={editor.isActive("bulletList") ? "bg-orange-200 p-1 rounded" : "p-1"}
+        className={editor.isActive("bulletList") ? "bg-primary-light p-1 rounded" : "p-1"}
       >
         <List className="w-4 h-4" />
       </button>
       <button
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        className={editor.isActive("orderedList") ? "bg-orange-200 p-1 rounded" : "p-1"}
+        className={editor.isActive("orderedList") ? "bg-primary-light p-1 rounded" : "p-1"}
       >
         <ListOrdered className="w-4 h-4" />
       </button>
@@ -92,7 +92,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onUpdate }) =>
     editorProps: {
       attributes: {
         class:
-          "w-full px-3 py-2 border border-orange-300 rounded-b text-xs resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white leading-relaxed",
+          "w-full px-3 py-2 border border-primary/30 rounded-b text-xs resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white leading-relaxed",
       },
     },
   });

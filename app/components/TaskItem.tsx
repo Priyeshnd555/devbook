@@ -159,11 +159,11 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
   }, [task.children, showCompleted]);
 
   return (
-    <div className={`${level > 0 ? "ml-7 border-l border-orange-200 pl-4 py-0.5" : ""}`} key={`${threadId}-${task.id}`}>
+    <div className={`${level > 0 ? "ml-7 border-l border-primary/20 pl-4 py-0.5" : ""}`} key={`${threadId}-${task.id}`}>
       <div className="mb-1">
-        <div className="flex items-start gap-3 group hover:bg-orange-50/30 px-3 py-2 rounded transition-colors">
+        <div className="flex items-start gap-3 group hover:bg-primary-light/30 px-3 py-2 rounded transition-colors">
           {hasChildren ? (
-            <button onClick={() => toggleTask(task.id)} className="mt-0.5 text-gray-400 hover:text-orange-500 transition-colors flex-shrink-0">
+            <button onClick={() => toggleTask(task.id)} className="mt-0.5 text-gray-400 hover:text-primary transition-colors flex-shrink-0">
               {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
           ) : (
@@ -171,7 +171,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
           )}
 
           <button onClick={() => toggleTaskDone(threadId, task.id)} className="mt-0.5 flex-shrink-0 transition-colors">
-            {task.done ? <CheckCircle2 className="w-5 h-5 text-orange-400" /> : <Circle className="w-5 h-5 text-gray-300 hover:text-orange-300" />}
+            {task.done ? <CheckCircle2 className="w-5 h-5 text-primary/70" /> : <Circle className="w-5 h-5 text-gray-300 hover:text-primary/50" />}
           </button>
 
           <div className="flex-1 min-w-0">
@@ -185,7 +185,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
                   if (e.key === 'Enter') handleSaveTaskText();
                   if (e.key === 'Escape') handleCancelEdit();
                 }}
-                className="w-full px-2 py-1 border border-orange-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                className="w-full px-2 py-1 border border-primary/30 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
                 autoFocus
               />
             ) : (
@@ -202,11 +202,11 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
 
             {task.note && !isEditing && !isEditingTask && (
               <div
-                className="mt-2 text-xs leading-relaxed text-orange-900 bg-orange-100 px-3 py-2 rounded"
+                className="mt-2 text-xs leading-relaxed text-primary-text bg-primary-light px-3 py-2 rounded"
                 onClick={() => setEditingNote(task.id)}
               >
                 <div className="flex items-start gap-2">
-                  <StickyNote className="w-3 h-3 text-orange-700 mt-0.5 flex-shrink-0" />
+                  <StickyNote className="w-3 h-3 text-primary-text mt-0.5 flex-shrink-0" />
                   <div
                     className={`prose prose-sm max-w-none ${!isNoteExpanded && noteLineCount > 3 ? 'max-h-12 overflow-hidden' : ''}`}
                     dangerouslySetInnerHTML={{ __html: task.note }}
@@ -214,7 +214,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
                 </div>
                 {noteLineCount > 3 && (
                   <button
-                    className="text-orange-600 text-xs mt-2"
+                    className="text-primary text-xs mt-2"
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsNoteExpanded(!isNoteExpanded);
@@ -238,15 +238,15 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
           </div>
 
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-            <button onClick={handleCyclePriority} className={`p-1.5 rounded transition-colors ${priorityStyles[task.priority || 0]} hover:bg-orange-50`} title="Set priority">
+            <button onClick={handleCyclePriority} className={`p-1.5 rounded transition-colors ${priorityStyles[task.priority || 0]} hover:bg-primary-light`} title="Set priority">
               <Star className="w-3.5 h-3.5" fill={task.priority > 0 ? 'currentColor' : 'none'}/>
             </button>
             {!task.note && !isEditing && (
-              <button onClick={() => setEditingNote(task.id)} className="p-1.5 text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded transition-colors" title="Add note">
+              <button onClick={() => setEditingNote(task.id)} className="p-1.5 text-gray-300 hover:text-primary hover:bg-primary-light rounded transition-colors" title="Add note">
                 <MessageSquare className="w-3.5 h-3.5" />
               </button>
             )}
-            <button onClick={() => { setAddingChildTo(task.id); setNewChildText(''); }} className="p-1.5 text-gray-300 hover:text-orange-500 hover:bg-orange-50 rounded transition-colors" title="Add subtask">
+            <button onClick={() => { setAddingChildTo(task.id); setNewChildText(''); }} className="p-1.5 text-gray-300 hover:text-primary hover:bg-primary-light rounded transition-colors" title="Add subtask">
               <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -254,8 +254,8 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
 
         {isAddingChild && (
           <div className="ml-10 mt-2 flex gap-2">
-            <input type="text" value={newChildText} onChange={(e) => setNewChildText(e.target.value)} placeholder="New subtask..." className="flex-1 px-3 py-2 border border-orange-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white" autoFocus onKeyPress={(e) => e.key === "Enter" && addChild(threadId, task.id)} />
-            <button onClick={() => addChild(threadId, task.id)} className="px-3 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors font-medium">Add</button>
+            <input type="text" value={newChildText} onChange={(e) => setNewChildText(e.target.value)} placeholder="New subtask..." className="flex-1 px-3 py-2 border border-primary/30 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white" autoFocus onKeyPress={(e) => e.key === "Enter" && addChild(threadId, task.id)} />
+            <button onClick={() => addChild(threadId, task.id)} className="px-3 py-2 bg-primary text-white rounded text-sm hover:bg-primary-hover transition-colors font-medium">Add</button>
           </div>
         )}
       </div>

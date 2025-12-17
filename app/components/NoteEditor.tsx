@@ -65,7 +65,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       <div className="flex gap-2">
         <button
           onClick={() => saveNote(threadId, taskId, editedNoteText)}
-          className="px-3 py-1.5 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition-colors font-medium"
+          className="px-3 py-1.5 bg-primary text-white text-xs rounded hover:bg-primary-hover transition-colors font-medium"
         >
           Save
         </button>

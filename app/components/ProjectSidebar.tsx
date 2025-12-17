@@ -194,7 +194,7 @@ const ProjectItem: React.FC<{
           onClick={() => onSelectProject(project.id)}
           className={`w-full p-2.5 rounded-lg transition-all group relative ${
             isSelected
-              ? "bg-orange-50 text-orange-900 ring-1 ring-orange-100"
+              ? "bg-primary-light text-primary-text ring-1 ring-primary/20"
               : "hover:bg-slate-50 text-slate-600"
           }`}
           title={project.name}
@@ -206,7 +206,7 @@ const ProjectItem: React.FC<{
           )}
           {/* STRATEGY: A small dot indicates that a project has children, even in collapsed view. */}
           {hasChildren && !isSelected && (
-            <div className="absolute top-1 right-1 w-2 h-2 bg-orange-500 rounded-full"></div>
+            <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></div>
           )}
         </button>
       </div>
@@ -222,7 +222,7 @@ const ProjectItem: React.FC<{
       <div
         className={`group relative flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer transition-all ${
           isSelected
-            ? "bg-orange-50 text-orange-900 ring-1 ring-orange-100"
+            ? "bg-primary-light text-primary-text ring-1 ring-primary/20"
             : "hover:bg-slate-50 text-slate-700"
         }`}
         style={{ paddingLeft: `${indentPx + 8}px` }}
@@ -240,7 +240,7 @@ const ProjectItem: React.FC<{
             }}
             className={`flex-shrink-0 p-0.5 rounded transition-colors ${
               isSelected
-                ? "text-orange-700"
+                ? "text-primary-text"
                 : "text-slate-400 hover:text-slate-600"
             }`}
           >
@@ -261,11 +261,11 @@ const ProjectItem: React.FC<{
           }`}
         >
           {isSelected ? (
-            <FolderOpen className="w-5 h-5 text-orange-600" />
+            <FolderOpen className="w-5 h-5 text-primary" />
           ) : (
             <Folder
               className={`w-5 h-5 ${
-                hasChildren ? "text-orange-500" : "text-slate-400"
+                hasChildren ? "text-primary" : "text-slate-400"
               }`}
             />
           )}
@@ -280,14 +280,14 @@ const ProjectItem: React.FC<{
             onChange={(e) => setRenameValue(e.target.value)}
             onKeyDown={handleRenameKeyPress}
             onBlur={handleRename}
-            className="flex-1 px-2 py-1 text-[15px] font-medium bg-white border border-orange-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="flex-1 px-2 py-1 text-[15px] font-medium bg-white border border-primary/30 rounded focus:outline-none focus:ring-2 focus:ring-primary"
             autoFocus
             onClick={(e) => e.stopPropagation()} // CONSTRAINT: Prevent clicks on the input from selecting the project.
           />
         ) : (
           <span
             className={`flex-1 truncate text-[15px] font-medium ${
-              isSelected ? "text-orange-900" : "text-slate-700"
+              isSelected ? "text-primary-text" : "text-slate-700"
             }`}
           >
             {project.name}
@@ -299,7 +299,7 @@ const ProjectItem: React.FC<{
           <span
             className={`flex-shrink-0 px-2 py-0.5 text-[11px] font-semibold rounded-full ${
               isSelected
-                ? "bg-orange-100 text-orange-700"
+                ? "bg-primary-light text-primary-text"
                 : "bg-slate-100 text-slate-600"
             }`}
           >
@@ -320,7 +320,7 @@ const ProjectItem: React.FC<{
                 showMenu
                   ? "bg-slate-200 text-slate-700"
                   : isSelected
-                  ? "hover:bg-orange-100 text-orange-600 opacity-0 group-hover:opacity-100"
+                  ? "hover:bg-primary-light text-primary opacity-0 group-hover:opacity-100"
                   : "hover:bg-slate-100 text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100"
               }`}
               title="Options"
@@ -357,7 +357,7 @@ const ProjectItem: React.FC<{
                       e.stopPropagation();
                       handleDelete();
                     }}
-                    className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                    className="w-full px-3 py-2 text-left text-sm text-danger hover:bg-danger-bg flex items-center gap-2"
                   >
                     <Trash2 className="w-4 h-4" />
                     Delete
@@ -377,8 +377,8 @@ const ProjectItem: React.FC<{
             }}
             className={`flex-shrink-0 p-1.5 rounded-md transition-all ${
               isSelected
-                ? "hover:bg-orange-100 text-orange-600 opacity-0 group-hover:opacity-100"
-                : "hover:bg-slate-100 text-slate-400 hover:text-orange-600 opacity-0 group-hover:opacity-100"
+                ? "hover:bg-primary-light text-primary opacity-0 group-hover:opacity-100"
+                : "hover:bg-slate-100 text-slate-400 hover:text-primary opacity-0 group-hover:opacity-100"
             }`}
             title="Add nested project"
           >
@@ -420,12 +420,12 @@ const ProjectItem: React.FC<{
                 onChange={(e) => setNewProjectName(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Project name..."
-                className="flex-1 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm"
+                className="flex-1 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent shadow-sm"
                 onClick={(e) => e.stopPropagation()}
               />
               <button
                 onClick={handleAddNestedProject}
-                className="flex items-center gap-1.5 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors"
+                className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-primary-hover transition-colors"
                 title="Add"
               >
                 <Plus className="w-4 h-4" />
@@ -517,7 +517,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
         >
           {!isCollapsed && (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center shadow-sm">
+              <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-hover rounded-lg flex items-center justify-center shadow-sm">
                 <Folder className="w-4 h-4 text-white" />
               </div>
               <div>
@@ -566,7 +566,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                 </p>
                 <button
                   onClick={() => setShowInput(true)}
-                  className="text-xs text-orange-600 hover:text-orange-700 font-medium"
+                  className="text-xs text-primary hover:text-primary-hover font-medium"
                 >
                   Create project →
                 </button>
@@ -591,13 +591,13 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                     onChange={(e) => setNewProjectName(e.target.value)}
                     onKeyDown={handleKeyPress}
                     placeholder="New project name..."
-                    className="flex-1 px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm"
+                    className="flex-1 px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent shadow-sm"
                   />
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleAddNewRootProject}
-                    className="flex items-center gap-1.5 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors"
+                    className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-primary-hover transition-colors"
                   >
                     Create Project
                   </button>
@@ -615,7 +615,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
             ) : (
               <button
                 onClick={() => setShowInput(true)}
-                className="flex items-center gap-1.5 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors w-full justify-center"
+                className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-primary-hover transition-colors w-full justify-center"
               >
                 <Plus className="w-5 h-5" />
                 New Project

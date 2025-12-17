@@ -2,22 +2,38 @@
 
 :root {
   /* Light Theme (Default) */
-  --color-primary: 24 99% 55%;   /* #FB8500 */
+  --color-primary: 24 99% 55%;   /* #FB8500 origin: orange-600 */
+  --color-primary-hover: 17 99% 48%; /* #ea580c origin: orange-700 appx */
+  --color-primary-light: 32 98% 93%; /* #ffedd5 origin: orange-100 appx */
+  --color-primary-text: 15 79% 34%; /* #c2410c origin: orange-700 text appx */
+
   --color-accent: 201 98% 41%;   /* #0288D1 */
+  
   --color-background: 0 0% 100%; /* #FFFFFF */
   --color-surface: 0 0% 97%;    /* #F8F8F8 */
+  
   --color-text-primary: 0 0% 10%; /* #1A1A1A */
   --color-text-secondary: 218 11% 54%; /* #6B7280 */
+  
   --color-border: 220 14% 90%;   /* #E5E7EB */
   --color-shadow: 0 0% 0%;      /* #000000 */
+  
   --color-success: 135 63% 41%; /* #28A745 */
+  
   --color-danger: 355 70% 54%;  /* #DC3545 */
+  --color-danger-bg: 0 93% 94%; /* #fee2e2 origin: red-100 */
+  --color-danger-text: 0 74% 42%; /* #b91c1c origin: red-700 */
+
   --color-warning: 45 100% 50%; /* #FFC107 */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --color-primary: 24 99% 55%;   /* #FB8500 */
+    --color-primary-hover: 24 99% 65%; /* lighter for dark mode hover */
+    --color-primary-light: 24 40% 20%; /* dark orange background */
+    --color-primary-text: 24 99% 80%; /* light orange text */
+    
     --color-accent: 198 90% 70%;   /* #4FC3F7 */
     --color-background: 0 0% 7%;  /* #121212 */
     --color-surface: 0 0% 12%;    /* #1F1F1F */
@@ -26,7 +42,11 @@
     --color-border: 0 0% 22%;     /* #383838 */
     --color-shadow: 0 0% 0%;      /* #000000 */
     --color-success: 124 39% 57%; /* #66BB6A */
+    
     --color-danger: 2 85% 63%;    /* #EF5350 */
+    --color-danger-bg: 0 40% 20%; /* dark red background */
+    --color-danger-text: 2 95% 85%; /* light red text */
+    
     --color-warning: 60 96% 65%;  /* #FFEE58 */
   }
 }
@@ -34,6 +54,10 @@
 /* To allow user override for dark mode, if desired, using data-theme attribute */
 [data-theme='dark'] {
   --color-primary: 24 99% 55%;
+  --color-primary-hover: 24 99% 65%;
+  --color-primary-light: 24 40% 20%;
+  --color-primary-text: 24 99% 80%;
+
   --color-accent: 198 90% 70%;
   --color-background: 0 0% 7%;
   --color-surface: 0 0% 12%;
@@ -42,15 +66,41 @@
   --color-border: 0 0% 22%;
   --color-shadow: 0 0% 0%;
   --color-success: 124 39% 57%;
+  
   --color-danger: 2 85% 63%;
+  --color-danger-bg: 0 40% 20%;
+  --color-danger-text: 2 95% 85%;
+  
   --color-warning: 60 96% 65%;
 }
 
 @theme inline {
   --color-background: var(--color-background);
-  --color-foreground: var(--color-text-primary); /* Changed to use new text variable */
+  --color-foreground: var(--color-text-primary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-primary: hsl(var(--color-primary));
+  --color-primary-hover: hsl(var(--color-primary-hover));
+  --color-primary-light: hsl(var(--color-primary-light));
+  --color-primary-text: hsl(var(--color-primary-text));
+  
+  --color-accent: hsl(var(--color-accent));
+  --color-surface: hsl(var(--color-surface));
+  
+  --color-text-primary: hsl(var(--color-text-primary));
+  --color-text-secondary: hsl(var(--color-text-secondary));
+  
+  --color-border: hsl(var(--color-border));
+  --color-shadow: hsl(var(--color-shadow));
+  
+  --color-success: hsl(var(--color-success));
+  
+  --color-danger: hsl(var(--color-danger));
+  --color-danger-bg: hsl(var(--color-danger-bg));
+  --color-danger-text: hsl(var(--color-danger-text));
+  
+  --color-warning: hsl(var(--color-warning));
 }
 
 body {

@@ -82,7 +82,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                   checked={darkMode}
                   onChange={setDarkMode}
                   className={`${
-                    darkMode ? "bg-orange-600" : "bg-gray-200"
+                    darkMode ? "bg-primary" : "bg-gray-200"
                   } relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
                 >
                   <span
@@ -101,7 +101,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 <div className="w-40">
                   <Listbox value={fontSize} onChange={setFontSize}>
                     <div className="relative">
-                      <Listbox.Button className="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-sm text-gray-900 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                      <Listbox.Button className="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-sm text-gray-900 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary">
                         <span className="block truncate">{fontSize}</span>
                       </Listbox.Button>
                       <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-10">
@@ -111,7 +111,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                             className={({ active }) =>
                               `relative cursor-default select-none py-2 pl-4 pr-4 ${
                                 active
-                                  ? "bg-orange-100 text-orange-900"
+                                  ? "bg-primary-light text-primary-text"
                                   : "text-gray-900"
                               }`
                             }

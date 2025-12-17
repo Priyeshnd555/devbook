@@ -300,7 +300,7 @@ const NestedWorkflow = () => {
               <div className="flex items-center gap-2">
                 <button
                     onClick={() => setIsAddingThread(true)}
-                    className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-orange-700 transition-colors disabled:bg-gray-400"
+                    className="flex items-center gap-2 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-primary-hover transition-colors disabled:bg-gray-400"
                     // CONSTRAINT: New thread button is disabled if no project is selected to ensure threads are always associated with a project.
                     disabled={!selectedProjectId}
                     title={
@@ -336,14 +336,14 @@ const NestedWorkflow = () => {
                   value={newThreadTitle}
                   onChange={(e) => setNewThreadTitle(e.target.value)}
                   placeholder="Title..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white"
                   autoFocus
                   onKeyPress={(e) => e.key === "Enter" && addThread()}
                 />
                 <div className="flex gap-2 mt-2">
                   <button
                     onClick={addThread}
-                    className="px-3 py-1.5 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 transition-colors font-medium"
+                    className="px-3 py-1.5 bg-primary text-white rounded text-xs hover:bg-primary-hover transition-colors font-medium"
                   >
                     Create
                   </button>
@@ -419,7 +419,7 @@ const NestedWorkflow = () => {
             <div className="sticky top-6">
               {/* STRATEGY: Conditionally render session log details or a placeholder message based on whether a thread is selected. */}
               {selectedThread ? (
-                <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                <div className={`bg-white rounded-lg border mb-4 shadow-sm transition-all ${selectedThreadId === selectedThread.id ? 'border-primary/60 shadow-md' : 'border-gray-200'}`}>
                   <div className="p-4 border-b border-gray-100">
                     <h2 className="text-base font-medium text-gray-900">
                       Session Log
