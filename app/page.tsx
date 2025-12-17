@@ -395,7 +395,7 @@ const NestedWorkflow = () => {
                       selectedThread.sessions.map((session, idx) => (
                         <div
                           key={`${selectedThread.id}-session-${idx}`}
-                          className="bg-background rounded p-3 text-xs border border-border"
+                          className="bg-background rounded p-3 text-xs border border-border break-words"
                         >
                           <div className="text-text-secondary mb-1.5 font-medium">
                             {session.date} at {session.time}
