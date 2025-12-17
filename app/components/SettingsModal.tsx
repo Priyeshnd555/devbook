@@ -43,7 +43,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   // We map the global 'theme' string to a binary 'isDarkMode' boolean for the Switch component.
   // 'system' theme is treated as not-dark (false) for the toggle state unless resolved,
   // but here we simplify to: dark state is triggered only by explicit 'dark' theme.
-  const { theme, setTheme, themeColor, setThemeColor } = useTheme();
+  const { theme, setTheme, themeColor, setThemeColor, customColor, setCustomColor } = useTheme();
   
   // CONSTRAINT: Simple toggle logic assuming 'dark' vs 'light'. 
   // 'system' resets to default, but the toggle forces explicit choice.
@@ -132,6 +132,36 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                       )}
                     </button>
                   ))}
+                  
+                  {/* Custom Color Picker */}
+                  <div className="relative flex items-center justify-center">
+                    <button
+                        onClick={() => setThemeColor("custom")}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 transition-transform hover:scale-110 ${themeColor === "custom" ? "ring-2 ring-offset-2 ring-text-primary" : ""}`}
+                         aria-label="Select Custom theme"
+                    >
+                         {themeColor === "custom" && (
+                            <Check className="w-4 h-4 text-white" />
+                          )}
+                    </button>
+                    {/* Hidden input overlay that triggers on click? Or just separate input? 
+                        Analysis: Best UX is probably a button that activates the mode, 
+                        and if active, maybe shows the color or allows picking. 
+                        Let's put the input on top with opacity 0 if we want direct click-to-open, 
+                        BUT we want to be able to select "custom" as a mode even if we don't change color.
+                        Better: Separate tiny input or just trigger click on input.
+                    */}
+                    <input 
+                        type="color"
+                        value={customColor}
+                        onChange={(e) => {
+                            setCustomColor(e.target.value);
+                            if (themeColor !== "custom") setThemeColor("custom");
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        title="Choose custom color"
+                    />
+                  </div>
                 </div>
               </div>
 

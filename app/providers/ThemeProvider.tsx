@@ -3,7 +3,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "dark" | "light" | "system";
-export type ThemeColor = "orange" | "green" | "blue";
+export type ThemeColor = "orange" | "green" | "blue" | "custom";
+import { generateThemeVariables } from "../utils/themeUtils";
 
 interface ThemeProviderProps {
   children: React.ReactNode;
@@ -11,6 +12,7 @@ interface ThemeProviderProps {
   defaultColor?: ThemeColor;
   storageKey?: string;
   colorStorageKey?: string;
+  defaultCustomColor?: string;
 }
 
 interface ThemeProviderState {
@@ -18,6 +20,8 @@ interface ThemeProviderState {
   setTheme: (theme: Theme) => void;
   themeColor: ThemeColor;
   setThemeColor: (color: ThemeColor) => void;
+  customColor: string;
+  setCustomColor: (color: string) => void;
 }
 
 const initialState: ThemeProviderState = {
@@ -25,6 +29,8 @@ const initialState: ThemeProviderState = {
   setTheme: () => null,
   themeColor: "orange",
   setThemeColor: () => null,
+  customColor: "#FB8500", // Default orange hex
+  setCustomColor: () => null,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -40,6 +46,7 @@ export function ThemeProvider({
   children,
   defaultTheme = "system",
   defaultColor = "orange",
+  defaultCustomColor = "#FB8500",
   storageKey = "devbook-theme",
   colorStorageKey = "devbook-color-theme",
   ...props
@@ -61,6 +68,13 @@ export function ThemeProvider({
     return defaultColor;
   });
 
+  const [customColor, setCustomColor] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(`${colorStorageKey}-custom`) || defaultCustomColor;
+    }
+    return defaultCustomColor;
+  });
+
   // STRATEGY: Effect updates the DOM class list whenever the theme changes.
   useEffect(() => {
     const root = window.document.documentElement;
@@ -80,11 +94,26 @@ export function ThemeProvider({
     root.classList.add(theme);
   }, [theme]);
 
-  // STRATEGY: Effect updates the DOM data-color attribute whenever the color changes.
+  // STRATEGY: Effect updates the DOM data-color attribute or injects custom styles.
   useEffect(() => {
     const root = window.document.documentElement;
     root.setAttribute("data-color", themeColor);
-  }, [themeColor]);
+
+    if (themeColor === "custom") {
+      const variables = generateThemeVariables(customColor);
+      if (variables) {
+        Object.entries(variables).forEach(([key, value]) => {
+          root.style.setProperty(key, value);
+        });
+      }
+    } else {
+      // Clean up custom variables if we switch back to a preset
+      root.style.removeProperty("--color-primary");
+      root.style.removeProperty("--color-primary-hover");
+      root.style.removeProperty("--color-primary-light");
+      root.style.removeProperty("--color-primary-text");
+    }
+  }, [themeColor, customColor]);
 
   const value = {
     theme,
@@ -96,6 +125,11 @@ export function ThemeProvider({
     setThemeColor: (color: ThemeColor) => {
       localStorage.setItem(colorStorageKey, color);
       setThemeColor(color);
+    },
+    customColor,
+    setCustomColor: (color: string) => {
+      localStorage.setItem(`${colorStorageKey}-custom`, color);
+      setCustomColor(color);
     },
   };
 
