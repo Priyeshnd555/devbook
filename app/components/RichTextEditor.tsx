@@ -41,7 +41,7 @@
 
 import { useEditor, EditorContent, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { Bold, Italic, List, ListOrdered } from "lucide-react";
+import { Bold, Italic, List, ListOrdered, CodeXml } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 interface RichTextEditorProps {
@@ -88,6 +88,14 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
       >
         <ListOrdered className="w-4 h-4" />
       </button>
+      <div className="w-px h-4 bg-primary/10 mx-1" />
+      <button
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+        className={`p-1 rounded transition-colors ${editor.isActive("codeBlock") ? "bg-primary/20 text-primary" : "text-text-secondary hover:bg-primary/10 hover:text-primary"}`}
+      >
+        <CodeXml className="w-4 h-4" />
+      </button>
     </div>
   );
 };
@@ -109,7 +117,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, editable = tru
     editorProps: {
       attributes: {
         class:
-          "w-full px-0 py-0 text-sm resize-none focus:outline-none bg-transparent text-text-primary leading-6 min-h-[auto] prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_p]:my-1 [&_li]:my-0 [&_a]:text-primary [&_a]:underline [&_a]:hover:text-primary-hover",
+          "w-full px-0 py-0 text-sm resize-none focus:outline-none bg-transparent text-text-primary leading-6 min-h-[auto] prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_p]:my-1 [&_li]:my-0 [&_a]:text-primary [&_a]:underline [&_a]:hover:text-primary-hover [&_pre]:bg-surface [&_pre]:p-4 [&_pre]:rounded-lg [&_pre]:border [&_pre]:border-border [&_pre]:my-2 [&_code]:font-mono [&_code]:text-xs [&_code]:bg-surface/50 [&_code]:px-1 [&_code]:rounded [&_pre_code]:bg-transparent [&_pre_code]:p-0",
       },
     },
   });
