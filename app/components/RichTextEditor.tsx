@@ -1,17 +1,17 @@
 /**
  * =================================================================================================
- * CONTEXT ANCHOR: RichTextEditor Component (RichTextEditor.tsx)
+ * CONTEXT ANCHOR: RichTextEditor Module
  * =================================================================================================
  *
  * @purpose
  * Provides a customizable rich text editor using Tiptap for creating and editing notes with
- * formatting options like bold, italic, and lists.
+ * formatting options like bold, italic, lists, and code blocks.
  *
  * @dependencies
  * - @tiptap/react: Core Tiptap editor functionality and React integration.
  * - @tiptap/starter-kit: A collection of common Tiptap extensions (bold, italic, lists).
- * - lucide-react: For icons used in the toolbar.
- * - react: For `useEffect` hook.
+ * - lucide-react: For icons used in the toolbar (Bold, Italic, List, ListOrdered, CodeXml).
+ * - react: For `useEffect` and `useRef` hooks.
  *
  * @invariants
  * 1. CONTROLLED COMPONENT: The editor's content is fully controlled by the `content` prop and
@@ -30,11 +30,11 @@
  *   hydration in Next.js applications, avoiding potential SSR issues.
  * - A `useEffect` hook is used to update the Tiptap editor's content when the `content` prop
  *   from the parent component changes, ensuring the editor remains synchronized with external state.
- * - **Generation 5 Update**:
+ * - **GENERATION 5 UPDATE**:
  *   - Supports `editable` prop to toggle read-only mode without unmounting.
- *   - Implements "Smart Cursor" logic: uses `posAtCoords` to detect click position in read-only mode
- *     and restores the cursor to that exact index upon entering edit mode.
- *   - Uses persistent prose formatting classes for consistent list/link rendering.
+ *   - Implements "Smart Cursor" logic: uses `posAtCoords` to detect click position in read-only mode.
+ * - **GENERATION 6 UPDATE**:
+ *   - Added Code Block support with `CodeXml` icon and custom `prose` styling for `pre` and `code` tags.
  * =================================================================================================
  */
 "use client";
@@ -51,6 +51,12 @@ interface RichTextEditorProps {
   onBlur?: () => void;
 }
 
+/**
+ * CONTEXT ANCHOR: MenuBar Component
+ * PURPOSE: Renders the toolbar for the RichTextEditor with formatting controls.
+ * DEPENDENCIES: Tiptap Editor instance, Lucide Icons.
+ * INVARIANTS: Only visible when the parent editor is in `editable` mode.
+ */
 const MenuBar = ({ editor }: { editor: Editor | null }) => {
   if (!editor) {
     return null;
@@ -100,6 +106,12 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
   );
 };
 
+/**
+ * CONTEXT ANCHOR: RichTextEditor Component
+ * PURPOSE: Main entry point for the rich text editor field.
+ * DEPENDENCIES: useEditor (Tiptap), StarterKit, MenuBar.
+ * INVARIANTS: content synchronous lifecycle.
+ */
 const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, editable = true, onUpdate, onBlur }) => {
   const clickPosRef = useRef<number | null>(null);
 
