@@ -297,7 +297,9 @@ const NestedWorkflow = () => {
           </div>
         </header>
 
-        <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto px-6 py-4 w-full overflow-y-auto">
+        <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto px-6 py-4 w-full overflow-auto
+            [scrollbar-width:none]
+            [&::-webkit-scrollbar]:hidden">
           <div className="md:col-span-2">
             {/* STRATEGY: Conditionally render the "Add New Thread" input form based on the `isAddingThread` state. */}
             {isAddingThread && (
@@ -402,7 +404,9 @@ const NestedWorkflow = () => {
                       {selectedThread.title}
                     </p>
                   </div>
-                  <div className="p-4 space-y-3 max-h-[calc(100vh-18rem)] overflow-y-auto">
+                  <div className="p-4 space-y-3 max-h-[calc(100vh-18rem)] overflow-auto
+            [scrollbar-width:none]
+            [&::-webkit-scrollbar]:hidden">
                     {/* STRATEGY: Display individual session notes or a message if no sessions are logged for the selected thread. */}
                     {selectedThread.sessions.length > 0 ? (
                       selectedThread.sessions.map((session, idx) => (
