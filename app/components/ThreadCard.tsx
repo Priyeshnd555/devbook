@@ -204,6 +204,8 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
     onSelect();
   }
 
+  const isAddingThisRootTask = taskItemProps.addingChildTo === `${thread.id}-root`;
+
   return (
     <div 
       className={`bg-surface rounded-lg border mb-4 shadow-sm transition-all ${isSelected ? 'border-primary/60 shadow-md' : 'border-border'}`}
@@ -322,23 +324,34 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
       {/* STRATEGY: The entire task list section is conditionally rendered based on whether the thread is expanded. */}
       {isThreadExpanded && (
         <>
-          <div className="p-4">
+        <div className="p-4">
             {/* STRATEGY: Persistent, seamless "New task" input at the bottom.
                 This allows for rapid-fire data entry (Notion-style). 
-                Pressing Enter adds the task and keeps focus. */}
-            {/* STRATEGY: Persistent, seamless "New task" input at the bottom.
-                This allows for rapid-fire data entry (Notion-style). 
-                Pressing Enter adds the task and keeps focus. */}
-            <div className="group flex items-center gap-3 px-3 opacity-60 hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                The `isAddingThisRootTask` constant ensures the input's state (value, active context) is correctly managed.
+                When the input is focused, `onFocus` sets the context and clears the input.
+                After a task is added, the parent resets the `addingChildTo` context.
+                The `onChange` handler now re-establishes the context (`addingChildTo`) if the user starts typing again
+                while the input is focused but no longer explicitly marked as the active root task input.
+                Pressing Enter adds the task and keeps focus, with the input ready for the next entry. */}
+            
+                        <div className="group flex items-center gap-3 px-3 opacity-60 hover:opacity-100 focus-within:opacity-100 transition-opacity">
                {/* Spacer to match chevron slot in TaskItem */}
                <div className="w-4 flex-shrink-0"></div>
                {/* Plus icon matches Checkbox size (w-5) */}
                <Plus className="w-5 h-5 text-text-secondary" />
                <input
                  type="text"
-                 value={taskItemProps.newChildText}
-                 onChange={(e) => taskItemProps.setNewChildText(e.target.value)}
-                 onFocus={() => taskItemProps.setAddingChildTo(`${thread.id}-root`)}
+                 value={isAddingThisRootTask ? taskItemProps.newChildText : ''}
+                 onChange={(e) => {
+                  if (!isAddingThisRootTask) {
+                    taskItemProps.setAddingChildTo(`${thread.id}-root`);
+                  }
+                  taskItemProps.setNewChildText(e.target.value);
+                 }}
+                 onFocus={() => {
+                  taskItemProps.setAddingChildTo(`${thread.id}-root`);
+                  taskItemProps.setNewChildText('');
+                 }}
                  // CONSTRAINT: We only want to add on Enter.
                  onKeyDown={(e) => {
                    if (e.key === "Enter") {
