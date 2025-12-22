@@ -9,10 +9,12 @@
  * notes, as well as user interactions for editing, completion, and adding sub-tasks.
  *
  * @dependencies
- * - REACT: `useState`, `useMemo` for internal UI state management.
+ * - REACT: `useState`, `useMemo`, `useEffect` for internal UI state management.
  * - LUCIDE-REACT: For all iconography (checkboxes, chevrons, etc.).
  * - NoteEditor: Component for rich text note editing.
  * - TYPES: `Task` from the main page (`../types`).
+ * - framer-motion: For the completion animation.
+ * - CompletionAnimation: The component for the completion animation.
  *
  * @invariants
  * 1. RECURSIVE STRUCTURE: The component renders itself for each of its `task.children`, passing
@@ -25,6 +27,7 @@
  * - `isNoteExpanded`: Local state to control the expanded/collapsed state of the note accordion.
  * - `noteLineCount`: Memoized value for the number of lines in the note, used for accordion logic.
  * - `visibleChildren`: Memoized value that filters sub-tasks based on the `showCompleted` prop.
+ * - `justCompleted`: Local state to trigger the completion animation.
  *
  * @ai_note
  * - The note display now supports rich text rendering using `dangerouslySetInnerHTML`.
@@ -38,10 +41,12 @@
  *   - Seamless styling (text-sm, leading-6).
  *   - Auto-save on blur removed (explicit Save/Cancel restored).
  *   - List and URL formatting explicitly handled via CSS injections in `prose`.
+ * - A completion animation is now triggered when a task is marked as done.
  * =================================================================================================
  */
 import NoteEditor from "./NoteEditor";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { AnimatePresence } from "framer-motion";
 import {
   Plus,
   ChevronDown,
@@ -54,6 +59,7 @@ import {
 } from "lucide-react";
 import { Task } from "../types";
 import { isTaskFullyCompleted } from "../utils/taskUtils";
+import { CompletionAnimation } from "./CompletionAnimation";
 
 export interface TaskItemProps {
   task: Task;
@@ -80,35 +86,55 @@ export interface TaskItemProps {
 }
 
 export const TaskItem: React.FC<TaskItemProps> = (props) => {
-    const {
-        task,
-        threadId,
-        level = 0,
-        showCompleted,
-        expandedTasks,
-        editingNote,
-        addingChildTo,
-        editingTaskId,
-        editedTaskText,
-        toggleTask,
-        toggleTaskDone,
-        setEditingNote,
-        saveNote,
-        setAddingChildTo,
-        newChildText,
-        setNewChildText,
-        addChild,
-        setEditingTaskId,
-        setEditedTaskText,
-        updateTaskText,
-        setTaskPriority,
-      } = props;
+  const {
+    task,
+    threadId,
+    level = 0,
+    showCompleted,
+    expandedTasks,
+    editingNote,
+    addingChildTo,
+    editingTaskId,
+    editedTaskText,
+    toggleTask,
+    toggleTaskDone,
+    setEditingNote,
+    saveNote,
+    setAddingChildTo,
+    newChildText,
+    setNewChildText,
+    addChild,
+    setEditingTaskId,
+    setEditedTaskText,
+    updateTaskText,
+    setTaskPriority,
+  } = props;
   const isExpanded = expandedTasks.has(task.id);
   const hasChildren = task.children.length > 0;
   const isEditing = editingNote === task.id;
   const isAddingChild = addingChildTo === task.id;
   const isEditingTask = editingTaskId === task.id;
   const [isNoteExpanded, setIsNoteExpanded] = useState(true);
+  const [justCompleted, setJustCompleted] = useState(false);
+
+  const handleToggleDone = () => {
+    if (!task.done) {
+      setJustCompleted(true);
+    } else {
+      // if user wants to change the status of completed task to not completed
+      toggleTaskDone(threadId, task.id);
+    }
+  };
+
+  useEffect(() => {
+    if (justCompleted) {
+      const timer = setTimeout(() => {
+        toggleTaskDone(threadId, task.id);
+        setJustCompleted(false);
+      }, 500); // Animation duration + buffer
+      return () => clearTimeout(timer);
+    }
+  }, [justCompleted]);
 
   const noteLineCount = useMemo(() => {
     if (!task.note) return 0;
@@ -145,37 +171,59 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
   // the visibility of completed tasks is consistent throughout the task hierarchy.
   const visibleChildren = useMemo(() => {
     const sortedChildren = [...task.children].sort((a, b) => {
-        if ((b.priority || 0) !== (a.priority || 0)) {
-          return (b.priority || 0) - (a.priority || 0);
-        }
-        const aDone = isTaskFullyCompleted(a);
-        const bDone = isTaskFullyCompleted(b);
-        if (aDone !== bDone) {
-          return aDone ? 1 : -1;
-        }
-        return 0;
-      });
+      if ((b.priority || 0) !== (a.priority || 0)) {
+        return (b.priority || 0) - (a.priority || 0);
+      }
+      const aDone = isTaskFullyCompleted(a);
+      const bDone = isTaskFullyCompleted(b);
+      if (aDone !== bDone) {
+        return aDone ? 1 : -1;
+      }
+      return 0;
+    });
 
     if (showCompleted) {
       return sortedChildren;
     }
-    return sortedChildren.filter(child => !isTaskFullyCompleted(child));
+    return sortedChildren.filter((child) => !isTaskFullyCompleted(child));
   }, [task.children, showCompleted]);
 
   return (
-    <div className={`${level > 0 ? "ml-7 border-l border-primary/20 pl-4 py-0.5" : ""}`} key={`${threadId}-${task.id}`}>
+    <div
+      className={`${
+        level > 0 ? "ml-7 border-l border-primary/20 pl-4 py-0.5" : ""
+      }`}
+      key={`${threadId}-${task.id}`}
+    >
       <div className="mb-1">
         <div className="flex items-start gap-3 group hover:bg-primary-light/30 px-3 py-2 rounded transition-colors">
           {hasChildren ? (
-            <button onClick={() => toggleTask(task.id)} className="mt-0.5 text-text-secondary hover:text-primary transition-colors flex-shrink-0">
-              {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            <button
+              onClick={() => toggleTask(task.id)}
+              className="mt-0.5 text-text-secondary hover:text-primary transition-colors flex-shrink-0"
+            >
+              {isExpanded ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
             </button>
           ) : (
             <div className="w-4 flex-shrink-0"></div>
           )}
 
-          <button onClick={() => toggleTaskDone(threadId, task.id)} className="mt-0.5 flex-shrink-0 transition-colors">
-            {task.done ? <CheckCircle2 className="w-5 h-5 text-primary/70" /> : <Circle className="w-5 h-5 text-text-secondary/40 hover:text-primary/50" />}
+          <button
+            onClick={handleToggleDone}
+            className="relative mt-0.5 flex-shrink-0 transition-colors"
+          >
+            {task.done ? (
+              <CheckCircle2 className="w-5 h-5 text-primary/70" />
+            ) : (
+              <Circle className="w-5 h-5 text-text-secondary/40 hover:text-primary/50" />
+            )}
+            <AnimatePresence>
+              {justCompleted && <CompletionAnimation />}
+            </AnimatePresence>
           </button>
 
           <div className="flex-1 min-w-0">
@@ -186,15 +234,19 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
                 onChange={(e) => setEditedTaskText(e.target.value)}
                 onBlur={handleSaveTaskText}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSaveTaskText();
-                  if (e.key === 'Escape') handleCancelEdit();
+                  if (e.key === "Enter") handleSaveTaskText();
+                  if (e.key === "Escape") handleCancelEdit();
                 }}
                 className="w-full px-2 py-1 border border-primary/30 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-surface text-text-primary"
                 autoFocus
               />
             ) : (
               <span
-                className={`text-sm leading-relaxed ${task.done ? "line-through text-text-secondary/80" : "text-text-primary"} cursor-text`}
+                className={`text-sm leading-relaxed ${
+                  task.done
+                    ? "line-through text-text-secondary/80"
+                    : "text-text-primary"
+                } cursor-text`}
                 onClick={() => {
                   setEditingTaskId(task.id);
                   setEditedTaskText(task.text);
@@ -218,15 +270,35 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
           </div>
 
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-            <button onClick={handleCyclePriority} className={`p-1.5 rounded transition-colors ${priorityStyles[task.priority || 0]} hover:bg-primary-light`} title="Set priority">
-              <Star className="w-3.5 h-3.5" fill={task.priority > 0 ? 'currentColor' : 'none'}/>
+            <button
+              onClick={handleCyclePriority}
+              className={`p-1.5 rounded transition-colors ${
+                priorityStyles[task.priority || 0]
+              } hover:bg-primary-light`}
+              title="Set priority"
+            >
+              <Star
+                className="w-3.5 h-3.5"
+                fill={task.priority > 0 ? "currentColor" : "none"}
+              />
             </button>
             {!task.note && !isEditing && (
-              <button onClick={() => setEditingNote(task.id)} className="p-1.5 text-text-secondary/60 hover:text-primary hover:bg-primary-light rounded transition-colors" title="Add note">
+              <button
+                onClick={() => setEditingNote(task.id)}
+                className="p-1.5 text-text-secondary/60 hover:text-primary hover:bg-primary-light rounded transition-colors"
+                title="Add note"
+              >
                 <MessageSquare className="w-3.5 h-3.5" />
               </button>
             )}
-            <button onClick={() => { setAddingChildTo(task.id); setNewChildText(''); }} className="p-1.5 text-text-secondary/60 hover:text-primary hover:bg-primary-light rounded transition-colors" title="Add subtask">
+            <button
+              onClick={() => {
+                setAddingChildTo(task.id);
+                setNewChildText("");
+              }}
+              className="p-1.5 text-text-secondary/60 hover:text-primary hover:bg-primary-light rounded transition-colors"
+              title="Add subtask"
+            >
               <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -234,7 +306,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
 
         {isAddingChild && (
           <div className="ml-10 mt-1 mb-2 flex items-center gap-2 animate-in fade-in duration-200">
-             <div className="w-1.5 h-1.5 rounded-full bg-primary/40 flex-shrink-0" />
+            <div className="w-1.5 h-1.5 rounded-full bg-primary/40 flex-shrink-0" />
             <input
               type="text"
               value={newChildText}
@@ -244,18 +316,18 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                    addChild(threadId, task.id);
+                  addChild(threadId, task.id);
                 }
                 if (e.key === "Escape") {
-                    setAddingChildTo(null);
-                    setNewChildText("");
+                  setAddingChildTo(null);
+                  setNewChildText("");
                 }
               }}
               onBlur={() => {
-                // Only close if empty. If user clicked away but had text, maybe save? 
+                // Only close if empty. If user clicked away but had text, maybe save?
                 // For now, let's just close if empty to mimic Notion behavior (it cleans up empty blocks).
                 if (!newChildText.trim()) {
-                    setAddingChildTo(null);
+                  setAddingChildTo(null);
                 }
               }}
             />
