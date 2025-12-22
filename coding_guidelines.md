@@ -43,6 +43,8 @@ Action: Re-supply critical context (key class definitions, relevant interfaces) 
 
 STRATEGIST'S NOTE: Clean code for humans is about elegance and maintainability. Code Context for AI is about predictability and explicit, searchable meaning. You are engineering the codebase not just to run, but to be queried effectively by a non-human intelligence with a limited attention span. The goal is to turn your code into a well-indexed reference manual for the AI.
 
+9.  should never remove comments while updating any new comments or context, only allowed to modfiy or update remove comments only when its absolutely neceesary
+
 
 AI-CENTRIC CODE STRATEGY: THE CONTEXT ENGINEERING MANIFESTO
 *A 30-Year Veteran's Battle-Tested Framework*
