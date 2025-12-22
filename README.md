@@ -38,9 +38,8 @@ The application is a single-page React application built with Next.js. It uses R
 
 
 example: 
-@AI_CODING_RULES.MD  @coding_guidelines.md  i want the total counts to be shown somewhere in @app/page.tsx make sure ui is      │
-│   usable                                                                                                                          │
-╰─────────────
+@Role_Goal.md i want the total counts to be shown somewhere in @app/page.tsx make sure ui is      │
+│   usable     and after that follow  @AI_CODING_RULES.MD  @coding_guidelines.md                                                                                                                
 
 
 
