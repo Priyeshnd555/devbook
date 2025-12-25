@@ -274,7 +274,7 @@ const NestedWorkflow = () => {
               <div className="flex items-center gap-2">
                 <button
                     onClick={() => setIsAddingThread(true)}
-                    className="flex items-center gap-2 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     // CONSTRAINT: New thread button is disabled if no project is selected to ensure threads are always associated with a project.
                     disabled={!selectedProjectId}
                     title={
@@ -412,7 +412,7 @@ const NestedWorkflow = () => {
                       selectedThread.sessions.map((session, idx) => (
                         <div
                           key={`${selectedThread.id}-session-${idx}`}
-                          className="bg-background rounded p-3 text-xs border border-border break-words"
+                          className="bg-background rounded p-3 text-xs border border-border wrap-break-word"
                         >
                           <div className="text-text-secondary mb-1.5 font-medium" title={`${session.date} at ${session.time}`}>
                             {formatRelativeDate(session.date)} at {session.time}

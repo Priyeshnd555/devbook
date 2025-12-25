@@ -71,10 +71,10 @@ Would AI find this code predictable?
 This is modern engineering for the AI era.
 Good code runs. Great code explains itself to both humans and machines.
 
-
 ## THUMB RULE TO FOLLOW
 
-### IMPLEMENTATION MANTRA:
+### IMPLEMENTATION MANTRA
+
 When in doubt, be explicit.
 When uncertain, document.
 When tempted to be clever, be boring.

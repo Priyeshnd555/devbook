@@ -281,9 +281,9 @@ const ThreadedWorkflow = () => {
                     onClick={() => toggleSubtask(thread.id, subtask.id)}
                   >
                     {subtask.done ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                      <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
                     ) : (
-                      <Circle className="w-5 h-5 text-gray-300 flex-shrink-0" />
+                      <Circle className="w-5 h-5 text-gray-300 shrink-0" />
                     )}
                     <span className={`flex-1 ${subtask.done ? 'line-through text-gray-500' : 'text-gray-900'}`}>
                       {subtask.text}

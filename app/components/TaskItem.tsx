@@ -54,7 +54,6 @@ import {
   Circle,
   CheckCircle2,
   MessageSquare,
-  StickyNote,
   Star,
 } from "lucide-react";
 import { Task } from "../types";
@@ -114,7 +113,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
   const isEditing = editingNote === task.id;
   const isAddingChild = addingChildTo === task.id;
   const isEditingTask = editingTaskId === task.id;
-  const [isNoteExpanded, setIsNoteExpanded] = useState(true);
+  // const [isNoteExpanded, setIsNoteExpanded] = useState(true);
   const [justCompleted, setJustCompleted] = useState(false);
 
   const handleToggleDone = () => {
@@ -134,14 +133,14 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
       }, 500); // Animation duration + buffer
       return () => clearTimeout(timer);
     }
-  }, [justCompleted]);
+  }, [justCompleted, task.id, threadId, toggleTaskDone]);
 
-  const noteLineCount = useMemo(() => {
-    if (!task.note) return 0;
-    // Simple line counting based on list items, which is a good proxy for lines in this rich text context.
-    const matches = task.note.match(/<li>/g);
-    return matches ? matches.length : 1;
-  }, [task.note]);
+  // const noteLineCount = useMemo(() => {
+  //   if (!task.note) return 0;
+  //   // Simple line counting based on list items, which is a good proxy for lines in this rich text context.
+  //   const matches = task.note.match(/<li>/g);
+  //   return matches ? matches.length : 1;
+  // }, [task.note]);
 
   const handleSaveTaskText = () => {
     if (editedTaskText.trim()) {
@@ -200,7 +199,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
           {hasChildren ? (
             <button
               onClick={() => toggleTask(task.id)}
-              className="mt-0.5 text-text-secondary hover:text-primary transition-colors flex-shrink-0"
+              className="mt-0.5 text-text-secondary hover:text-primary transition-colors shrink-0"
             >
               {isExpanded ? (
                 <ChevronDown className="w-4 h-4" />
@@ -209,12 +208,12 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
               )}
             </button>
           ) : (
-            <div className="w-4 flex-shrink-0"></div>
+            <div className="w-4 shrink-0"></div>
           )}
 
           <button
             onClick={handleToggleDone}
-            className="relative mt-0.5 flex-shrink-0 transition-colors"
+            className="relative mt-0.5 shrink-0 transition-colors"
           >
             {task.done ? (
               <CheckCircle2 className="w-5 h-5 text-primary/70" />
@@ -269,7 +268,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
             )}
           </div>
 
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
             <button
               onClick={handleCyclePriority}
               className={`p-1.5 rounded transition-colors ${
@@ -306,7 +305,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
 
         {isAddingChild && (
           <div className="ml-10 mt-1 mb-2 flex items-center gap-2 animate-in fade-in duration-200">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary/40 flex-shrink-0" />
+            <div className="w-1.5 h-1.5 rounded-full bg-primary/40 shrink-0" />
             <input
               type="text"
               value={newChildText}

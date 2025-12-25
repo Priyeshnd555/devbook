@@ -238,7 +238,7 @@ const ProjectItem: React.FC<{
               e.stopPropagation(); // CONSTRAINT: Prevent the click from also selecting the project.
               setIsExpanded(!isExpanded);
             }}
-            className={`flex-shrink-0 p-0.5 rounded transition-colors ${
+            className={`shrink-0 p-0.5 rounded transition-colors ${
               isSelected
                 ? "text-primary-text"
                 : "text-text-secondary hover:text-text-primary"
@@ -256,7 +256,7 @@ const ProjectItem: React.FC<{
 
         {/* Folder Icon */}
         <div
-          className={`flex-shrink-0 transition-transform ${
+          className={`shrink-0 transition-transform ${
             isHovered && !isSelected ? "scale-110" : ""
           }`}
         >
@@ -297,7 +297,7 @@ const ProjectItem: React.FC<{
         {/* Child Count Badge */}
         {hasChildren && !isRenaming && (
           <span
-            className={`flex-shrink-0 px-2 py-0.5 text-[11px] font-semibold rounded-full ${
+            className={`shrink-0 px-2 py-0.5 text-[11px] font-semibold rounded-full ${
               isSelected
                 ? "bg-primary-light text-primary-text"
                 : "bg-background text-text-secondary"
@@ -316,7 +316,7 @@ const ProjectItem: React.FC<{
                 e.stopPropagation();
                 setShowMenu(!showMenu);
               }}
-              className={`flex-shrink-0 p-1.5 rounded-md transition-all ${
+              className={`shrink-0 p-1.5 rounded-md transition-all ${
                 showMenu
                   ? "bg-border text-text-primary"
                   : isSelected
@@ -375,7 +375,7 @@ const ProjectItem: React.FC<{
               setIsAdding(true);
               setIsExpanded(true);
             }}
-            className={`flex-shrink-0 p-1.5 rounded-md transition-all ${
+            className={`shrink-0 p-1.5 rounded-md transition-all ${
               isSelected
                 ? "hover:bg-primary-light text-primary opacity-0 group-hover:opacity-100"
                 : "hover:bg-background text-text-secondary hover:text-primary opacity-0 group-hover:opacity-100"
@@ -412,7 +412,7 @@ const ProjectItem: React.FC<{
               className="mt-1 mb-2 flex items-center gap-2 px-2 py-2"
               style={{ paddingLeft: `${indentPx + 28}px` }}
             >
-              <Folder className="w-4 h-4 text-text-secondary flex-shrink-0" />
+              <Folder className="w-4 h-4 text-text-secondary shrink-0" />
               <input
                 type="text"
                 autoFocus
@@ -425,7 +425,7 @@ const ProjectItem: React.FC<{
               />
               <button
                 onClick={handleAddNestedProject}
-                className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-primary-hover transition-colors"
+                className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors"
                 title="Add"
               >
                 <Plus className="w-4 h-4" />
@@ -487,7 +487,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
 
   return (
     <div
-      className={`relative bg-surface flex flex-col h-screen flex-shrink-0 transition-all duration-300 shadow-lg ${
+      className={`relative bg-surface flex flex-col h-screen shrink-0 transition-all duration-300 shadow-lg ${
         isCollapsed ? "w-0 border-none" : "w-80 border-r border-border"
       }`}
     >
@@ -517,7 +517,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
         >
           {!isCollapsed && (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary-hover rounded-lg flex items-center justify-center shadow-sm">
+              <div className="w-8 h-8 bg-linear-to-br from-primary to-primary-hover rounded-lg flex items-center justify-center shadow-sm">
                 <Folder className="w-4 h-4 text-white" />
               </div>
               <div>
@@ -555,7 +555,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
             // but only if the sidebar is not collapsed.
             !isCollapsed && (
               <div className="text-center py-16 px-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-background to-border rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-linear-to-br from-background to-border rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Folder className="w-8 h-8 text-text-secondary" />
                 </div>
                 <h3 className="text-sm font-semibold text-text-primary mb-1">
@@ -583,7 +583,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
             {showInput ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Folder className="w-4 h-4 text-text-secondary flex-shrink-0" />
+                  <Folder className="w-4 h-4 text-text-secondary shrink-0" />
                   <input
                     type="text"
                     autoFocus
@@ -597,7 +597,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleAddNewRootProject}
-                    className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-primary-hover transition-colors"
+                    className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors"
                   >
                     Create Project
                   </button>
@@ -615,7 +615,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
             ) : (
               <button
                 onClick={() => setShowInput(true)}
-                className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-primary-hover transition-colors w-full justify-center"
+                className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors w-full justify-center"
               >
                 <Plus className="w-5 h-5" />
                 New Project

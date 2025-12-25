@@ -218,10 +218,10 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 group mb-3">
-              <span className="flex-shrink-0 w-6 text-center text-xs font-mono text-text-secondary" title={`Thread ${threadNumber}`}>
+              <span className="shrink-0 w-6 text-center text-xs font-mono text-text-secondary" title={`Thread ${threadNumber}`}>
                 {threadNumber}.
               </span>
-              <button onClick={(e) => { e.stopPropagation(); toggleThread(thread.id); }} className="text-text-secondary hover:text-primary transition-colors flex-shrink-0">
+              <button onClick={(e) => { e.stopPropagation(); toggleThread(thread.id); }} className="text-text-secondary hover:text-primary transition-colors shrink-0">
                 {isThreadExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
               </button>
               {/* STRATEGY: Implement inline editing for the thread title. When `editingThreadId` matches this thread,
@@ -244,7 +244,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                 <h3 className="text-base font-medium text-text-primary" onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id);}}>{thread.title}</h3>
               )}
               {/* STRATEGY: Action buttons (edit, delete) are hidden until the user hovers over the title area. */}
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 flex-shrink-0">
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
                 <button onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id);}} className="p-1 text-text-secondary hover:text-primary transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
                 <button onClick={(e) => { e.stopPropagation(); onDelete(thread.id);}} className="p-1 text-text-secondary hover:text-danger transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
@@ -252,7 +252,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
 
             <div className="flex items-center gap-4 text-xs text-text-secondary ml-12">
               <div className="flex items-center gap-1.5" title={`Last worked on: ${formatFullDate(thread.lastWorked)}`}>
-                <Clock className="w-3.5 h-3.5 text-text-secondary/70 flex-shrink-0" /> 
+                <Clock className="w-3.5 h-3.5 text-text-secondary/70 shrink-0" /> 
                 <span className="truncate">{formatRelativeDate(thread.lastWorked)}</span>
               </div>
               <div className="flex items-center gap-2">
@@ -261,7 +261,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                 <div className="bg-border rounded-full h-1 w-16"><div className="bg-primary h-1 rounded-full transition-all" style={{ width: `${totalTaskCount > 0 ? (completedTaskCount / totalTaskCount) * 100 : 0}%` }}></div></div>
               </div>
               <div className="relative">
-                <button onClick={(e) => { e.stopPropagation(); setIsStatusMenuOpen(!isStatusMenuOpen);}} onBlur={() => setIsStatusMenuOpen(false)} className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${statusStyle.bg} flex-shrink-0`}>
+                <button onClick={(e) => { e.stopPropagation(); setIsStatusMenuOpen(!isStatusMenuOpen);}} onBlur={() => setIsStatusMenuOpen(false)} className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${statusStyle.bg} shrink-0`}>
                   <div className={`w-1 h-1 rounded-full ${statusStyle.dot}`}></div>
                   <span className={`text-xs font-medium ${statusStyle.text}`}>{thread.status}</span>
                 </button>
@@ -303,7 +303,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
             </div>
           </div>
 
-          <button onClick={(e) => { e.stopPropagation(); setAddingSessionTo(thread.id); }} className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium flex-shrink-0 hover:bg-primary-hover transition-colors">
+          <button onClick={(e) => { e.stopPropagation(); setAddingSessionTo(thread.id); }} className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors">
             <Zap className="w-3.5 h-3.5" /> Log
           </button>
         </div>
@@ -336,7 +336,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
             
                         <div className="group flex items-center gap-3 px-3 opacity-60 hover:opacity-100 focus-within:opacity-100 transition-opacity">
                {/* Spacer to match chevron slot in TaskItem */}
-               <div className="w-4 flex-shrink-0"></div>
+               <div className="w-4 shrink-0"></div>
                {/* Plus icon matches Checkbox size (w-5) */}
                <Plus className="w-5 h-5 text-text-secondary" />
                <input
