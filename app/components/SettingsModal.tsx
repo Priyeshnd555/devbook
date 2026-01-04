@@ -37,7 +37,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   // We map the global 'theme' string to a binary 'isDarkMode' boolean for the Switch component.
   // 'system' theme is treated as not-dark (false) for the toggle state unless resolved,
   // but here we simplify to: dark state is triggered only by explicit 'dark' theme.
-  const { theme, setTheme, themeColor, setThemeColor, customColor, setCustomColor, fontSize, setFontSize } = useTheme();
+  const themeContext = useTheme();
+  
+  // ===============================================================================================
+  // FAILURE BOUNDARY: Enforce component is used inside a ThemeProvider.
+  // ===============================================================================================
+  // STRATEGY: The component's core functionality depends entirely on the theme context.
+  // If the context is missing, it cannot render or function correctly. We throw a specific
+  // error to provide immediate, actionable feedback to the developer, preventing the app
+  // from running in a broken state. This aligns with the "fail fast" and "immediate feedback"
+  // principles.
+  if (!themeContext) {
+    throw new Error("SettingsModal must be used within a ThemeProvider");
+  }
+  const { theme, setTheme, themeColor, setThemeColor, customColor, setCustomColor, fontSize, setFontSize } = themeContext;
+  
   
   // CONSTRAINT: Simple toggle logic assuming 'dark' vs 'light'. 
   // 'system' resets to default, but the toggle forces explicit choice.
@@ -54,24 +68,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     { name: "Blue", value: "blue", bgClass: "bg-blue-500" },
   ];
 
-  // Helper to map global 'fontSize' (lowercase) to UI display (Capitalized)
-  const getDisplayFontSize = () => {
-    switch (fontSize) {
-      case "small": return "Small";
-      case "large": return "Large";
-      case "normal": default: return "Normal";
-    }
-  };
-
-  const handleFontSizeChange = (value: string) => {
-    switch (value) {
-      case "Small": setFontSize("small"); break;
-      case "Large": setFontSize("large"); break;
-      default: setFontSize("normal"); break;
-    }
-  };
-
-  const fontSizes = ["Small", "Normal", "Large"];
+  // ===============================================================================================
+  // ROBUST DATA HANDLING: Unify font size state and display representation.
+  // ===============================================================================================
+  // STRATEGY: Instead of converting between state values (e.g., "small") and display
+  // values (e.g., "Small") using helper functions, we define a single source of truth.
+  // This array of objects makes the component more robust by eliminating the risk of
+  // inconsistencies that can arise from string manipulation. The `find` operation is
+  // safe and will gracefully handle any unexpected `fontSize` state.
+  const fontSizes = [
+    { value: "small", label: "Small" },
+    { value: "normal", label: "Normal" },
+    { value: "large", label: "Large" },
+  ];
+  const selectedFontSize = fontSizes.find(fs => fs.value === fontSize) || fontSizes[1];
 
   if (!isOpen) return null;
   return (
@@ -188,10 +198,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                   Font Size
                 </span>
                 <div className="w-32 relative">
-                  <Listbox value={getDisplayFontSize()} onChange={handleFontSizeChange}>
+                  <Listbox value={fontSize} onChange={setFontSize}>
                     <div className="relative">
                       <Listbox.Button className="relative w-full cursor-default rounded-lg py-2 pl-3 pr-10 text-left bg-background border border-border text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm">
-                        <span className="block truncate">{getDisplayFontSize()}</span>
+                        <span className="block truncate">{selectedFontSize.label}</span>
                         <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                           <svg
                             className="h-4 w-4 text-text-secondary"
@@ -204,15 +214,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         </span>
                       </Listbox.Button>
                       <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-surface border border-border py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-50">
-                        {fontSizes.map((size, personIdx) => (
+                        {fontSizes.map((size, index) => (
                           <Listbox.Option
-                            key={personIdx}
+                            key={size.value}
                             className={({ active }) =>
                               `relative cursor-default select-none py-2 pl-10 pr-4 ${
                                 active ? "bg-primary/10 text-primary" : "text-text-primary"
                               }`
                             }
-                            value={size} // This passes "Small" | "Normal" | "Large" to onChange
+                            value={size.value}
                           >
                             {({ selected }) => (
                               <>
@@ -221,7 +231,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                                     selected ? "font-medium" : "font-normal"
                                   }`}
                                 >
-                                  {size}
+                                  {size.label}
                                 </span>
                                 {selected ? (
                                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary">
@@ -239,10 +249,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            <div className="px-4 py-3 bg-background border-t border-border text-right">
+            <div className="px-4 py-3 bg-background border-t border-border flex justify-end">
                 <button
                     onClick={onClose}
-                    className="px-4 py-2 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 transition-colors font-medium"
+                    className="px-5 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background"
                 >
                     Done
                 </button>
