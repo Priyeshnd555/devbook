@@ -35,6 +35,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <meta name="ahrefs-site-verification" content="63a3427c3074795b2225c5773fcbf0648b3ed76801494286f48e818d81c88224"></meta>
+       <Script
+          src="https://analytics.ahrefs.com/analytics.js"
+          data-key="3kiXtPYkGutierGlX7ORRg"
+          async
+        />
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -44,11 +50,7 @@ export default function RootLayout({
         >
           {children}
         </ThemeProvider>
-        <Script
-          src="https://analytics.ahrefs.com/analytics.js"
-          data-key="3kiXtPYkGutierGlX7ORRg"
-          async
-        />
+       
       </body>
     </html>
   );
