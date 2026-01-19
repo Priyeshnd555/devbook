@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 import { ThemeProvider } from "./providers/ThemeProvider";
@@ -43,6 +44,11 @@ export default function RootLayout({
         >
           {children}
         </ThemeProvider>
+        <Script
+          src="https://analytics.ahrefs.com/analytics.js"
+          data-key="3kiXtPYkGutierGlX7ORRg"
+          async
+        />
       </body>
     </html>
   );
