@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 
 import { ThemeProvider } from "./providers/ThemeProvider";
+import { PostHogProvider } from "./providers/PostHogProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,12 +45,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider
-          storageKey="devbook-theme"
-          defaultTheme="system"
-        >
-          {children}
-        </ThemeProvider>
+        <PostHogProvider>
+          <ThemeProvider
+            storageKey="devbook-theme"
+            defaultTheme="system"
+          >
+            {children}
+          </ThemeProvider>
+        </PostHogProvider>
        
       </body>
     </html>
