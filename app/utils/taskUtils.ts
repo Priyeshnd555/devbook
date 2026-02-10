@@ -6,7 +6,7 @@
 // as they have no side effects.
 // ============================================================================
 
-import { Task } from '../types';
+import { Task, SortConfig } from '../types';
 
 /**
  * STRATEGY: Recursion is used to locate an item within the nested structure and apply an update, maintaining immutability.
@@ -17,9 +17,10 @@ import { Task } from '../types';
  * @param newText Optional new text.
  * @param newNote Optional new note.
  * @param newPriority Optional new priority.
+ * @param newSortConfig Optional new sort config.
  * @returns A new array of tasks with the specified task updated.
  */
-export const updateTaskRecursive = (tasks: Task[], taskId: string, newDoneState?: boolean, newText?: string, newNote?: string, newPriority?: number): Task[] => {
+export const updateTaskRecursive = (tasks: Task[], taskId: string, newDoneState?: boolean, newText?: string, newNote?: string, newPriority?: number, newSortConfig?: SortConfig): Task[] => {
     return tasks.map(task => {
       if (task.id === taskId) {
         return {
@@ -28,10 +29,11 @@ export const updateTaskRecursive = (tasks: Task[], taskId: string, newDoneState?
           text: newText !== undefined ? newText : task.text,
           note: newNote !== undefined ? newNote : task.note,
           priority: newPriority !== undefined ? newPriority : task.priority,
+          sortConfig: newSortConfig !== undefined ? newSortConfig : task.sortConfig,
         };
       }
       if (task.children.length > 0) {
-        return { ...task, children: updateTaskRecursive(task.children, taskId, newDoneState, newText, newNote, newPriority) };
+        return { ...task, children: updateTaskRecursive(task.children, taskId, newDoneState, newText, newNote, newPriority, newSortConfig) };
       }
       return task;
     });

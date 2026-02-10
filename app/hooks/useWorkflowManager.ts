@@ -43,6 +43,8 @@
  *   structures by assigning missing `projectId`s to an "Inbox" project.
  * - `taskItemProps` object is used to prevent prop drilling for `TaskItem` components, bundling
  *   all necessary props.
+ * - **Deterministic Sorting (Gen 6 Update)**: Implements deterministic sorting based on `createdAt`
+ *   timestamp with an ID-based tie-breaker. Sorting direction is managed via `SortDirection`.
  * =================================================================================================
  */
 
@@ -57,6 +59,8 @@ import {
   Task,
   Session,
   ThreadStatus,
+  SortConfig,
+  SortDirection,
 } from "../types";
 
 import {
@@ -64,6 +68,8 @@ import {
   countAllTasks,
   countAllCompletedTasks,
 } from "../utils/taskUtils";
+
+import { sortThreads } from "../utils/sortUtils";
 
 import { TaskItemProps } from "../components/TaskItem";
 
@@ -141,6 +147,12 @@ const useWorkflowManager = () => {
     "localShowCompleted",
     {}
   );
+
+  // STRATEGY: Global sort direction for threads. Defaults to newest first (desc).
+  const [threadsSortDirection, setThreadsSortDirection] = usePersistentState<SortDirection>(
+    "threadsSortDirection",
+    "desc"
+  );
   const toggleThreadShowCompleted = (threadId: string) => {
     setLocalShowCompleted(prev => ({
       ...prev,
@@ -212,6 +224,7 @@ const useWorkflowManager = () => {
               lastWorked: thread.lastWorked || new Date().toISOString().split("T")[0],
               tasks: thread.tasks || [],
               sessions: thread.sessions || [],
+              createdAt: thread.createdAt || Date.now(),
           };
       };
 
@@ -454,12 +467,12 @@ const useWorkflowManager = () => {
       tasks: [],
 
       sessions: [],
+      createdAt: Date.now(),
     };
 
     setThreads((prev) => ({ ...prev, [newThreadId]: newThread }));
 
-    // STRATEGY: New threads are prepended to the order to appear at the top of the list.
-
+    // STRATEGY: New threads are prepended to the order to appear at the top of the list by default.
     setThreadOrder((prev) => [newThreadId, ...prev]);
 
     setNewThreadTitle("");
@@ -677,6 +690,7 @@ const useWorkflowManager = () => {
       children: [],
 
       priority: 0,
+      createdAt: Date.now(),
     };
 
     setThreads((prev) => ({
@@ -714,6 +728,7 @@ const useWorkflowManager = () => {
             children: [],
 
             priority: 0,
+            createdAt: Date.now(),
           };
 
           return { ...task, children: [...task.children, newChild] };
@@ -780,6 +795,38 @@ const useWorkflowManager = () => {
   // SESSION OPERATIONS
 
   // ==========================================================================
+
+  const updateThreadSort = (threadId: string, config: SortConfig) => {
+    setThreads((prev) => ({
+      ...prev,
+      [threadId]: { ...prev[threadId], sortConfig: config },
+    }));
+  };
+
+  const updateTaskSort = (threadId: string, taskId: string, config: SortConfig) => {
+    setThreads((prevThreads) => {
+      const threadToUpdate = prevThreads[threadId];
+      if (!threadToUpdate) return prevThreads;
+
+      const updatedTasks = updateTaskRecursive(
+        threadToUpdate.tasks,
+        taskId,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        config
+      );
+
+      return {
+        ...prevThreads,
+        [threadId]: {
+          ...threadToUpdate,
+          tasks: updatedTasks,
+        },
+      };
+    });
+  };
 
   const addSession = (threadId: string, notes: string) => {
     if (!notes.trim()) return;
@@ -849,14 +896,19 @@ const useWorkflowManager = () => {
   // Filter the master thread order to only show threads belonging to the selected project and its descendants.
 
   const filteredThreadOrder = useMemo(() => {
-    if (!selectedProjectId) return threadOrder;
+    let order = threadOrder;
+    if (selectedProjectId) {
+      order = threadOrder.filter((id) => {
+        const thread = threads[id];
+        return thread && descendantProjectIds.includes(thread.projectId);
+      });
+    }
 
-    return threadOrder.filter((id) => {
-      const thread = threads[id];
-
-      return thread && descendantProjectIds.includes(thread.projectId);
-    });
-  }, [threadOrder, threads, descendantProjectIds, selectedProjectId]);
+    // Apply global thread sorting
+    const filteredThreads = order.map(id => threads[id]).filter(t => !!t) as Thread[];
+    const sorted = sortThreads(filteredThreads, threadsSortDirection);
+    return sorted.map(t => t.id);
+  }, [threadOrder, threads, descendantProjectIds, selectedProjectId, threadsSortDirection]);
 
   // Calculate global task counts across all threads.
 
@@ -923,7 +975,7 @@ const useWorkflowManager = () => {
       updateTaskText,
 
       setTaskPriority,
-
+      updateTaskSort,
     };
 
   return {
@@ -1100,8 +1152,9 @@ const useWorkflowManager = () => {
     
 
         setSelectedThreadId,
-
         toggleThreadShowCompleted,
+        threadsSortDirection,
+        setThreadsSortDirection,
 
     
 
@@ -1156,6 +1209,8 @@ const useWorkflowManager = () => {
     
 
         setTaskPriority,
+        updateTaskSort,
+        updateThreadSort,
 
     
 

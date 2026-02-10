@@ -37,6 +37,8 @@
  * - Note editing is handled by the `NoteEditor` component, centralizing its state management.
  * - The filtering logic for `visibleChildren` based on the `showCompleted` prop ensures that
  *   the visibility of completed tasks is consistent throughout the task hierarchy.
+ * - **Deterministic Sorting (Gen 6 Update)**: Subtasks use Up/Down arrows for deterministic
+ *   ordering based on creation time.
  * - **Generation 5 Update**: Notes now support "Notion-like" interactions:
  *   - Seamless styling (text-sm, leading-6).
  *   - Auto-save on blur removed (explicit Save/Cancel restored).
@@ -55,10 +57,16 @@ import {
   CheckCircle2,
   MessageSquare,
   Star,
+  ListFilter,
+  SortAsc,
+  SortDesc,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
-import { Task } from "../types";
+import { Task, SortConfig } from "../types";
 import { isTaskFullyCompleted } from "../utils/taskUtils";
 import { CompletionAnimation } from "./CompletionAnimation";
+import { sortTasks } from "../utils/sortUtils";
 
 export interface TaskItemProps {
   task: Task;
@@ -82,6 +90,7 @@ export interface TaskItemProps {
   setEditedTaskText: (text: string) => void;
   updateTaskText: (threadId: string, taskId: string, text: string) => void;
   setTaskPriority: (threadId: string, taskId: string, priority: number) => void;
+  updateTaskSort: (threadId: string, taskId: string, config: SortConfig) => void;
 }
 
 export const TaskItem: React.FC<TaskItemProps> = (props) => {
@@ -107,6 +116,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
     setEditedTaskText,
     updateTaskText,
     setTaskPriority,
+    updateTaskSort,
   } = props;
   const isExpanded = expandedTasks.has(task.id);
   const hasChildren = task.children.length > 0;
@@ -115,6 +125,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
   const isEditingTask = editingTaskId === task.id;
   // const [isNoteExpanded, setIsNoteExpanded] = useState(true);
   const [justCompleted, setJustCompleted] = useState(false);
+  // const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
 
   const handleToggleDone = () => {
     if (!task.done) {
@@ -169,29 +180,18 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
   // STRATEGY: Recursively filter sub-tasks based on the `showCompleted` prop, ensuring that
   // the visibility of completed tasks is consistent throughout the task hierarchy.
   const visibleChildren = useMemo(() => {
-    const sortedChildren = [...task.children].sort((a, b) => {
-      if ((b.priority || 0) !== (a.priority || 0)) {
-        return (b.priority || 0) - (a.priority || 0);
-      }
-      const aDone = isTaskFullyCompleted(a);
-      const bDone = isTaskFullyCompleted(b);
-      if (aDone !== bDone) {
-        return aDone ? 1 : -1;
-      }
-      return 0;
-    });
+    const sortedChildren = sortTasks(task.children, task.sortConfig);
 
     if (showCompleted) {
       return sortedChildren;
     }
     return sortedChildren.filter((child) => !isTaskFullyCompleted(child));
-  }, [task.children, showCompleted]);
+  }, [task.children, task.sortConfig, showCompleted]);
 
   return (
     <div
-      className={`${
-        level > 0 ? "ml-7 border-l border-primary/20 pl-4 py-0.5" : ""
-      }`}
+      className={`${level > 0 ? "ml-7 border-l border-primary/20 pl-4 py-0.5" : ""
+        }`}
       key={`${threadId}-${task.id}`}
     >
       <div className="mb-1">
@@ -241,11 +241,10 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
               />
             ) : (
               <span
-                className={`text-sm leading-relaxed ${
-                  task.done
-                    ? "line-through text-text-secondary/80"
-                    : "text-text-primary"
-                } cursor-text`}
+                className={`text-sm leading-relaxed ${task.done
+                  ? "line-through text-text-secondary/80"
+                  : "text-text-primary"
+                  } cursor-text`}
                 onClick={() => {
                   setEditingTaskId(task.id);
                   setEditedTaskText(task.text);
@@ -271,9 +270,8 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
             <button
               onClick={handleCyclePriority}
-              className={`p-1.5 rounded transition-colors ${
-                priorityStyles[task.priority || 0]
-              } hover:bg-primary-light`}
+              className={`p-1.5 rounded transition-colors ${priorityStyles[task.priority || 0]
+                } hover:bg-primary-light`}
               title="Set priority"
             >
               <Star
@@ -300,6 +298,25 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
             >
               <Plus className="w-3.5 h-3.5" />
             </button>
+            {/* Subtle Unified Sort Toggle for Subtasks - Only shown if there are children to sort */}
+            {task.children.length > 0 && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault(); e.stopPropagation();
+                  const newDirection = task.sortConfig?.direction === 'asc' ? 'desc' : 'asc';
+                  updateTaskSort(threadId, task.id, { direction: newDirection });
+                }}
+                className="flex items-center ml-1 p-1 rounded transition-colors focus:outline-none text-text-secondary/40 hover:text-text-secondary/80"
+                title={`Subtasks sorted by ${task.sortConfig?.direction === 'asc' ? 'oldest first' : 'newest first'}. Click to toggle.`}
+                aria-label={`Subtasks sorted by ${task.sortConfig?.direction === 'asc' ? 'oldest first' : 'newest first'}. Click to toggle.`}
+              >
+                {task.sortConfig?.direction === 'asc' ? (
+                  <ArrowUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ArrowDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+            )}
           </div>
         </div>
 
@@ -360,6 +377,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
               setEditedTaskText={setEditedTaskText}
               updateTaskText={updateTaskText}
               setTaskPriority={setTaskPriority}
+              updateTaskSort={updateTaskSort}
             />
           ))}
         </div>

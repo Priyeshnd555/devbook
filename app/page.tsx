@@ -84,6 +84,11 @@
 //   - Explicit Note Control (Save/Cancel) with high-readability typography.
 //   - `dateUtils.ts` for relative date formatting.
 //
+// # GENERATION 6: Deterministic Sorting (Current State)
+//   - FEATURE: Deterministic sorting using Up/Down arrows based on `createdAt`.
+//   - LOGIC: Sorting is strictly time-based with a stable ID fallback for guaranteed consistency.
+//   - UI: Header-level global thread sorting and card-level local task sorting.
+//
 // STRATEGY:
 // - STYLE INJECTION: The `ThemeProvider` injects the `dark` class, `data-color` attribute, and root `font-size`.
 // - DYNAMIC CALCULATION: `themeUtils.ts` converts user Hex selection to HSL and generates variants
@@ -98,7 +103,7 @@
 // =================================================================================================
 
 import React from "react";
-import { Plus } from "lucide-react";
+import { Plus, ArrowUp, ArrowDown } from "lucide-react";
 import { ThreadCard } from "./components/ThreadCard"; // Import ThreadCard
 import { motion, AnimatePresence } from "framer-motion";
 import ProjectSidebar from "./components/ProjectSidebar";
@@ -231,6 +236,10 @@ const NestedWorkflow = () => {
     deleteProject,
     localShowCompleted,
     toggleThreadShowCompleted,
+    updateThreadSort,
+    updateTaskSort,
+    threadsSortDirection,
+    setThreadsSortDirection,
   } = useWorkflowManager();
 
   // STRATEGY: The visibility of the sidebar is managed at this top-level component
@@ -272,19 +281,35 @@ const NestedWorkflow = () => {
               </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsAddingThread(true)}
-                  className="flex items-center gap-2 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  // CONSTRAINT: New thread button is disabled if no project is selected to ensure threads are always associated with a project.
-                  disabled={!selectedProjectId}
-                  title={
-                    !selectedProjectId
-                      ? "Select a project to add a thread"
-                      : "Add new thread"
-                  }
-                >
-                  <Plus className="w-3.5 h-3.5" /> New Thread
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setThreadsSortDirection(threadsSortDirection === 'asc' ? 'desc' : 'asc')}
+                    className="group flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors focus:outline-none text-text-secondary/40 hover:text-text-secondary/80"
+                    aria-label={`Threads sorted by ${threadsSortDirection === 'asc' ? 'oldest first' : 'newest first'}. Click to toggle.`}
+                  >
+                    {threadsSortDirection === 'asc' ? (
+                      <ArrowUp className="h-3.5 w-3.5" />
+                    ) : (
+                      <ArrowDown className="h-3.5 w-3.5" />
+                    )}
+                    <span className="text-[10px] uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      {threadsSortDirection === 'asc' ? 'Oldest first' : 'Newest first'}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setIsAddingThread(true)}
+                    className="flex items-center gap-2 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    // CONSTRAINT: New thread button is disabled if no project is selected to ensure threads are always associated with a project.
+                    disabled={!selectedProjectId}
+                    title={
+                      !selectedProjectId
+                        ? "Select a project to add a thread"
+                        : "Add new thread"
+                    }
+                  >
+                    <Plus className="w-3.5 h-3.5" /> New Thread
+                  </button>
+                </div>
                 {/* UX STRATEGY: To minimize cognitive load, secondary actions ('Show Completed', 'Settings') are consolidated into a dropdown menu.
                     This elevates the 'New Thread' button as the sole, unambiguous primary action in this area, directly addressing user feedback about a cluttered interface. */}
                 <HeaderActions
@@ -389,6 +414,8 @@ const NestedWorkflow = () => {
                         onToggleLocalShowCompleted={() =>
                           toggleThreadShowCompleted(thread.id)
                         }
+                        onUpdateThreadSort={updateThreadSort}
+                        onUpdateTaskSort={updateTaskSort}
                       />
                     </motion.div>
                   );

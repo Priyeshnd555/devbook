@@ -35,6 +35,8 @@
  * - The conditional rendering of the task list when the thread is expanded (`isThreadExpanded`).
  * - How it passes the `taskItemProps` object down to each `TaskItem`.
  * - The filtering logic for `visibleTasks` based on the `showCompleted` prop.
+ * - **Deterministic Sorting (Gen 6 Update)**: Thread card features Up/Down arrows for
+ *   deterministic, time-based sorting of root-level tasks.
  * =================================================================================================
  */
 import React, { useState } from "react";
@@ -48,13 +50,16 @@ import {
   Trash2,
   Eye,
   EyeOff,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { TaskItem, TaskItemProps } from "./TaskItem"; // Import TaskItem and its props
-import { Thread, THREAD_STATE_TRANSITIONS, ThreadStatus } from "../types";
+import { Thread, THREAD_STATE_TRANSITIONS, ThreadStatus, SortConfig, SortDirection } from "../types";
 import { isTaskFullyCompleted } from "../utils/taskUtils";
 import { formatRelativeDate, formatFullDate } from "../utils/dateUtils";
+import { sortTasks } from "../utils/sortUtils";
 
 // CONTEXT ANCHOR: DUAL-VISIBILITY SYSTEM IMPLEMENTATION (in ThreadCard.tsx)
 // =================================================================================================
@@ -106,6 +111,8 @@ export interface ThreadCardProps {
   localShowCompleted: boolean;
   /** Callback function to toggle the `localShowCompleted` state for this specific thread. */
   onToggleLocalShowCompleted: () => void;
+  onUpdateThreadSort: (threadId: string, config: SortConfig) => void;
+  onUpdateTaskSort: (threadId: string, taskId: string, config: SortConfig) => void;
 }
 
 export const ThreadCard: React.FC<ThreadCardProps> = ({
@@ -130,24 +137,17 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
   showCompleted,
   localShowCompleted,
   onToggleLocalShowCompleted,
+  onUpdateThreadSort,
+  onUpdateTaskSort,
 }) => {
   const isAddingSession = addingSessionTo === thread.id;
   const [title, setTitle] = useState<string>(thread.title); // Initialize with prop
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const [sessionNotes, setSessionNotes] = useState<string>("");
+
   const sortedTasks = React.useMemo(() => {
-    return [...thread.tasks].sort((a, b) => {
-      if ((b.priority || 0) !== (a.priority || 0)) {
-        return (b.priority || 0) - (a.priority || 0);
-      }
-      const aDone = isTaskFullyCompleted(a);
-      const bDone = isTaskFullyCompleted(b);
-      if (aDone !== bDone) {
-        return aDone ? 1 : -1;
-      }
-      return 0;
-    });
-  }, [thread.tasks]);
+    return sortTasks(thread.tasks, thread.sortConfig);
+  }, [thread.tasks, thread.sortConfig]);
 
   // STRATEGY: Determine the definitive visibility state. If the global `showCompleted` is true,
   // it takes precedence. Otherwise, the thread-specific `localShowCompleted` is used.
@@ -178,9 +178,9 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
     setTitle(thread.title); // Revert to original title
     setEditingThreadId(null); // Exit editing mode
   };
-  
+
   const handleAddTask = () => {
-      onAddRootTask(thread.id);
+    onAddRootTask(thread.id);
   }
 
   // STRATEGY: A configuration object maps thread statuses to specific Tailwind CSS classes.
@@ -207,12 +207,12 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
   const isAddingThisRootTask = taskItemProps.addingChildTo === `${thread.id}-root`;
 
   return (
-    <div 
+    <div
       className={`bg-surface rounded-lg border mb-4 shadow-sm transition-all ${isSelected ? 'border-primary/60 shadow-md' : 'border-border'}`}
       key={thread.id}
     >
-      <div 
-        className="p-4 border-b border-border cursor-pointer" 
+      <div
+        className="p-4 border-b border-border cursor-pointer"
         onClick={handleCardClick}
       >
         <div className="flex items-start justify-between gap-4">
@@ -224,8 +224,6 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
               <button onClick={(e) => { e.stopPropagation(); toggleThread(thread.id); }} className="text-text-secondary hover:text-primary transition-colors shrink-0">
                 {isThreadExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
               </button>
-              {/* STRATEGY: Implement inline editing for the thread title. When `editingThreadId` matches this thread,
-                  render an input field; otherwise, render the title text. */}
               {editingThreadId === thread.id ? (
                 <input
                   type="text"
@@ -241,69 +239,86 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
-                <h3 className="text-base font-medium text-text-primary" onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id);}}>{thread.title}</h3>
+                <h3 className="text-base font-medium text-text-primary" onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }}>{thread.title}</h3>
               )}
-              {/* STRATEGY: Action buttons (edit, delete) are hidden until the user hovers over the title area. */}
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
-                <button onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id);}} className="p-1 text-text-secondary hover:text-primary transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                <button onClick={(e) => { e.stopPropagation(); onDelete(thread.id);}} className="p-1 text-text-secondary hover:text-danger transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }} className="p-1 text-text-secondary hover:text-primary transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                <button onClick={(e) => { e.stopPropagation(); onDelete(thread.id); }} className="p-1 text-text-secondary hover:text-danger transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             </div>
 
             <div className="flex items-center gap-4 text-xs text-text-secondary ml-12">
               <div className="flex items-center gap-1.5" title={`Last worked on: ${formatFullDate(thread.lastWorked)}`}>
-                <Clock className="w-3.5 h-3.5 text-text-secondary/70 shrink-0" /> 
+                <Clock className="w-3.5 h-3.5 text-text-secondary/70 shrink-0" />
                 <span className="truncate">{formatRelativeDate(thread.lastWorked)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-medium text-text-secondary/90">{completedTaskCount}/{totalTaskCount}</span>
-                {/* STRATEGY: The progress bar width is dynamically calculated based on task completion percentage. */}
                 <div className="bg-border rounded-full h-1 w-16"><div className="bg-primary h-1 rounded-full transition-all" style={{ width: `${totalTaskCount > 0 ? (completedTaskCount / totalTaskCount) * 100 : 0}%` }}></div></div>
               </div>
               <div className="relative">
-                <button onClick={(e) => { e.stopPropagation(); setIsStatusMenuOpen(!isStatusMenuOpen);}} onBlur={() => setIsStatusMenuOpen(false)} className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${statusStyle.bg} shrink-0`}>
+                <button onClick={(e) => { e.stopPropagation(); setIsStatusMenuOpen(!isStatusMenuOpen); }} onBlur={() => setIsStatusMenuOpen(false)} className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${statusStyle.bg} shrink-0`}>
                   <div className={`w-1 h-1 rounded-full ${statusStyle.dot}`}></div>
                   <span className={`text-xs font-medium ${statusStyle.text}`}>{thread.status}</span>
                 </button>
                 {isStatusMenuOpen && (
                   <div className="absolute top-full mt-1.5 w-24 bg-surface rounded-md shadow-lg border border-border z-10">
                     {(Object.keys(THREAD_STATE_TRANSITIONS) as ThreadStatus[]).map((s) => (
-                      <button key={s} onMouseDown={() => { onUpdateStatus(thread.id, s); setIsStatusMenuOpen(false);}} className="block w-full text-left px-3 py-1.5 text-xs text-text-primary hover:bg-background capitalize">{s}</button>
+                      <button key={s} onMouseDown={() => { onUpdateStatus(thread.id, s); setIsStatusMenuOpen(false); }} className="block w-full text-left px-3 py-1.5 text-xs text-text-primary hover:bg-background capitalize">{s}</button>
                     ))}
                   </div>
                 )}
               </div>
-              {/* STRATEGY: The local visibility toggle is only shown if the global `showCompleted` is false.
-                  This prevents UI confusion by hiding the redundant local control when the global override is active.
-                  It is animated with Framer Motion for a smooth appearance/disappearance. */}
-              <AnimatePresence>
-              {!showCompleted && (
-                <motion.div 
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: 'auto' }}
-                  exit={{ opacity: 0, width: 0 }}
-                  className="flex items-center gap-2 overflow-hidden"
+              <div className="flex items-center gap-1">
+                <AnimatePresence>
+                  {!showCompleted && (
+                    <motion.div
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: 'auto' }}
+                      exit={{ opacity: 0, width: 0 }}
+                      className="flex items-center"
+                    >
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleLocalShowCompleted(); }}
+                        className="p-1 rounded-full text-text-secondary/40 hover:text-text-secondary/80 transition-colors focus:outline-none"
+                        title={localShowCompleted ? "Hide completed tasks" : "Show completed tasks"}
+                      >
+                        {localShowCompleted ? (
+                          <Eye className="h-3.5 w-3.5" />
+                        ) : (
+                          <EyeOff className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <button
+                  onClick={(e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    const newDirection = thread.sortConfig?.direction === 'asc' ? 'desc' : 'asc';
+                    onUpdateThreadSort(thread.id, { direction: newDirection });
+                  }}
+                  className="group flex items-center gap-1.5 px-1.5 py-1 rounded transition-colors focus:outline-none text-text-secondary/40 hover:text-text-secondary/80"
+                  aria-label={`Sorted by ${thread.sortConfig?.direction === 'asc' ? 'oldest first' : 'newest first'}. Click to toggle.`}
                 >
-                  {/* STRATEGY: Replaced Switch with a clickable icon for better UX and consistency.
-                      The Eye/EyeOff icon now directly triggers the local completed task visibility toggle. */}
-                  <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleLocalShowCompleted(); }}
-                    className="p-1 rounded-full hover:bg-background transition-colors focus:outline-none"
-                    title={localShowCompleted ? "Hide completed tasks" : "Show completed tasks"}
-                  >
-                    {localShowCompleted ? (
-                      <Eye className="h-4 w-4 text-text-secondary" />
-                    ) : (
-                      <EyeOff className="h-4 w-4 text-text-secondary/60" />
-                    )}
-                  </button>
-                </motion.div>
-              )}
-              </AnimatePresence>
+                  {thread.sortConfig?.direction === 'asc' ? (
+                    <ArrowUp className="h-3.5 w-3.5" />
+                  ) : (
+                    <ArrowDown className="h-3.5 w-3.5" />
+                  )}
+                  <span className="text-[10px] uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    {thread.sortConfig?.direction === 'asc' ? 'Oldest first' : 'Newest first'}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
 
-          <button onClick={(e) => { e.stopPropagation(); setAddingSessionTo(thread.id); }} className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors">
+          <button
+            onClick={(e) => { e.stopPropagation(); setAddingSessionTo(thread.id); }}
+            className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors"
+          >
             <Zap className="w-3.5 h-3.5" /> Log
           </button>
         </div>
@@ -313,68 +328,92 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
       {isAddingSession && (
         <div className="p-4 bg-background border-b border-border">
           <h4 className="text-sm font-medium text-text-primary mb-2">Work session</h4>
-          <textarea value={sessionNotes} onChange={(e) => setSessionNotes(e.target.value)} placeholder="What did you work on?" className="w-full p-3 border border-border rounded text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-surface text-text-primary" rows={2} autoFocus/>
+          <textarea
+            value={sessionNotes}
+            onChange={(e) => setSessionNotes(e.target.value)}
+            placeholder="What did you work on?"
+            className="w-full p-3 border border-border rounded text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-surface text-text-primary"
+            rows={2}
+            autoFocus
+          />
           <div className="flex gap-2 mt-2">
-            <button onClick={() => {onAddSession(thread.id, sessionNotes); setSessionNotes('')}} className="px-3 py-1.5 bg-primary text-white rounded text-xs hover:bg-primary-hover transition-colors font-medium">Save</button>
-            <button onClick={() => { setAddingSessionTo(null); setSessionNotes(""); }} className="px-3 py-1.5 bg-background text-text-secondary border border-border rounded text-xs hover:bg-surface transition-colors">Cancel</button>
+            <button
+              onClick={() => { onAddSession(thread.id, sessionNotes); setSessionNotes('') }}
+              className="px-3 py-1.5 bg-primary text-white rounded text-xs hover:bg-primary-hover transition-colors font-medium"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => { setAddingSessionTo(null); setSessionNotes(""); }}
+              className="px-3 py-1.5 bg-background text-text-secondary border border-border rounded text-xs hover:bg-surface transition-colors"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
 
       {/* STRATEGY: The entire task list section is conditionally rendered based on whether the thread is expanded. */}
       {isThreadExpanded && (
-        <>
         <div className="p-4">
-            {/* STRATEGY: Persistent, seamless "New task" input at the bottom.
-                This allows for rapid-fire data entry (Notion-style). 
-                The `isAddingThisRootTask` constant ensures the input's state (value, active context) is correctly managed.
-                When the input is focused, `onFocus` sets the context and clears the input.
-                After a task is added, the parent resets the `addingChildTo` context.
-                The `onChange` handler now re-establishes the context (`addingChildTo`) if the user starts typing again
-                while the input is focused but no longer explicitly marked as the active root task input.
-                Pressing Enter adds the task and keeps focus, with the input ready for the next entry. */}
-            
-                        <div className="group flex items-center gap-3 px-3 opacity-60 hover:opacity-100 focus-within:opacity-100 transition-opacity">
-               {/* Spacer to match chevron slot in TaskItem */}
-               <div className="w-4 shrink-0"></div>
-               {/* Plus icon matches Checkbox size (w-5) */}
-               <Plus className="w-5 h-5 text-text-secondary" />
-               <input
-                 type="text"
-                 value={isAddingThisRootTask ? taskItemProps.newChildText : ''}
-                 onChange={(e) => {
-                  if (!isAddingThisRootTask) {
-                    taskItemProps.setAddingChildTo(`${thread.id}-root`);
-                  }
-                  taskItemProps.setNewChildText(e.target.value);
-                 }}
-                 onFocus={() => {
+          {/* STRATEGY: Persistent, seamless "New task" input at the bottom.
+              This allows for rapid-fire data entry (Notion-style). 
+              The `isAddingThisRootTask` constant ensures the input's state (value, active context) is correctly managed.
+              When the input is focused, `onFocus` sets the context and clears the input.
+              After a task is added, the parent resets the `addingChildTo` context.
+              The `onChange` handler now re-establishes the context (`addingChildTo`) if the user starts typing again
+              while the input is focused but no longer explicitly marked as the active root task input.
+              Pressing Enter adds the task and keeps focus, with the input ready for the next entry. */}
+          <div className="group flex items-center gap-3 px-3 opacity-60 hover:opacity-100 focus-within:opacity-100 transition-opacity">
+            {/* Spacer to match chevron slot in TaskItem */}
+            <div className="w-4 shrink-0"></div>
+            {/* Plus icon matches Checkbox size (w-5) */}
+            <Plus className="w-5 h-5 text-text-secondary" />
+            <input
+              type="text"
+              value={isAddingThisRootTask ? taskItemProps.newChildText : ''}
+              onChange={(e) => {
+                if (!isAddingThisRootTask) {
                   taskItemProps.setAddingChildTo(`${thread.id}-root`);
-                  taskItemProps.setNewChildText('');
-                 }}
-                 // CONSTRAINT: We only want to add on Enter.
-                 onKeyDown={(e) => {
-                   if (e.key === "Enter") {
-                     handleAddTask();
-                     // STRATEGY: Keep focus on this input after adding for rapid entry.
-                     // The handleAddTask clears the text but doesn't blur.
-                   }
-                 }}
-                 placeholder="New task..."
-                 className="flex-1 py-1.5 bg-transparent text-sm border-none focus:outline-none focus:ring-0 placeholder:text-text-secondary/60 text-text-primary"
-               />
-            </div>
-
-            {visibleTasks.length > 0 ? (
-              <div className="space-y-0.5">{
-                visibleTasks.map((task) => <TaskItem key={`${thread.id}-${task.id}`} {...taskItemProps} task={task} threadId={thread.id} showCompleted={finalShowCompleted} />)
-              }</div>
-            ) : (
-              // STRATEGY: Display a helpful empty state message if there are no tasks.
-              <div className="py-6 text-center text-xs text-text-secondary"><p>No tasks to show.</p></div>
-            )}
+                }
+                taskItemProps.setNewChildText(e.target.value);
+              }}
+              onFocus={() => {
+                taskItemProps.setAddingChildTo(`${thread.id}-root`);
+                taskItemProps.setNewChildText('');
+              }}
+              onKeyDown={(e) => {
+                // CONSTRAINT: We only want to add on Enter.
+                if (e.key === "Enter") {
+                  handleAddTask();
+                  // STRATEGY: Keep focus on this input after adding for rapid entry.
+                  // The handleAddTask clears the text but doesn't blur.
+                }
+              }}
+              placeholder="New task..."
+              className="flex-1 py-1.5 bg-transparent text-sm border-none focus:outline-none focus:ring-0 placeholder:text-text-secondary/60 text-text-primary"
+            />
           </div>
-        </>
+
+          {visibleTasks.length > 0 ? (
+            <div className="space-y-0.5">
+              {visibleTasks.map((task) => (
+                <TaskItem
+                  key={`${thread.id}-${task.id}`}
+                  {...taskItemProps}
+                  task={task}
+                  threadId={thread.id}
+                  showCompleted={finalShowCompleted}
+                />
+              ))}
+            </div>
+          ) : (
+            // STRATEGY: Display a helpful empty state message if there are no tasks.
+            <div className="py-6 text-center text-xs text-text-secondary">
+              <p>No tasks to show.</p>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
