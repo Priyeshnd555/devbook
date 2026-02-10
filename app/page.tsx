@@ -67,9 +67,9 @@
 //
 // # GENERATION 3: Dynamic Custom Colors (Current State)
 //   - FEATURE: User can select preset colors (Orange, Green, Blue) or a Custom Color via picker.
-//   - LOGIC: 
+//   - LOGIC:
 //     - `data-color='orange|green|blue'` handles presets via CSS overrides.
-//     - `data-color='custom'` triggers dynamic injection of calculated CSS variables (via JS) 
+//     - `data-color='custom'` triggers dynamic injection of calculated CSS variables (via JS)
 //       directly onto the root element, bypassing `globals.css` presets for that specific mode.
 //
 // # GENERATION 4: Global Accessibility & Font Scaling (Current State)
@@ -261,7 +261,7 @@ const NestedWorkflow = () => {
         <header className="bg-surface border-b border-border shadow-xs z-20">
           <div className="max-w-7xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between gap-4">
-               <div className="min-w-0">
+              <div className="min-w-0">
                 <h1 className="text-lg font-semibold text-text-primary">
                   Thread Notes
                 </h1>
@@ -273,33 +273,35 @@ const NestedWorkflow = () => {
 
               <div className="flex items-center gap-2">
                 <button
-                    onClick={() => setIsAddingThread(true)}
-                    className="flex items-center gap-2 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    // CONSTRAINT: New thread button is disabled if no project is selected to ensure threads are always associated with a project.
-                    disabled={!selectedProjectId}
-                    title={
+                  onClick={() => setIsAddingThread(true)}
+                  className="flex items-center gap-2 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  // CONSTRAINT: New thread button is disabled if no project is selected to ensure threads are always associated with a project.
+                  disabled={!selectedProjectId}
+                  title={
                     !selectedProjectId
-                        ? "Select a project to add a thread"
-                        : "Add new thread"
-                    }
+                      ? "Select a project to add a thread"
+                      : "Add new thread"
+                  }
                 >
-                    <Plus className="w-3.5 h-3.5" /> New Thread
+                  <Plus className="w-3.5 h-3.5" /> New Thread
                 </button>
                 {/* UX STRATEGY: To minimize cognitive load, secondary actions ('Show Completed', 'Settings') are consolidated into a dropdown menu.
                     This elevates the 'New Thread' button as the sole, unambiguous primary action in this area, directly addressing user feedback about a cluttered interface. */}
                 <HeaderActions
-                    showCompleted={showCompleted}
-                    onToggleShowCompleted={setShowCompleted}
-                    onOpenSettings={() => setSettingsModalOpen(true)}
+                  showCompleted={showCompleted}
+                  onToggleShowCompleted={setShowCompleted}
+                  onOpenSettings={() => setSettingsModalOpen(true)}
                 />
+              </div>
             </div>
-          </div>
           </div>
         </header>
 
-        <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto px-6 py-4 w-full overflow-auto
+        <main
+          className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto px-6 py-4 w-full overflow-auto
             [scrollbar-width:none]
-            [&::-webkit-scrollbar]:hidden">
+            [&::-webkit-scrollbar]:hidden"
+        >
           <div className="md:col-span-2">
             {/* STRATEGY: Conditionally render the "Add New Thread" input form based on the `isAddingThread` state. */}
             {isAddingThread && (
@@ -380,9 +382,13 @@ const NestedWorkflow = () => {
                         showCompleted={showCompleted}
                         // STRATEGY: Pass down the thread-specific visibility state from the `localShowCompleted` dictionary.
                         // The nullish coalescing operator `??` ensures a default of `false` if the thread has no entry yet.
-                        localShowCompleted={localShowCompleted[thread.id] ?? false}
+                        localShowCompleted={
+                          localShowCompleted[thread.id] ?? false
+                        }
                         // STRATEGY: Pass down the handler to toggle the local visibility state for this specific thread.
-                        onToggleLocalShowCompleted={() => toggleThreadShowCompleted(thread.id)}
+                        onToggleLocalShowCompleted={() =>
+                          toggleThreadShowCompleted(thread.id)
+                        }
                       />
                     </motion.div>
                   );
@@ -395,7 +401,9 @@ const NestedWorkflow = () => {
             <div className="sticky top-6">
               {/* STRATEGY: Conditionally render session log details or a placeholder message based on whether a thread is selected. */}
               {selectedThread ? (
-                <div className={`bg-surface rounded-lg border mb-4 shadow-sm transition-all ${selectedThreadId === selectedThread.id ? 'border-primary/60 shadow-md' : 'border-border'}`}>
+                <div
+                  className={`bg-surface rounded-lg border mb-4 shadow-sm transition-all ${selectedThreadId === selectedThread.id ? "border-primary/60 shadow-md" : "border-border"}`}
+                >
                   <div className="p-4 border-b border-border">
                     <h2 className="text-base font-medium text-text-primary">
                       Session Log
@@ -404,9 +412,11 @@ const NestedWorkflow = () => {
                       {selectedThread.title}
                     </p>
                   </div>
-                  <div className="p-4 space-y-3 max-h-[calc(100vh-18rem)] overflow-auto
+                  <div
+                    className="p-4 space-y-3 max-h-[calc(100vh-18rem)] overflow-auto
             [scrollbar-width:none]
-            [&::-webkit-scrollbar]:hidden">
+            [&::-webkit-scrollbar]:hidden"
+                  >
                     {/* STRATEGY: Display individual session notes or a message if no sessions are logged for the selected thread. */}
                     {selectedThread.sessions.length > 0 ? (
                       selectedThread.sessions.map((session, idx) => (
@@ -414,7 +424,10 @@ const NestedWorkflow = () => {
                           key={`${selectedThread.id}-session-${idx}`}
                           className="bg-background rounded p-3 text-xs border border-border wrap-break-word"
                         >
-                          <div className="text-text-secondary mb-1.5 font-medium" title={`${session.date} at ${session.time}`}>
+                          <div
+                            className="text-text-secondary mb-1.5 font-medium"
+                            title={`${session.date} at ${session.time}`}
+                          >
                             {formatRelativeDate(session.date)} at {session.time}
                           </div>
                           <div className="text-text-primary leading-relaxed whitespace-pre-wrap">
@@ -438,7 +451,7 @@ const NestedWorkflow = () => {
           </div>
         </main>
       </div>
-      <SettingsModal 
+      <SettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setSettingsModalOpen(false)}
       />
