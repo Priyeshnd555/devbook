@@ -89,6 +89,12 @@
 //   - LOGIC: Sorting is strictly time-based with a stable ID fallback for guaranteed consistency.
 //   - UI: Header-level global thread sorting and card-level local task sorting.
 //
+// # GENERATION 7: Hierarchical Project Navigation & Management (Latest State)
+//   - FEATURE: Replaced flat project selector with a hierarchical, searchable "Project Navigator".
+//   - POWER FEATURES: Inline folder creation, recursive tree view, renaming, and deletion.
+//   - UI: Breadcrumb-based trigger button for instant location awareness.
+//   - STABILITY: Explicit event propagation handling for blocking confirmation dialogs.
+//
 // STRATEGY:
 // - STYLE INJECTION: The `ThemeProvider` injects the `dark` class, `data-color` attribute, and root `font-size`.
 // - DYNAMIC CALCULATION: `themeUtils.ts` converts user Hex selection to HSL and generates variants
@@ -124,12 +130,81 @@ import HeaderActions from "./components/HeaderActions";
            Allows users to instantly switch between projects and create new ones.
 
   COMPONENT: ProjectSidebar (from ./components/ProjectSidebar.tsx)
+  ----------------------------------------------------
+  PURPOSE: Renders a sidebar that allows for creation and navigation of nested projects.
+           It displays projects in a hierarchical view.
+
+  COMPONENT: HeaderActions (from ./components/HeaderActions.tsx)
+  ----------------------------------------------------
+  PURPOSE: Consolidates secondary actions (Show/Hide Completed, Settings) into a non-intrusive
+           dropdown menu to reduce UI clutter and user cognitive load.
+
+  COMPONENT: TaskItem (from ./components/TaskItem.tsx)
+  ----------------------------------------------------
+  PURPOSE: Renders a single, potentially nested, task item. It handles displaying
+           the task's text, completion status, and note. It also manages user
+           interactions for editing a task, adding a sub-task, toggling
+           its 'done' state, and cycling through priority levels.
+  KEY PROPS:
+    - task: The task object to render.
+    - threadId: The ID of the parent thread.
+    - expandedTasks: A Set<string> to determine if the task's children are visible.
+    - setTaskPriority: A handler to set the priority of a task.
+    - ... (and many state handlers from the parent to modify the application state).
+
+  COMPONENT: ThreadCard (from ./components/ThreadCard.tsx)
+  ------------------------------------------------------
+  PURPOSE: Renders a full "thread" card, which is a top-level container for a
+           group of tasks. It displays thread metadata (title, status, last worked on),
+           and contains the list of root-level TaskItems for that thread. It also
+           handles thread-specific actions like logging a new work session, editing
+           the thread title, and changing its status. The tasks within the card are
+           automatically sorted first by priority (descending), and then by
+           completion status. A task is only considered "completed" for sorting
+           if it and all of its sub-tasks are also marked as done.
+  KEY PROPS:
+    - thread: The thread object to render.
+    - isThreadExpanded: A boolean to control the visibility of the thread's content.
+    - onUpdateTitle, onDelete, onUpdateStatus: Handlers for modifying the thread.
+    - taskItemProps: A collection of props that are passed down to all child TaskItem components.
+    - showCompleted: A boolean to control the visibility of completed tasks.
+
+  COMPONENT: SettingsModal (from ./components/SettingsModal.tsx)
+  ----------------------------------------------------
+  PURPOSE: Renders a modal dialog for viewing and modifying application-wide settings.
+           It is displayed as an overlay and contains controls for theme and other preferences.
 */
 
 // =================================================================================================
 // CONTEXT ANCHOR: DUAL-VISIBILITY SYSTEM FOR COMPLETED TASKS
 // =================================================================================================
-// ... (rest of the system)
+// PURPOSE: To explain the two-tiered system for controlling the visibility of completed tasks,
+//          providing both a global override and a per-thread toggle for fine-grained control.
+//
+// OVERVIEW:
+// The application employs a dual-state system for managing task visibility:
+//
+// 1. GLOBAL `showCompleted` (Boolean):
+//    - SOURCE: `useWorkflowManager` -> `HeaderActions.tsx`
+//    - EFFECT: Acts as a master switch. When `true`, all completed tasks in all threads are
+//      visible, and the per-thread toggles are hidden to prevent conflicting states.
+//    - AI-NOTE: This is the primary, high-level control for task visibility.
+//
+// 2. LOCAL `localShowCompleted` (Record<string, boolean>):
+//    - SOURCE: `useWorkflowManager` -> `page.tsx` -> `ThreadCard.tsx`
+//    - EFFECT: A dictionary where each key is a `thread.id` and the value is a boolean. It allows
+//      a user to show/hide completed tasks for a *specific thread*.
+//    - CONSTRAINT: This toggle is only visible and functional when the global `showCompleted`
+//      is `false`. This creates a clear hierarchy of control.
+//
+// DATA FLOW:
+// - `useWorkflowManager` manages both `showCompleted` and `localShowCompleted` states.
+// - This component (`page.tsx`) retrieves both states from the hook.
+// - It passes the global `showCompleted` state to `HeaderActions` for the master toggle.
+// - It passes the global `showCompleted`, the specific `localShowCompleted[thread.id]` value,
+//   and the `toggleThreadShowCompleted` handler down to each `ThreadCard`.
+// - `ThreadCard` then uses these props to determine the final visibility of its tasks and to
+//   render the local toggle switch.
 // =================================================================================================
 
 // ==========================================================================
@@ -207,16 +282,31 @@ const NestedWorkflow = () => {
         <header className="bg-surface border-b border-border shadow-xs z-20">
           <div className="max-w-7xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0 flex flex-col">
+              <div className="min-w-0 flex items-center gap-4">
+                <div>
+                  <h1 className="text-lg font-semibold text-text-primary">
+                    Thread Notes
+                  </h1>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    {globalCompletedTasks}/{globalTotalTasks} Tasks
+                  </p>
+                </div>
+
+                <div className="h-10 w-[1px] bg-border mx-1" />
+
+                {/* 
+                  STRATEGY: The ProjectNavigator provides a centralized hierarchical management portal. 
+                  It receives all CRUD operations (add, rename, delete) from the useWorkflowManager brain.
+                  CONSTRAINT: Must pass onSelectProject and onClose-related data to ensure immediate UI feedback.
+                */}
                 <ProjectNavigator
                   projects={projects}
                   selectedProjectId={selectedProjectId}
                   onSelectProject={handleSelectProject}
                   onAddProject={addProject}
+                  onRenameProject={renameProject}
+                  onDeleteProject={deleteProject}
                 />
-                <p className="text-[10px] text-text-secondary mt-0.5 ml-3 font-medium uppercase tracking-wider opacity-70">
-                  {globalTotalThreads} Threads &bull; {globalCompletedTasks}/{globalTotalTasks} Tasks
-                </p>
               </div>
 
               <div className="flex items-center gap-2">
