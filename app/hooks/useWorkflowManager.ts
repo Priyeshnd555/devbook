@@ -80,33 +80,10 @@ const useWorkflowManager = () => {
     {}
   );
 
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
+  const [selectedProjectId, setSelectedProjectId] = usePersistentState<string | null>(
+    "nested-workflow-selected-project",
     null
   );
-
-  useEffect(() => {
-    // This effect runs only on the client, after the initial render.
-
-    // It's safe to access localStorage here.
-
-    if (typeof window !== "undefined") {
-      const storedProjects = JSON.parse(
-        localStorage.getItem("nested-workflow-projects") || "{}"
-      );
-
-      if (Object.keys(storedProjects).length > 0) {
-        const firstRootProject = (
-          Object.values(storedProjects) as Project[]
-        ).find((p) => p.parentId === null);
-
-        setSelectedProjectId(
-          firstRootProject
-            ? firstRootProject.id
-            : Object.keys(storedProjects)[0]
-        );
-      }
-    }
-  }, []); // Empty dependency array ensures this runs only once on mount.
 
   const [threads, setThreads] = usePersistentState<ThreadsState>(
     "nested-workflow-threads",
