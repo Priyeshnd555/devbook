@@ -3,6 +3,6 @@
 4:I[97367,["/devbook/_next/static/chunks/42879de7b8087bc9.js"],"MetadataBoundary"]
 5:"$Sreact.suspense"
 7:I[27201,["/devbook/_next/static/chunks/42879de7b8087bc9.js"],"IconMark"]
-0:{"buildId":"7Si5rwPqbp8L5MepNM_M_","rsc":["$","$1","h",{"children":[null,["$","$L2",null,{"children":"$@3"}],["$","div",null,{"hidden":true,"children":["$","$L4",null,{"children":["$","$5",null,{"name":"Next.Metadata","children":"$@6"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"loading":null,"isPartial":false}
+0:{"buildId":"J29vpq9_034oTOT3PUQEG","rsc":["$","$1","h",{"children":[null,["$","$L2",null,{"children":"$@3"}],["$","div",null,{"hidden":true,"children":["$","$L4",null,{"children":["$","$5",null,{"name":"Next.Metadata","children":"$@6"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"loading":null,"isPartial":false}
 3:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
 6:[["$","title","0",{"children":"Thread Note"}],["$","meta","1",{"name":"description","content":"Nested Note"}],["$","link","2",{"rel":"icon","href":"https://priyeshnd555.github.io/devbook/newLogo.png"}],["$","$L7","3",{}]]
