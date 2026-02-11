@@ -72,7 +72,7 @@ export interface Project {
   parentId: string | null;
 }
 
-export interface ProjectActions {
+interface ProjectActions {
   onSelectProject: (projectId: string) => void;
   onAddProject: (name: string, parentId: string | null) => void;
   onRenameProject: (projectId: string, newName: string) => void;
