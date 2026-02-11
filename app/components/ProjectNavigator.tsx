@@ -15,16 +15,9 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Search, Plus, Folder, ChevronDown, Check, X, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Project } from "../types";
+import { Project, ProjectBaseProps } from "../types";
 
-interface ProjectNavigatorProps {
-    projects: Record<string, Project>;
-    selectedProjectId: string | null;
-    onSelectProject: (projectId: string) => void;
-    onAddProject: (name: string, parentId: string | null) => void;
-    onRenameProject: (projectId: string, newName: string) => void;
-    onDeleteProject: (projectId: string) => void;
-}
+type ProjectNavigatorProps = ProjectBaseProps;
 
 /**
  * CONTEXT ANCHOR: NavigatorItem
@@ -32,16 +25,10 @@ interface ProjectNavigatorProps {
  * DEPENDENCIES: Folder icons, MoreVertical menu, onRenameProject, onDeleteProject, onAddProject.
  * INVARIANTS: Children always inherit parentId; only one management mode (adding/renaming) is active per item.
  */
-const NavigatorItem: React.FC<{
+const NavigatorItem: React.FC<ProjectBaseProps & {
     project: Project;
-    projects: Record<string, Project>;
     level: number;
-    onSelectProject: (projectId: string) => void;
-    onAddProject: (name: string, parentId: string | null) => void;
-    onRenameProject: (projectId: string, newName: string) => void;
-    onDeleteProject: (projectId: string) => void;
     searchQuery: string;
-    selectedProjectId: string | null;
     onClose: () => void;
 }> = ({
     project,
@@ -90,7 +77,7 @@ const NavigatorItem: React.FC<{
         // STRATEGY: Confirm destructive actions via window.confirm to prevent accidental data loss.
         // CONSTRAINT: setShowMenu(false) must happen regardless of confirmation to clean up UI.
         const handleDelete = () => {
-            if (window.confirm(`Are you sure you want to delete "${project.name}" and all its sub-projects?`)) {
+            if (window.confirm(`Are you sure you want to delete "${project.name}" and all its sub-projects? This action cannot be undone.`)) {
                 onDeleteProject(project.id);
             }
             setShowMenu(false);
@@ -306,8 +293,6 @@ const ProjectNavigator: React.FC<ProjectNavigatorProps> = ({
     useEffect(() => {
         if (isOpen) {
             inputRef.current?.focus();
-        } else {
-            setSearchQuery("");
         }
     }, [isOpen]);
 
@@ -329,6 +314,7 @@ const ProjectNavigator: React.FC<ProjectNavigatorProps> = ({
                 setIsOpen(false);
             } else {
                 onAddProject(searchQuery.trim(), null);
+                setSearchQuery("");
                 setIsOpen(false);
             }
         } else if (e.key === "Escape") {
@@ -411,7 +397,7 @@ const ProjectNavigator: React.FC<ProjectNavigatorProps> = ({
                                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-primary hover:bg-primary/5 transition-colors text-left"
                                 >
                                     <Plus className="w-4 h-4" />
-                                    <span className="flex-1 truncate">Create root "{searchQuery.trim()}"</span>
+                                    <span className="flex-1 truncate">Create root &quot;{searchQuery.trim()}&quot;</span>
                                 </button>
                             )}
 

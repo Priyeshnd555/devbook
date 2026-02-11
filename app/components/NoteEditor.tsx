@@ -70,31 +70,31 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   // Current logic: Cancel just hides buttons. RichTextEditor stays ensuring seamlessness.
   // If we cancel, we should probably reset text.
   useEffect(() => {
-      if (!isEditing) {
-          setEditedNoteText(initialContent);
-      }
+    if (!isEditing) {
+      setEditedNoteText(initialContent);
+    }
   }, [isEditing, initialContent]);
 
   return (
     // Match Read View Styles: mt-1 ml-0.5 bg-primary/5 rounded-md px-2 py-1 -mx-2
     // Added onClick to trigger edit mode when in read mode
-    <div 
+    <div
       className={`mt-1 ml-0.5 -mx-2 px-2 py-1 bg-primary/5 rounded-md group/editor transition-colors ${!isEditing ? 'cursor-text hover:bg-primary/10' : ''}`}
-      onClick={(e) => {
+      onClick={() => {
         if (!isEditing) {
           setEditingNote(taskId); // Parent handles this state update
         }
       }}
     >
       <div className="">
-         <RichTextEditor 
-            content={editedNoteText} 
-            editable={isEditing}
-            onUpdate={setEditedNoteText} 
-         />
+        <RichTextEditor
+          content={editedNoteText}
+          editable={isEditing}
+          onUpdate={setEditedNoteText}
+        />
       </div>
       {isEditing && (
-        <div 
+        <div
           className="flex gap-2 animate-in fade-in duration-200 mt-2"
           onClick={(e) => e.stopPropagation()} // Prevent bubbling
         >
@@ -106,8 +106,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           </button>
           <button
             onClick={() => {
-                setEditingNote(null);
-                setEditedNoteText(initialContent); // Reset on cancel
+              setEditingNote(null);
+              setEditedNoteText(initialContent); // Reset on cancel
             }}
             className="px-3 py-1.5 bg-background text-text-secondary text-xs border border-border rounded hover:bg-surface transition-colors shadow-sm"
           >

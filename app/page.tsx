@@ -220,7 +220,6 @@ const NestedWorkflow = () => {
     expandedThreads,
     selectedThreadId,
     selectedThread,
-    globalTotalThreads,
     globalTotalTasks,
     globalCompletedTasks,
     isAddingThread,

@@ -47,15 +47,9 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
-import { Project } from "../types";
+import { Project, ProjectBaseProps } from "../types";
 
-interface ProjectSidebarProps {
-  projects: Record<string, Project>;
-  onSelectProject: (projectId: string) => void;
-  onAddProject: (name: string, parentId: string | null) => void;
-  onRenameProject: (projectId: string, newName: string) => void;
-  onDeleteProject: (projectId: string) => void;
-  selectedProjectId: string | null;
+interface ProjectSidebarProps extends ProjectBaseProps {
   isSidebarVisible: boolean;
   onToggle: () => void;
 }
@@ -95,15 +89,9 @@ interface ProjectSidebarProps {
  *   own `showMenu` state.
  * =================================================================================================
  */
-const ProjectItem: React.FC<{
+const ProjectItem: React.FC<ProjectBaseProps & {
   project: Project;
-  projects: Record<string, Project>;
   level: number;
-  onSelectProject: (projectId: string) => void;
-  selectedProjectId: string | null;
-  onAddProject: (name: string, parentId: string | null) => void;
-  onRenameProject?: (projectId: string, newName: string) => void;
-  onDeleteProject?: (projectId: string) => void;
   isCollapsed: boolean;
 }> = ({
   project,
@@ -116,337 +104,328 @@ const ProjectItem: React.FC<{
   onDeleteProject,
   isCollapsed,
 }) => {
-  const children = Object.values(projects).filter(
-    (p) => p.parentId === project.id
-  );
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [isAdding, setIsAdding] = useState(false);
-  const [newProjectName, setNewProjectName] = useState("");
-  const [isHovered, setIsHovered] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [renameValue, setRenameValue] = useState(project.name);
+    const children = Object.values(projects).filter(
+      (p) => p.parentId === project.id
+    );
+    const [isExpanded, setIsExpanded] = useState(true);
+    const [isAdding, setIsAdding] = useState(false);
+    const [newProjectName, setNewProjectName] = useState("");
+    const [isHovered, setIsHovered] = useState(false);
+    const [showMenu, setShowMenu] = useState(false);
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [renameValue, setRenameValue] = useState(project.name);
 
-  const isSelected = selectedProjectId === project.id;
-  const hasChildren = children.length > 0;
+    const isSelected = selectedProjectId === project.id;
+    const hasChildren = children.length > 0;
 
-  const handleAddNestedProject = () => {
-    if (newProjectName.trim()) {
-      onAddProject(newProjectName.trim(), project.id);
-      setNewProjectName("");
-      setIsAdding(false);
-      setIsExpanded(true);
-    }
-  };
+    const handleAddNestedProject = () => {
+      if (newProjectName.trim()) {
+        onAddProject(newProjectName.trim(), project.id);
+        setNewProjectName("");
+        setIsAdding(false);
+        setIsExpanded(true);
+      }
+    };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleAddNestedProject();
-    } else if (e.key === "Escape") {
-      setIsAdding(false);
-      setNewProjectName("");
-    }
-  };
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        handleAddNestedProject();
+      } else if (e.key === "Escape") {
+        setIsAdding(false);
+        setNewProjectName("");
+      }
+    };
 
-  // STRATEGY: Finalizes the rename operation. It triggers the parent callback `onRenameProject`
-  // only if the name has actually changed and is not empty. This prevents unnecessary state updates.
-  // It then resets the local renaming UI state.
-  const handleRename = () => {
-    if (renameValue.trim() && renameValue !== project.name && onRenameProject) {
-      onRenameProject(project.id, renameValue.trim());
-    }
-    setIsRenaming(false);
-    setShowMenu(false);
-  };
-
-  // STRATEGY: Handles the delete action with user confirmation.
-  // A native `window.confirm` dialog is used to prevent accidental deletion, clearly stating
-  // the consequences (deleting sub-projects). The actual deletion logic is deferred to the parent
-  // component via the `onDeleteProject` callback.
-  const handleDelete = () => {
-    // CONSTRAINT: Always confirm destructive actions with the user.
-    if (
-      onDeleteProject &&
-      window.confirm(
-        `Are you sure you want to delete "${project.name}" and all its sub-projects? This action cannot be undone.`
-      )
-    ) {
-      onDeleteProject(project.id);
-    }
-    setShowMenu(false);
-  };
-
-  const handleRenameKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleRename();
-    } else if (e.key === "Escape") {
+    // STRATEGY: Finalizes the rename operation. It triggers the parent callback `onRenameProject`
+    // only if the name has actually changed and is not empty. This prevents unnecessary state updates.
+    // It then resets the local renaming UI state.
+    const handleRename = () => {
+      if (renameValue.trim() && renameValue !== project.name && onRenameProject) {
+        onRenameProject(project.id, renameValue.trim());
+      }
       setIsRenaming(false);
-      setRenameValue(project.name);
-    }
-  };
+      setShowMenu(false);
+    };
 
-  // STRATEGY: Renders a minimal, icon-only representation of the project item
-  // when the sidebar is in its collapsed state.
-  if (isCollapsed) {
-    return (
-      <div className="mb-1">
-        <button
-          onClick={() => onSelectProject(project.id)}
-          className={`w-full p-2.5 rounded-lg transition-all group relative ${
-            isSelected
+    // STRATEGY: Handles the delete action with user confirmation.
+    // A native `window.confirm` dialog is used to prevent accidental deletion, clearly stating
+    // the consequences (deleting sub-projects). The actual deletion logic is deferred to the parent
+    // component via the `onDeleteProject` callback.
+    const handleDelete = () => {
+      // CONSTRAINT: Always confirm destructive actions with the user.
+      if (
+        onDeleteProject &&
+        window.confirm(
+          `Are you sure you want to delete "${project.name}" and all its sub-projects? This action cannot be undone.`
+        )
+      ) {
+        onDeleteProject(project.id);
+      }
+      setShowMenu(false);
+    };
+
+    const handleRenameKeyPress = (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        handleRename();
+      } else if (e.key === "Escape") {
+        setIsRenaming(false);
+        setRenameValue(project.name);
+      }
+    };
+
+    // STRATEGY: Renders a minimal, icon-only representation of the project item
+    // when the sidebar is in its collapsed state.
+    if (isCollapsed) {
+      return (
+        <div className="mb-1">
+          <button
+            onClick={() => onSelectProject(project.id)}
+            className={`w-full p-2.5 rounded-lg transition-all group relative ${isSelected
               ? "bg-primary-light text-primary-text ring-1 ring-primary/20"
               : "hover:bg-background text-text-secondary"
-          }`}
-          title={project.name}
-        >
-          {isSelected ? (
-            <FolderOpen className="w-5 h-5 mx-auto" />
-          ) : (
-            <Folder className="w-5 h-5 mx-auto" />
-          )}
-          {/* STRATEGY: A small dot indicates that a project has children, even in collapsed view. */}
-          {hasChildren && !isSelected && (
-            <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></div>
-          )}
-        </button>
-      </div>
-    );
-  }
-
-  // STRATEGY: Renders the full, expanded view of the project item, including indentation,
-  // action buttons, and nested children.
-  const indentPx = level * 20;
-
-  return (
-    <div className="mb-0.5">
-      <div
-        className={`group relative flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer transition-all ${
-          isSelected
-            ? "bg-primary-light text-primary-text ring-1 ring-primary/20"
-            : "hover:bg-background text-text-primary"
-        }`}
-        style={{ paddingLeft: `${indentPx + 8}px` }}
-        onClick={() => onSelectProject(project.id)}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        {/* Expand/Collapse Chevron */}
-        {/* STRATEGY: This chevron is only visible if the item has children or if the user is currently adding a new child to it. */}
-        {hasChildren || isAdding ? (
-          <button
-            onClick={(e) => {
-              e.stopPropagation(); // CONSTRAINT: Prevent the click from also selecting the project.
-              setIsExpanded(!isExpanded);
-            }}
-            className={`shrink-0 p-0.5 rounded transition-colors ${
-              isSelected
-                ? "text-primary-text"
-                : "text-text-secondary hover:text-text-primary"
-            }`}
+              }`}
+            title={project.name}
           >
-            {isExpanded ? (
-              <ChevronDown className="w-4 h-4" />
+            {isSelected ? (
+              <FolderOpen className="w-5 h-5 mx-auto" />
             ) : (
-              <ChevronRight className="w-4 h-4" />
+              <Folder className="w-5 h-5 mx-auto" />
+            )}
+            {/* STRATEGY: A small dot indicates that a project has children, even in collapsed view. */}
+            {hasChildren && !isSelected && (
+              <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></div>
             )}
           </button>
-        ) : (
-          <div className="w-5" /> // STRATEGY: Render a placeholder to maintain alignment for items without children.
-        )}
-
-        {/* Folder Icon */}
-        <div
-          className={`shrink-0 transition-transform ${
-            isHovered && !isSelected ? "scale-110" : ""
-          }`}
-        >
-          {isSelected ? (
-            <FolderOpen className="w-5 h-5 text-primary" />
-          ) : (
-            <Folder
-              className={`w-5 h-5 ${
-                hasChildren ? "text-primary" : "text-text-secondary"
-              }`}
-            />
-          )}
         </div>
+      );
+    }
 
-        {/* Project Name or Rename Input */}
-        {/* STRATEGY: Conditionally render a text input for inline renaming when `isRenaming` is true. */}
-        {isRenaming ? (
-          <input
-            type="text"
-            value={renameValue}
-            onChange={(e) => setRenameValue(e.target.value)}
-            onKeyDown={handleRenameKeyPress}
-            onBlur={handleRename}
-            className="flex-1 px-2 py-1 text-[15px] font-medium bg-surface border border-primary/30 rounded focus:outline-none focus:ring-2 focus:ring-primary"
-            autoFocus
-            onClick={(e) => e.stopPropagation()} // CONSTRAINT: Prevent clicks on the input from selecting the project.
-          />
-        ) : (
-          <span
-            className={`flex-1 truncate text-[15px] font-medium ${
-              isSelected ? "text-primary-text" : "text-text-primary"
+    // STRATEGY: Renders the full, expanded view of the project item, including indentation,
+    // action buttons, and nested children.
+    const indentPx = level * 20;
+
+    return (
+      <div className="mb-0.5">
+        <div
+          className={`group relative flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer transition-all ${isSelected
+            ? "bg-primary-light text-primary-text ring-1 ring-primary/20"
+            : "hover:bg-background text-text-primary"
             }`}
-          >
-            {project.name}
-          </span>
-        )}
+          style={{ paddingLeft: `${indentPx + 8}px` }}
+          onClick={() => onSelectProject(project.id)}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          {/* Expand/Collapse Chevron */}
+          {/* STRATEGY: This chevron is only visible if the item has children or if the user is currently adding a new child to it. */}
+          {hasChildren || isAdding ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation(); // CONSTRAINT: Prevent the click from also selecting the project.
+                setIsExpanded(!isExpanded);
+              }}
+              className={`shrink-0 p-0.5 rounded transition-colors ${isSelected
+                ? "text-primary-text"
+                : "text-text-secondary hover:text-text-primary"
+                }`}
+            >
+              {isExpanded ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+          ) : (
+            <div className="w-5" /> // STRATEGY: Render a placeholder to maintain alignment for items without children.
+          )}
 
-        {/* Child Count Badge */}
-        {hasChildren && !isRenaming && (
-          <span
-            className={`shrink-0 px-2 py-0.5 text-[11px] font-semibold rounded-full ${
-              isSelected
+          {/* Folder Icon */}
+          <div
+            className={`shrink-0 transition-transform ${isHovered && !isSelected ? "scale-110" : ""
+              }`}
+          >
+            {isSelected ? (
+              <FolderOpen className="w-5 h-5 text-primary" />
+            ) : (
+              <Folder
+                className={`w-5 h-5 ${hasChildren ? "text-primary" : "text-text-secondary"
+                  }`}
+              />
+            )}
+          </div>
+
+          {/* Project Name or Rename Input */}
+          {/* STRATEGY: Conditionally render a text input for inline renaming when `isRenaming` is true. */}
+          {isRenaming ? (
+            <input
+              type="text"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={handleRenameKeyPress}
+              onBlur={handleRename}
+              className="flex-1 px-2 py-1 text-[15px] font-medium bg-surface border border-primary/30 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+              autoFocus
+              onClick={(e) => e.stopPropagation()} // CONSTRAINT: Prevent clicks on the input from selecting the project.
+            />
+          ) : (
+            <span
+              className={`flex-1 truncate text-[15px] font-medium ${isSelected ? "text-primary-text" : "text-text-primary"
+                }`}
+            >
+              {project.name}
+            </span>
+          )}
+
+          {/* Child Count Badge */}
+          {hasChildren && !isRenaming && (
+            <span
+              className={`shrink-0 px-2 py-0.5 text-[11px] font-semibold rounded-full ${isSelected
                 ? "bg-primary-light text-primary-text"
                 : "bg-background text-text-secondary"
-            }`}
-          >
-            {children.length}
-          </span>
-        )}
+                }`}
+            >
+              {children.length}
+            </span>
+          )}
 
-        {/* Action Buttons (Menu and Add) */}
-        {/* STRATEGY: Action buttons are hidden by default and appear on hover to keep the UI clean. */}
-        {!isRenaming && (
-          <div className="relative">
+          {/* Action Buttons (Menu and Add) */}
+          {/* STRATEGY: Action buttons are hidden by default and appear on hover to keep the UI clean. */}
+          {!isRenaming && (
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(!showMenu);
+                }}
+                className={`shrink-0 p-1.5 rounded-md transition-all ${showMenu
+                  ? "bg-border text-text-primary"
+                  : isSelected
+                    ? "hover:bg-primary-light text-primary opacity-0 group-hover:opacity-100"
+                    : "hover:bg-background text-text-secondary hover:text-text-primary opacity-0 group-hover:opacity-100"
+                  }`}
+                title="Options"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+
+              {/* Dropdown Menu */}
+              {/* STRATEGY: The dropdown menu is rendered in a portal-like fashion using a fixed-position backdrop to catch outside clicks. */}
+              {showMenu && (
+                <>
+                  {/* Backdrop to close menu on outside click */}
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowMenu(false)}
+                  />
+
+                  {/* Menu Content */}
+                  <div className="absolute right-0 top-full mt-1 w-40 bg-surface rounded-lg shadow-lg border border-border py-1 z-20">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setRenameValue(project.name);
+                        setIsRenaming(true);
+                        setShowMenu(false);
+                      }}
+                      className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-background flex items-center gap-2"
+                    >
+                      <Pencil className="w-4 h-4" />
+                      Rename
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete();
+                      }}
+                      className="w-full px-3 py-2 text-left text-sm text-danger hover:bg-danger-bg flex items-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {!isRenaming && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setShowMenu(!showMenu);
+                setIsAdding(true);
+                setIsExpanded(true);
               }}
-              className={`shrink-0 p-1.5 rounded-md transition-all ${
-                showMenu
-                  ? "bg-border text-text-primary"
-                  : isSelected
-                  ? "hover:bg-primary-light text-primary opacity-0 group-hover:opacity-100"
-                  : "hover:bg-background text-text-secondary hover:text-text-primary opacity-0 group-hover:opacity-100"
-              }`}
-              title="Options"
+              className={`shrink-0 p-1.5 rounded-md transition-all ${isSelected
+                ? "hover:bg-primary-light text-primary opacity-0 group-hover:opacity-100"
+                : "hover:bg-background text-text-secondary hover:text-primary opacity-0 group-hover:opacity-100"
+                }`}
+              title="Add nested project"
             >
-              <MoreVertical className="w-4 h-4" />
+              <Plus className="w-4 h-4" />
             </button>
+          )}
+        </div>
 
-            {/* Dropdown Menu */}
-            {/* STRATEGY: The dropdown menu is rendered in a portal-like fashion using a fixed-position backdrop to catch outside clicks. */}
-            {showMenu && (
-              <>
-                {/* Backdrop to close menu on outside click */}
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowMenu(false)}
+        {/* Recursive Rendering of Children */}
+        {/* STRATEGY: If the item is expanded, recursively render its children and show the inline 'add' form if active. */}
+        {isExpanded && (
+          <div className="mt-0.5">
+            {children.map((child) => (
+              <ProjectItem
+                key={child.id}
+                project={child}
+                projects={projects}
+                level={level + 1}
+                onSelectProject={onSelectProject}
+                selectedProjectId={selectedProjectId}
+                onAddProject={onAddProject}
+                onRenameProject={onRenameProject}
+                onDeleteProject={onDeleteProject}
+                isCollapsed={isCollapsed}
+              />
+            ))}
+
+            {/* Inline Add Form */}
+            {isAdding && (
+              <div
+                className="mt-1 mb-2 flex items-center gap-2 px-2 py-2"
+                style={{ paddingLeft: `${indentPx + 28}px` }}
+              >
+                <Folder className="w-4 h-4 text-text-secondary shrink-0" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Project name..."
+                  className="flex-1 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent shadow-sm"
+                  onClick={(e) => e.stopPropagation()}
                 />
-
-                {/* Menu Content */}
-                <div className="absolute right-0 top-full mt-1 w-40 bg-surface rounded-lg shadow-lg border border-border py-1 z-20">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setRenameValue(project.name);
-                      setIsRenaming(true);
-                      setShowMenu(false);
-                    }}
-                    className="w-full px-3 py-2 text-left text-sm text-text-primary hover:bg-background flex items-center gap-2"
-                  >
-                    <Pencil className="w-4 h-4" />
-                    Rename
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete();
-                    }}
-                    className="w-full px-3 py-2 text-left text-sm text-danger hover:bg-danger-bg flex items-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete
-                  </button>
-                </div>
-              </>
+                <button
+                  onClick={handleAddNestedProject}
+                  className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors"
+                  title="Add"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    setIsAdding(false);
+                    setNewProjectName("");
+                  }}
+                  className="p-1.5 bg-border text-text-secondary rounded-lg hover:bg-surface transition-colors"
+                  title="Cancel"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             )}
           </div>
         )}
-
-        {!isRenaming && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsAdding(true);
-              setIsExpanded(true);
-            }}
-            className={`shrink-0 p-1.5 rounded-md transition-all ${
-              isSelected
-                ? "hover:bg-primary-light text-primary opacity-0 group-hover:opacity-100"
-                : "hover:bg-background text-text-secondary hover:text-primary opacity-0 group-hover:opacity-100"
-            }`}
-            title="Add nested project"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-        )}
       </div>
-
-      {/* Recursive Rendering of Children */}
-      {/* STRATEGY: If the item is expanded, recursively render its children and show the inline 'add' form if active. */}
-      {isExpanded && (
-        <div className="mt-0.5">
-          {children.map((child) => (
-            <ProjectItem
-              key={child.id}
-              project={child}
-              projects={projects}
-              level={level + 1}
-              onSelectProject={onSelectProject}
-              selectedProjectId={selectedProjectId}
-              onAddProject={onAddProject}
-              onRenameProject={onRenameProject}
-              onDeleteProject={onDeleteProject}
-              isCollapsed={isCollapsed}
-            />
-          ))}
-
-          {/* Inline Add Form */}
-          {isAdding && (
-            <div
-              className="mt-1 mb-2 flex items-center gap-2 px-2 py-2"
-              style={{ paddingLeft: `${indentPx + 28}px` }}
-            >
-              <Folder className="w-4 h-4 text-text-secondary shrink-0" />
-              <input
-                type="text"
-                autoFocus
-                value={newProjectName}
-                onChange={(e) => setNewProjectName(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder="Project name..."
-                className="flex-1 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent shadow-sm"
-                onClick={(e) => e.stopPropagation()}
-              />
-              <button
-                onClick={handleAddNestedProject}
-                className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors"
-                title="Add"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => {
-                  setIsAdding(false);
-                  setNewProjectName("");
-                }}
-                className="p-1.5 bg-border text-text-secondary rounded-lg hover:bg-surface transition-colors"
-                title="Cancel"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
+    );
+  };
 
 const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
   projects,
@@ -487,9 +466,8 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
 
   return (
     <div
-      className={`relative bg-surface flex flex-col h-screen shrink-0 transition-all duration-300 shadow-lg ${
-        isCollapsed ? "w-0 border-none" : "w-80 border-r border-border"
-      }`}
+      className={`relative bg-surface flex flex-col h-screen shrink-0 transition-all duration-300 shadow-lg ${isCollapsed ? "w-0 border-none" : "w-80 border-r border-border"
+        }`}
     >
       {/* STRATEGY: This toggle button is absolutely positioned to "peek" out from the edge of the sidebar.
           This provides a clear, intuitive UX for collapsing/expanding the panel, directly attached to the

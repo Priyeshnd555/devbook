@@ -32,13 +32,13 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
 
-  
+
   // STRATEGY: Connect to global ThemeProvider.
   // We map the global 'theme' string to a binary 'isDarkMode' boolean for the Switch component.
   // 'system' theme is treated as not-dark (false) for the toggle state unless resolved,
   // but here we simplify to: dark state is triggered only by explicit 'dark' theme.
   const themeContext = useTheme();
-  
+
   // ===============================================================================================
   // FAILURE BOUNDARY: Enforce component is used inside a ThemeProvider.
   // ===============================================================================================
@@ -51,8 +51,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     throw new Error("SettingsModal must be used within a ThemeProvider");
   }
   const { theme, setTheme, themeColor, setThemeColor, customColor, setCustomColor, fontSize, setFontSize } = themeContext;
-  
-  
+
+
   // CONSTRAINT: Simple toggle logic assuming 'dark' vs 'light'. 
   // 'system' resets to default, but the toggle forces explicit choice.
   const isDarkMode = theme === "dark";
@@ -122,14 +122,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 <Switch
                   checked={isDarkMode}
                   onChange={handleThemeChange}
-                  className={`${
-                    isDarkMode ? "bg-primary" : "bg-border"
-                  } relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
+                  className={`${isDarkMode ? "bg-primary" : "bg-border"
+                    } relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
                 >
                   <span
-                    className={`${
-                      isDarkMode ? "translate-x-6" : "translate-x-1"
-                    } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                    className={`${isDarkMode ? "translate-x-6" : "translate-x-1"
+                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                   />
                 </Switch>
               </div>
@@ -143,9 +141,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <button
                       key={color.value}
                       onClick={() => setThemeColor(color.value)}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 ${
-                        color.bgClass
-                      } ${themeColor === color.value ? "ring-2 ring-offset-2 ring-text-primary" : ""}`}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 ${color.bgClass
+                        } ${themeColor === color.value ? "ring-2 ring-offset-2 ring-text-primary" : ""}`}
                       aria-label={`Select ${color.name} theme`}
                     >
                       {themeColor === color.value && (
@@ -153,23 +150,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                       )}
                     </button>
                   ))}
-                  
+
                   {/* Custom Color Picker */}
                   <div className="relative flex items-center justify-center ml-2 pl-2 border-l border-border">
                     <button
-                        onClick={() => setThemeColor("custom")}
-                        className={`group relative w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 overflow-hidden ${themeColor === "custom" ? "ring-2 ring-offset-2 ring-text-primary" : ""}`}
-                         aria-label="Select Custom theme"
-                         style={{ background: 'conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)' }}
+                      onClick={() => setThemeColor("custom")}
+                      className={`group relative w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 overflow-hidden ${themeColor === "custom" ? "ring-2 ring-offset-2 ring-text-primary" : ""}`}
+                      aria-label="Select Custom theme"
+                      style={{ background: 'conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)' }}
                     >
-                         {/* Visual overlay to make it look button-like but show the rainbow */}
-                         <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-                         
-                         {themeColor === "custom" ? (
-                            <Check className="w-4 h-4 text-white drop-shadow-md z-10" />
-                          ) : (
-                            <Plus className="w-4 h-4 text-white drop-shadow-md z-10 opacity-70 group-hover:opacity-100" />
-                          )}
+                      {/* Visual overlay to make it look button-like but show the rainbow */}
+                      <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
+
+                      {themeColor === "custom" ? (
+                        <Check className="w-4 h-4 text-white drop-shadow-md z-10" />
+                      ) : (
+                        <Plus className="w-4 h-4 text-white drop-shadow-md z-10 opacity-70 group-hover:opacity-100" />
+                      )}
                     </button>
                     {/* Hidden input overlay that triggers on click? Or just separate input? 
                         Analysis: Best UX is probably a button that activates the mode, 
@@ -178,15 +175,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         BUT we want to be able to select "custom" as a mode even if we don't change color.
                         Better: Separate tiny input or just trigger click on input.
                     */}
-                    <input 
-                        type="color"
-                        value={customColor}
-                        onChange={(e) => {
-                            setCustomColor(e.target.value);
-                            if (themeColor !== "custom") setThemeColor("custom");
-                        }}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        title="Choose custom color"
+                    <input
+                      type="color"
+                      value={customColor}
+                      onChange={(e) => {
+                        setCustomColor(e.target.value);
+                        if (themeColor !== "custom") setThemeColor("custom");
+                      }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      title="Choose custom color"
                     />
                   </div>
                 </div>
@@ -214,12 +211,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         </span>
                       </Listbox.Button>
                       <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-surface border border-border py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-50">
-                        {fontSizes.map((size, index) => (
+                        {fontSizes.map((size) => (
                           <Listbox.Option
                             key={size.value}
                             className={({ active }) =>
-                              `relative cursor-default select-none py-2 pl-10 pr-4 ${
-                                active ? "bg-primary/10 text-primary" : "text-text-primary"
+                              `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? "bg-primary/10 text-primary" : "text-text-primary"
                               }`
                             }
                             value={size.value}
@@ -227,9 +223,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                             {({ selected }) => (
                               <>
                                 <span
-                                  className={`block truncate ${
-                                    selected ? "font-medium" : "font-normal"
-                                  }`}
+                                  className={`block truncate ${selected ? "font-medium" : "font-normal"
+                                    }`}
                                 >
                                   {size.label}
                                 </span>
@@ -250,12 +245,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             </div>
 
             <div className="px-4 py-3 bg-background border-t border-border flex justify-end">
-                <button
-                    onClick={onClose}
-                    className="px-5 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background"
-                >
-                    Done
-                </button>
+              <button
+                onClick={onClose}
+                className="px-5 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background"
+              >
+                Done
+              </button>
             </div>
           </motion.div>
         </motion.div>

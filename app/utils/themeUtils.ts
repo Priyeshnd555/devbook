@@ -6,7 +6,7 @@
 // INVARIANTS: Input is valid HEX string; Output is valid CSS HSL string values.
 // =================================================================================================
 
-export function hexToHSL(hex: string): { h: number; s: number; l: number } | null {
+function hexToHSL(hex: string): { h: number; s: number; l: number } | null {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) return null;
 

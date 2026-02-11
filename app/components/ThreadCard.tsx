@@ -56,7 +56,7 @@ import {
 
 import { motion, AnimatePresence } from "framer-motion";
 import { TaskItem, TaskItemProps } from "./TaskItem"; // Import TaskItem and its props
-import { Thread, THREAD_STATE_TRANSITIONS, ThreadStatus, SortConfig, SortDirection } from "../types";
+import { Thread, THREAD_STATE_TRANSITIONS, ThreadStatus, SortConfig } from "../types";
 import { isTaskFullyCompleted } from "../utils/taskUtils";
 import { formatRelativeDate, formatFullDate } from "../utils/dateUtils";
 import { sortTasks } from "../utils/sortUtils";
@@ -86,7 +86,7 @@ import { sortTasks } from "../utils/sortUtils";
 //    - It passes the `finalShowCompleted` value down to its child `TaskItem` components, ensuring
 //      the visibility state propagates correctly through the component tree.
 // =================================================================================================
-export interface ThreadCardProps {
+interface ThreadCardProps {
   thread: Thread;
   threadNumber: number;
   totalTaskCount: number;
@@ -138,7 +138,6 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
   localShowCompleted,
   onToggleLocalShowCompleted,
   onUpdateThreadSort,
-  onUpdateTaskSort,
 }) => {
   const isAddingSession = addingSessionTo === thread.id;
   const [title, setTitle] = useState<string>(thread.title); // Initialize with prop

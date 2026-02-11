@@ -527,7 +527,7 @@ const useWorkflowManager = () => {
   const deleteThread = (threadId: string) => {
     // STRATEGY: Use a confirmation dialog before performing a destructive action.
 
-    if (window.confirm("Are you sure you want to delete this thread?")) {
+    if (window.confirm("Are you sure you want to delete this thread? This action cannot be undone.")) {
       const newThreads = { ...threads };
 
       delete newThreads[threadId];

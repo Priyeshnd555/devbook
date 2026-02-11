@@ -57,9 +57,6 @@ import {
   CheckCircle2,
   MessageSquare,
   Star,
-  ListFilter,
-  SortAsc,
-  SortDesc,
   ArrowUp,
   ArrowDown,
 } from "lucide-react";

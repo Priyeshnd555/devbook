@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "dark" | "light" | "system";
 export type ThemeColor = "orange" | "green" | "blue" | "custom";
-export type FontSize = "small" | "normal" | "large";
+type FontSize = "small" | "normal" | "large";
 import { generateThemeVariables } from "../utils/themeUtils";
 
 interface ThemeProviderProps {

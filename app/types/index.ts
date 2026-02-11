@@ -71,3 +71,15 @@ export interface Project {
   name: string;
   parentId: string | null;
 }
+
+export interface ProjectActions {
+  onSelectProject: (projectId: string) => void;
+  onAddProject: (name: string, parentId: string | null) => void;
+  onRenameProject: (projectId: string, newName: string) => void;
+  onDeleteProject: (projectId: string) => void;
+}
+
+export interface ProjectBaseProps extends ProjectActions {
+  projects: Record<string, Project>;
+  selectedProjectId: string | null;
+}
