@@ -13,7 +13,7 @@ build:
 deploy:
 	@source $(NVM_DIR)/nvm.sh && nvm use 20 && npm run predeploy && npm run deploy
 
-Refractor:
+refactor:
 	@echo "Running knip..."
 	@npx knip
 	@echo "Running jscpd..."
