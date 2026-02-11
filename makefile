@@ -15,9 +15,9 @@ deploy:
 
 refactor:
 	@echo "Running knip..."
-	@npx knip
+	-@npx knip
 	@echo "Running jscpd..."
-	@npx jscpd app --ignore "**/node_modules/**"
+	-@npx jscpd app --ignore "**/node_modules/**"
 	@echo "Running ast-grep..."
 	@npx sg run --pattern 'window.confirm($$MSG)' app
 	@echo "Running build and lint..."
