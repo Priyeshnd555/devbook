@@ -67,6 +67,7 @@ import {
   updateTaskRecursive,
   countAllTasks,
   countAllCompletedTasks,
+  findOldestUndoneTaskCreatedAt,
 } from "../utils/taskUtils";
 
 import { sortThreads } from "../utils/sortUtils";
@@ -131,7 +132,10 @@ const useWorkflowManager = () => {
 
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
-  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+  const [selectedThreadId, setSelectedThreadId] = usePersistentState<string | null>(
+    "nested-workflow-selected-thread",
+    null
+  );
 
   const [editedTaskText, setEditedTaskText] = useState<string>("");
 
@@ -153,11 +157,34 @@ const useWorkflowManager = () => {
     "threadsSortDirection",
     "desc"
   );
+
+  // STRATEGY: Track projects (folders) that are hidden from the Weekly Overview for specific days.
+  // The key is a date string (YYYY-MM-DD) and the value is an array of project IDs.
+  const [hiddenProjectsForDay, setHiddenProjectsForDay] = usePersistentState<Record<string, string[]>>(
+    "nested-workflow-hidden-projects-day",
+    {}
+  );
   const toggleThreadShowCompleted = (threadId: string) => {
     setLocalShowCompleted(prev => ({
       ...prev,
       [threadId]: !(prev[threadId] ?? false),
     }));
+  };
+
+  /**
+   * Toggles whether a project is hidden from the Weekly Overview on a specific date.
+   * @param projectId The ID of the project to hide/show.
+   * @param date Date string in YYYY-MM-DD format.
+   */
+  const toggleProjectHiddenForDay = (projectId: string, date: string) => {
+    setHiddenProjectsForDay((prev) => {
+      const currentHidden = prev[date] || [];
+      const isHidden = currentHidden.includes(projectId);
+      const newHidden = isHidden
+        ? currentHidden.filter((id) => id !== projectId)
+        : [...currentHidden, projectId];
+      return { ...prev, [date]: newHidden };
+    });
   };
 
 
@@ -796,6 +823,9 @@ const useWorkflowManager = () => {
 
   // ==========================================================================
 
+  // STRATEGY: `updateThreadSort` persists the sort direction for a specific thread's root tasks.
+  // This config is stored on the `Thread` object itself (`thread.sortConfig`) so sort preferences
+  // survive page reloads. It is applied in `ThreadCard` via the `sortTasks` utility.
   const updateThreadSort = (threadId: string, config: SortConfig) => {
     setThreads((prev) => ({
       ...prev,
@@ -803,6 +833,9 @@ const useWorkflowManager = () => {
     }));
   };
 
+  // STRATEGY: `updateTaskSort` persists the sort direction for a specific task's children.
+  // This config is stored on the `Task` object itself (`task.sortConfig`) so per-task sort
+  // preferences also survive page reloads. Applied in `TaskItem` via `sortTasks`.
   const updateTaskSort = (threadId: string, taskId: string, config: SortConfig) => {
     setThreads((prevThreads) => {
       const threadToUpdate = prevThreads[threadId];
@@ -910,27 +943,92 @@ const useWorkflowManager = () => {
     return sorted.map(t => t.id);
   }, [threadOrder, threads, descendantProjectIds, selectedProjectId, threadsSortDirection]);
 
-  // Calculate global task counts across all threads.
-
   const { globalTotalTasks, globalCompletedTasks } = useMemo(() => {
     let total = 0;
-
     let completed = 0;
 
     threadOrder.forEach((threadId) => {
       const thread = threads[threadId];
-
       if (thread) {
-        // STRATEGY: Delegate task counting to a dedicated utility function to handle recursion.
-
         total += countAllTasks(thread.tasks);
-
         completed += countAllCompletedTasks(thread.tasks);
       }
     });
 
     return { globalTotalTasks: total, globalCompletedTasks: completed };
   }, [threadOrder, threads]);
+
+  /**
+   * STRATEGY: Calculates data for the Weekly Overview dashboard (`/weekly/page.tsx`).
+   *
+   * OUTPUT SCHEMA (per project):
+   * ```
+   * {
+   *   projectId: string;           // Project's unique ID
+   *   projectName: string;         // Display label
+   *   parentId: string | null;     // For hierarchical tree building in weekly view
+   *   pendingDays: number;         // Days since oldest undone task was created (urgency signal)
+   *   progress: number;            // 0-100 percentage of completed tasks
+   *   threads: [{                  // Raw threads with task data
+   *     id, title, undoneTasks,
+   *     tasks: Task[]              // Full task tree for date-specific filtering in the UI
+   *   }]
+   * }
+   * ```
+   *
+   * CONSUMER: `weekly/page.tsx` transforms this flat array into a hierarchical `treeData`
+   *           structure using `parentId` and additional date-based filtering.
+   *
+   * PERFORMANCE: This is a full scan of all projects and threads. `useMemo` ensures it only
+   *              recalculates when `projects` or `threads` state actually changes.
+   *
+   * CONSTRAINT: `hiddenProjectsForDay` filtering is intentionally NOT applied here. The weekly
+   *             page is responsible for that UI-level filtering so this data remains a pure
+   *             aggregate suitable for multiple consumers.
+   */
+  const weeklyOverviewData = useMemo(() => {
+    return Object.values(projects).map((project) => {
+      // Find all threads belonging to this project
+      const projectThreads = Object.values(threads).filter(
+        (t) => t.projectId === project.id
+      );
+
+      const allTasks = projectThreads.flatMap((t) => t.tasks);
+      
+      // Find the oldest undone task among all these threads
+      const oldestTimestamp = findOldestUndoneTaskCreatedAt(allTasks);
+
+      const totalTasks = countAllTasks(allTasks);
+      const completedTasks = countAllCompletedTasks(allTasks);
+      const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+      const diffTime = Date.now() - oldestTimestamp;
+      const pendingDays = oldestTimestamp === Infinity ? 0 : Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+
+      const threadsWithInfo = projectThreads.map(t => {
+        // We include ALL tasks and their statuses so the UI can filter by date
+        const undoneTasks = countAllTasks(t.tasks) - countAllCompletedTasks(t.tasks);
+        return {
+          id: t.id,
+          title: t.title,
+          undoneTasks,
+          tasks: t.tasks, // Pass raw tasks for date-specific logic
+        };
+      });
+
+      return {
+        projectId: project.id,
+        projectName: project.name,
+        parentId: project.parentId,
+        pendingDays,
+        oldestTimestamp,
+        totalTasks,
+        completedTasks,
+        progress,
+        threads: threadsWithInfo,
+      };
+    });
+  }, [projects, threads]);
 
   const globalTotalThreads = threadOrder.length;
 
@@ -1228,6 +1326,10 @@ const useWorkflowManager = () => {
 
         setShowCompleted,
 
+        // Weekly Overview
+        weeklyOverviewData,
+        hiddenProjectsForDay,
+        toggleProjectHiddenForDay,
       };
 
     };

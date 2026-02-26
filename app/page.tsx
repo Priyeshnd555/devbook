@@ -108,10 +108,42 @@
 // - Layout dimensions and spacing remain handled by standard Tailwind utilities.
 // =================================================================================================
 
+// =================================================================================================
+// CONTEXT ANCHOR: WEEKLY DASHBOARD INTEGRATION (from app/page.tsx perspective)
+// =================================================================================================
+// PURPOSE: To document how this page (`page.tsx`) integrates with the Weekly Roadmap (`/weekly`),
+//          enabling seamless thread navigation between the two views.
+//
+// INTEGRATION OVERVIEW:
+// - The `Weekly Roadmap` (/weekly/page.tsx) is a companion view that provides a date-oriented,
+//   project-level summary of all threads and their tasks.
+// - Both pages share state through the `useWorkflowManager` hook, which is the single source
+//   of truth. No state is passed between pages via URL params (except implicit navigation).
+//
+// DATA FLOW FOR WEEKLY NAVIGATION:
+// 1. USER is on the Weekly Roadmap (`/weekly/page.tsx`).
+// 2. USER clicks a Thread card -> `handleThreadClick(projectId, threadId)` is called.
+// 3. `useWorkflowManager.handleSelectProject(projectId)` + `handleSelectThread(threadId)` are
+//    called, updating `selectedProjectId` and `selectedThreadId` in localStorage-backed state.
+// 4. `router.push('/')` navigates back to this page.
+// 5. This page reads `selectedProjectId` and `selectedThreadId` from `useWorkflowManager`,
+//    which are already set, resulting in the correct thread being highlighted.
+//
+// KEY STATE PRODUCED BY useWorkflowManager FOR WEEKLY VIEW:
+// - `weeklyOverviewData`: A derived array that aggregates per-project thread/task stats.
+//   Format: `{ projectId, projectName, parentId, pendingDays, progress, threads: [{id, title, undoneTasks, tasks}] }`
+//   - This is the primary input for the Weekly Roadmap's `treeData` computation.
+//
+// NAVIGATION ENTRY POINT (in this file):
+// - The `<Link href="/weekly">` button in the header ("Roadmap") navigates TO the weekly view.
+// - CONSTRAINT: The Link button is always visible, regardless of selected project.
+// =================================================================================================
+
 import React from "react";
-import { Plus, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, ArrowUp, ArrowDown, LayoutDashboard } from "lucide-react";
 import { ThreadCard } from "./components/ThreadCard"; // Import ThreadCard
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import ProjectSidebar from "./components/ProjectSidebar";
 import useWorkflowManager from "./hooks/useWorkflowManager";
 import { countAllTasks, countAllCompletedTasks } from "./utils/taskUtils";
@@ -283,7 +315,7 @@ const NestedWorkflow = () => {
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0 flex items-center gap-4">
                 <div>
-                  <h1 className="text-lg font-semibold text-text-primary">
+                  <h1 className="text-2xl font-serif font-bold text-text-primary">
                     Thread Notes
                   </h1>
                   <p className="text-xs text-text-secondary mt-0.5">
@@ -324,9 +356,17 @@ const NestedWorkflow = () => {
                       {threadsSortDirection === 'asc' ? 'Oldest first' : 'Newest first'}
                     </span>
                   </button>
+                  <Link
+                    href="/weekly"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface transition-all border border-transparent hover:border-border"
+                    title="Weekly Overview"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    <span className="hidden lg:inline">Roadmap</span>
+                  </Link>
                   <button
                     onClick={() => setIsAddingThread(true)}
-                    className="flex items-center gap-2 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-lg hover:bg-primary-hover transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                     // CONSTRAINT: New thread button is disabled if no project is selected to ensure threads are always associated with a project.
                     disabled={!selectedProjectId}
                     title={
@@ -335,7 +375,7 @@ const NestedWorkflow = () => {
                         : "Add new thread"
                     }
                   >
-                    <Plus className="w-3.5 h-3.5" /> New Thread
+                    <Plus className="w-4 h-4" /> New Thread
                   </button>
                 </div>
                 {/* UX STRATEGY: To minimize cognitive load, secondary actions ('Show Completed', 'Settings') are consolidated into a dropdown menu.
@@ -351,7 +391,7 @@ const NestedWorkflow = () => {
         </header>
 
         <main
-          className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto px-6 py-4 w-full overflow-auto
+          className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto px-8 py-6 w-full overflow-auto
             [scrollbar-width:none]
             [&::-webkit-scrollbar]:hidden"
         >

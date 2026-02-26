@@ -68,3 +68,45 @@ export function formatFullDate(dateStr: string): string {
     day: "numeric",
   });
 }
+/**
+ * Calculates the ISO week number for a given date.
+ */
+export function getWeekNumber(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+/**
+ * Returns an array of date objects for a week (Monday to Sunday) based on a week offset.
+ * @param weekOffset Number of weeks away from current week (0 = current, 1 = next week, -1 = last week)
+ */
+export function getWeekDates(weekOffset: number = 0): { name: string, date: string, day: string, month: string, year: number, weekNumber: number }[] {
+  const current = new Date();
+  current.setDate(current.getDate() + (weekOffset * 7));
+  
+  const day = current.getDay();
+  const monday = new Date(current);
+  const diff = current.getDate() - day + (day === 0 ? -6 : 1);
+  monday.setDate(diff);
+
+  const week = [];
+  const dayNames = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+
+  for (let i = 0; i < 7; i++) {
+    const nextDay = new Date(monday);
+    nextDay.setDate(monday.getDate() + i);
+    week.push({
+      name: dayNames[i],
+      day: nextDay.toLocaleDateString(undefined, { day: 'numeric' }),
+      month: nextDay.toLocaleDateString(undefined, { month: 'short' }),
+      year: nextDay.getFullYear(),
+      date: nextDay.toISOString().split("T")[0],
+      weekNumber: getWeekNumber(nextDay)
+    });
+  }
+
+  return week;
+}

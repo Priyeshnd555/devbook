@@ -33,6 +33,7 @@ export interface Task {
   priority: number;
   sortConfig?: SortConfig; // Optional sort config for children
   createdAt: number; // Timestamp for creation-based sorting
+  completedAt?: number; // Timestamp for completion tracking
 }
 
 export interface Session {
@@ -72,6 +73,17 @@ export interface Project {
   parentId: string | null;
 }
 
+// =================================================================================================
+// CONTEXT ANCHOR: SHARED PROJECT PROP CONTRACT
+// =================================================================================================
+// PURPOSE: `ProjectActions` and `ProjectBaseProps` define the standardized prop interface that
+//          ALL project-management UI components must satisfy. This ensures consistency and makes
+//          refactoring safe — changing these interfaces immediately surfaces all affected components.
+//
+// CONSUMERS: `ProjectSidebar`, `ProjectNavigator` both extend `ProjectBaseProps`.
+// AI-NOTE: When adding a new project action (e.g., `onMoveProject`), add it here first, then
+//          implement it in `useWorkflowManager`, then pass it down through page.tsx to the consumers.
+// =================================================================================================
 interface ProjectActions {
   onSelectProject: (projectId: string) => void;
   onAddProject: (name: string, parentId: string | null) => void;

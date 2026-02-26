@@ -1,4 +1,5 @@
 @import "tailwindcss";
+/* @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;700&family=Inter:wght@400;500;700&display=swap'); */
 
 :root {
   /* HSL Channel definitions - Light Theme (Default) */
@@ -90,6 +91,47 @@
   --color-primary-text: 217 91% 80%;
 }
 
+/* ORNAMENTAL THEME */
+[data-color='ornamental'] {
+  --color-primary: 265 38% 35%;      /* #584976 */
+  --color-primary-hover: 265 38% 25%; /* #40355E */
+  --color-primary-light: 265 38% 95%; /* #F1EFF6 */
+  --color-primary-text: 265 38% 15%;  /* #29213B */
+
+  --color-accent: 45 100% 70%;   /* #FFD266 */
+  
+  --color-background: 45 33% 97%; /* #FCF9F2 */
+  --color-surface: 45 33% 99%;    /* #FEFDF9 */
+  
+  --color-text-primary: 265 38% 10%; /* #1A1424 */
+  --color-text-secondary: 265 15% 40%; /* #5A526B */
+  
+  --color-border: 265 20% 85%;   /* #D5D1DE */
+
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: 'EB Garamond', serif;
+}
+[data-color='ornamental'].dark {
+  --color-primary: 265 38% 65%;
+  --color-primary-hover: 265 38% 75%;
+  --color-primary-light: 265 38% 15%;
+  --color-primary-text: 265 38% 95%;
+  
+  --color-accent: 45 100% 70%; 
+  
+  --color-background: 265 15% 10%;    /* #1A181D */
+  --color-surface: 265 15% 15%;    /* #232027 */
+  
+  --color-text-primary: 265 20% 90%; /* #E2E0E7 */
+  --color-text-secondary: 265 10% 60%; /* #938FA1 */
+  
+  --color-border: 265 15% 25%;
+  
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: 'EB Garamond', serif;
+}
+
+
 @theme inline {
   /* Mapping semantic names to HSL variables */
   /* Usage: bg-background (maps to --color-background), text-foreground (maps to --color-text-primary) */
@@ -119,8 +161,9 @@
   
   --color-warning: hsl(var(--color-warning));
 
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-sans, --font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-serif);
 }
 
 body {

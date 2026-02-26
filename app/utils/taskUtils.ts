@@ -26,6 +26,7 @@ export const updateTaskRecursive = (tasks: Task[], taskId: string, newDoneState?
         return {
           ...task,
           done: newDoneState !== undefined ? newDoneState : task.done,
+          completedAt: newDoneState === true ? Date.now() : (newDoneState === false ? undefined : task.completedAt),
           text: newText !== undefined ? newText : task.text,
           note: newNote !== undefined ? newNote : task.note,
           priority: newPriority !== undefined ? newPriority : task.priority,
@@ -75,4 +76,21 @@ export const isTaskFullyCompleted = (task: Task): boolean => {
     return task.done;
   }
   return task.children.every(isTaskFullyCompleted);
+};
+
+/**
+ * STRATEGY: Recursively finds the oldest `createdAt` timestamp among all undone tasks.
+ * This is used to determine how many days a project has been pending.
+ * @param tasks The array of tasks to search.
+ * @returns The oldest timestamp (minimum value) or Infinity if no undone tasks are found.
+ */
+export const findOldestUndoneTaskCreatedAt = (tasks: Task[]): number => {
+  return tasks.reduce((oldest, task) => {
+    let currentOldest = oldest;
+    if (!task.done) {
+      currentOldest = Math.min(currentOldest, task.createdAt);
+    }
+    const childrenOldest = findOldestUndoneTaskCreatedAt(task.children);
+    return Math.min(currentOldest, childrenOldest);
+  }, Infinity);
 };

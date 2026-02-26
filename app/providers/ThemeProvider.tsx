@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "dark" | "light" | "system";
-export type ThemeColor = "orange" | "green" | "blue" | "custom";
+export type ThemeColor = "orange" | "green" | "blue" | "custom" | "ornamental";
 type FontSize = "small" | "normal" | "large";
 import { generateThemeVariables } from "../utils/themeUtils";
 
@@ -32,7 +32,7 @@ interface ThemeProviderState {
 const initialState: ThemeProviderState = {
   theme: "system",
   setTheme: () => null,
-  themeColor: "orange",
+  themeColor: "ornamental",
   setThemeColor: () => null,
   customColor: "#FB8500", // Default orange hex
   setCustomColor: () => null,
@@ -49,14 +49,14 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 // DEPENDENCIES: React, Window.localStorage, Window.matchMedia, themeUtils (for custom generation).
 // INVARIANTS: 
 // - Theme is always one of "light", "dark", "system".
-// - ThemeColor is "orange", "green", "blue", or "custom".
+// - ThemeColor is "orange", "green", "blue", "custom", or "ornamental".
 // - FontSize is "small", "normal", "large".
 // - If "custom", proper CSS variables are injected into :root style.
 // =================================================================================================
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  defaultColor = "orange",
+  defaultColor = "ornamental",
   defaultCustomColor = "#FB8500",
   defaultFontSize = "normal",
   storageKey = "devbook-theme",
