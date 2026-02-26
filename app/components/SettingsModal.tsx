@@ -63,7 +63,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   };
 
   const colors: { name: string; value: ThemeColor; bgClass: string }[] = [
-    { name: "Ornamental", value: "ornamental", bgClass: "bg-primary" },
+    { name: "Orange", value: "orange", bgClass: "bg-orange-500" },
+    { name: "Green", value: "green", bgClass: "bg-green-500" },
+    { name: "Blue", value: "blue", bgClass: "bg-blue-500" },
+
   ];
 
   // ===============================================================================================

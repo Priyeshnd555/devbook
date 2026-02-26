@@ -36,6 +36,19 @@ import { Task } from "../types";
  * 1. TABLE VIEW (default): Horizontal scroll rows of Thread cards grouped by root project.
  * 2. TREE VIEW:  Hierarchical graph of project folder nodes, expandable up to 3 levels.
  *
+ * @theming
+ * ALL colors use semantic CSS variable tokens from globals.css / ThemeProvider, NEVER hardcoded
+ * hex or rgba values. Token mapping:
+ *   - bg-background      → var(--color-background): page root background
+ *   - bg-surface         → var(--color-surface): elevated card surfaces
+ *   - text-foreground    → var(--color-text-primary): primary readable text
+ *   - text-foreground/NN → foreground with opacity for secondary/muted text
+ *   - border-border      → var(--color-border): dividers and card outlines
+ *   - text-primary       → var(--color-primary): accent color (changes with theme)
+ *   - bg-primary         → var(--color-primary): accent fill
+ *   - bg-surface/80      → surface with backdrop transparency for sticky/glass elements
+ * INVARIANT: No hardcoded hex, rgb(), or rgba() color values are allowed in this file.
+ *
  * @dependencies
  * - HOOK: `useWorkflowManager` — the single source of truth for all project/thread/task data.
  *   The key derived state used here is `weeklyOverviewData` (see useWorkflowManager.ts).
@@ -119,8 +132,8 @@ interface WeekDay {
 // CONSTRAINT: Only shows `directThreadsWithContext` (not descendant threads) to avoid duplication
 //             in the tree layout, since child nodes render their own threads.
 // INVARIANTS: `isExpanded` is controlled externally via `expandedNodes` Set in the parent.
+// THEMING: All colors use semantic CSS variable tokens. No hardcoded hex/rgb/rgba values.
 // =================================================================================================
-// --- Dynamic Node Component ---
 const FolderNode = ({
     data,
     onThreadClick,
@@ -147,14 +160,17 @@ const FolderNode = ({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className={`group flex flex-col transition-all duration-300 rounded-2xl relative z-20 
-                ${data.isFullyCompleted ? 'bg-white/[0.01] border-white/[0.05] opacity-40 grayscale' : 'bg-[#161b22]/80 backdrop-blur-xl border-white/10 hover:border-primary/50 shadow-2xl'}
+                ${data.isFullyCompleted
+                    ? 'bg-foreground/[0.01] border-border/10 opacity-40 grayscale'
+                    : 'bg-surface/80 backdrop-blur-xl border-border/20 hover:border-primary/50 shadow-2xl'
+                }
                 ${isExpanded ? 'min-w-[360px]' : 'w-72'}
                 border overflow-hidden`}
         >
             <div className="p-5 flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className={`shrink-0 p-2 rounded-xl ${data.isFullyCompleted ? 'bg-white/5 text-white/20' : depth === 0 ? 'bg-primary/20 text-primary' : 'bg-white/5 text-white/40'}`}>
+                        <div className={`shrink-0 p-2 rounded-xl ${data.isFullyCompleted ? 'bg-foreground/5 text-foreground/20' : depth === 0 ? 'bg-primary/20 text-primary' : 'bg-foreground/5 text-foreground/40'}`}>
                             <Hexagon className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
@@ -166,12 +182,12 @@ const FolderNode = ({
                                             <React.Fragment key={i}>
                                                 <span className={`text-[10px] font-bold uppercase tracking-wider leading-none transition-colors
                                                     ${i === parts.length - 1
-                                                        ? (data.isFullyCompleted ? 'text-white/30' : 'text-white/90')
-                                                        : 'text-white/20'}`}>
+                                                        ? (data.isFullyCompleted ? 'text-foreground/30' : 'text-foreground/90')
+                                                        : 'text-foreground/20'}`}>
                                                     {part}
                                                 </span>
                                                 {i < parts.length - 1 && (
-                                                    <ChevronRight className="w-2.5 h-2.5 text-white/15 shrink-0" />
+                                                    <ChevronRight className="w-2.5 h-2.5 text-foreground/15 shrink-0" />
                                                 )}
                                             </React.Fragment>
                                         ))}
@@ -179,7 +195,7 @@ const FolderNode = ({
                                 );
                             })()}
                             {depth === 0 && (
-                                <h3 className={`text-sm font-bold truncate tracking-tight transition-colors ${data.isFullyCompleted ? 'text-white/30' : 'text-white/90 group-hover:text-primary'}`}>
+                                <h3 className={`text-sm font-bold truncate tracking-tight transition-colors ${data.isFullyCompleted ? 'text-foreground/30' : 'text-foreground/90 group-hover:text-primary'}`}>
                                     {data.projectName}
                                 </h3>
                             )}
@@ -187,7 +203,7 @@ const FolderNode = ({
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <div className={`text-[11px] font-black tabular-nums ${data.isFullyCompleted ? 'text-white/20' : 'text-primary'}`}>
+                        <div className={`text-[11px] font-black tabular-nums ${data.isFullyCompleted ? 'text-foreground/20' : 'text-primary'}`}>
                             {data.progress}%
                         </div>
                         <button
@@ -195,7 +211,7 @@ const FolderNode = ({
                                 e.stopPropagation();
                                 onToggleExpand();
                             }}
-                            className={`p-2 rounded-lg transition-all ${isExpanded ? 'bg-primary/20 text-primary' : 'bg-white/5 text-white/20 hover:text-white hover:bg-white/10'}`}
+                            className={`p-2 rounded-lg transition-all ${isExpanded ? 'bg-primary/20 text-primary' : 'bg-foreground/5 text-foreground/20 hover:text-foreground hover:bg-foreground/10'}`}
                         >
                             <Layers className="w-3.5 h-3.5" />
                         </button>
@@ -208,7 +224,7 @@ const FolderNode = ({
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
-                            className="flex flex-col gap-2 pt-4 border-t border-white/5"
+                            className="flex flex-col gap-2 pt-4 border-t border-border/10"
                         >
                             {displayThreads.length > 0 ? displayThreads.map((thread) => (
                                 <motion.div
@@ -218,28 +234,28 @@ const FolderNode = ({
                                     animate={{ opacity: 1, x: 0 }}
                                     className={`flex flex-col justify-between p-4 rounded-2xl border transition-all cursor-pointer group/thread shadow-lg relative overflow-hidden
                                         ${!thread.hasPending
-                                            ? 'bg-white/[0.01] border-white/[0.04] opacity-30 grayscale pointer-events-none'
-                                            : 'bg-primary/[0.08] border-primary/20 hover:border-primary/40 hover:bg-primary/[0.12] shadow-[0_0_20px_rgba(59,130,246,0.05)]'}`}
+                                            ? 'bg-foreground/[0.01] border-border/10 opacity-30 grayscale pointer-events-none'
+                                            : 'bg-primary/[0.08] border-primary/20 hover:border-primary/40 hover:bg-primary/[0.12]'}`}
                                     onClick={() => onThreadClick(data.projectId, thread.id)}
                                 >
                                     <div className="flex items-start justify-between gap-3 mb-2">
-                                        <span className={`text-[12px] font-bold leading-snug ${!thread.hasPending ? 'text-white/20' : 'text-white/90 group-hover/thread:text-white'} transition-colors`}>
+                                        <span className={`text-[12px] font-bold leading-snug ${!thread.hasPending ? 'text-foreground/20' : 'text-foreground/90 group-hover/thread:text-foreground'} transition-colors`}>
                                             {thread.title}
                                         </span>
-                                        <div className={`shrink-0 px-2 py-0.5 rounded-lg border ${!thread.hasPending ? 'bg-white/5 border-white/10' : 'bg-primary/15 border-primary/20'}`}>
-                                            <span className={`text-[10px] font-bold tabular-nums ${!thread.hasPending ? 'text-white/20' : 'text-primary'}`}>
+                                        <div className={`shrink-0 px-2 py-0.5 rounded-lg border ${!thread.hasPending ? 'bg-foreground/5 border-border/10' : 'bg-primary/15 border-primary/20'}`}>
+                                            <span className={`text-[10px] font-bold tabular-nums ${!thread.hasPending ? 'text-foreground/20' : 'text-primary'}`}>
                                                 {thread.visibleTasks.length}
                                             </span>
                                         </div>
                                     </div>
                                     {thread.breadcrumb && thread.isChild && (
-                                        <div className="flex items-center gap-1.5 text-[10px] text-white/20 font-semibold uppercase tracking-wider">
+                                        <div className="flex items-center gap-1.5 text-[10px] text-foreground/20 font-semibold uppercase tracking-wider">
                                             <Layers className="w-2.5 h-2.5" />
                                             <span className="truncate">{thread.breadcrumb.split(' / ').slice(1).join(' / ')}</span>
                                         </div>
                                     )}
                                     {!thread.hasPending && (
-                                        <div className="flex items-center gap-1.5 text-[10px] text-white/20 font-semibold uppercase tracking-wider mt-1">
+                                        <div className="flex items-center gap-1.5 text-[10px] text-foreground/20 font-semibold uppercase tracking-wider mt-1">
                                             <CheckCircle2 className="w-2.5 h-2.5" />
                                             <span>Completed</span>
                                         </div>
@@ -249,15 +265,15 @@ const FolderNode = ({
                                     )}
                                 </motion.div>
                             )) : (
-                                <div className="text-[11px] font-semibold text-white/10 uppercase tracking-widest py-4 text-center">No Active Threads</div>
+                                <div className="text-[11px] font-semibold text-foreground/10 uppercase tracking-widest py-4 text-center">No Active Threads</div>
                             )}
                         </motion.div>
                     )}
                 </AnimatePresence>
 
                 {!data.isFullyCompleted && !isExpanded && (
-                    <div className="mt-auto pt-3 border-t border-white/5 flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-white/20">
+                    <div className="mt-auto pt-3 border-t border-border/10 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-foreground/20">
                             <Clock className="w-3.5 h-3.5" />
                             <span className="text-xs font-bold uppercase tracking-wider">{data.pendingDays}d pending</span>
                         </div>
@@ -268,18 +284,25 @@ const FolderNode = ({
     );
 };
 
-// --- Curved Connector ---
+// =================================================================================================
+// CONTEXT ANCHOR: CurvedLine Component (inline, weekly/page.tsx)
+// =================================================================================================
+// PURPOSE: Draws an SVG Bezier "twine" connector between two tree nodes.
+// THEMING: Uses `currentColor` + CSS variable trick to avoid hardcoded rgba values.
+//          Active lines use `text-primary` color class; inactive use `text-border`.
+// =================================================================================================
 const CurvedLine = ({ start, end, active = false }: { start: { x: number, y: number }, end: { x: number, y: number }, active?: boolean }) => {
     // S-curve path for horizontal connection
     const midX = (start.x + end.x) / 2;
     const path = `M ${start.x} ${start.y} C ${midX} ${start.y}, ${midX} ${end.y}, ${end.x} ${end.y}`;
 
     return (
-        <svg className="absolute inset-0 pointer-events-none w-full h-full overflow-visible z-0">
+        <svg className={`absolute inset-0 pointer-events-none w-full h-full overflow-visible z-0 ${active ? 'text-primary' : 'text-border'}`}>
             <motion.path
                 d={path}
                 fill="none"
-                stroke={active ? "rgba(59, 130, 246, 0.4)" : "rgba(255, 255, 255, 0.05)"}
+                stroke="currentColor"
+                strokeOpacity={active ? 0.4 : 0.2}
                 strokeWidth={active ? "1.5" : "1"}
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 1 }}
@@ -289,7 +312,8 @@ const CurvedLine = ({ start, end, active = false }: { start: { x: number, y: num
                 <motion.path
                     d={path}
                     fill="none"
-                    stroke="rgba(59, 130, 246, 0.2)"
+                    stroke="currentColor"
+                    strokeOpacity={0.15}
                     strokeWidth="3"
                     className="blur-md"
                     animate={{ opacity: [0.1, 0.3, 0.1] }}
@@ -302,16 +326,16 @@ const CurvedLine = ({ start, end, active = false }: { start: { x: number, y: num
 
 // --- Main Page Component ---
 const WeeklyRoadmap = () => {
-    const router = useRouter(); // Added useRouter
+    const router = useRouter();
     const {
         projects,
         selectedProjectId,
         weeklyOverviewData,
-        threads, // Added
-        expandedThreads, // Added
+        threads,
+        expandedThreads,
         handleSelectProject,
-        handleSelectThread, // Added
-        toggleThread, // Added
+        handleSelectThread,
+        toggleThread,
         addProject,
         renameProject,
         deleteProject,
@@ -519,7 +543,9 @@ const WeeklyRoadmap = () => {
     }, [viewMode, treeData, expandedNodes.size]);
 
     return (
-        <div className="flex h-screen bg-[#0d1117] text-white font-sans overflow-hidden">
+        // THEMING: bg-background is the root page color from the CSS variable system.
+        // text-foreground responds to both light and dark themes automatically.
+        <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden">
             <ProjectSidebar
                 projects={projects}
                 selectedProjectId={selectedProjectId}
@@ -532,28 +558,30 @@ const WeeklyRoadmap = () => {
             />
 
             <div className="flex-1 flex flex-col min-w-0 relative">
-                <header className="sticky top-0 bg-[#0d1117]/80 backdrop-blur-2xl border-b border-white/[0.05] z-50">
+                {/* THEMING: Header uses bg-background/80 + backdrop-blur to give a translucent glass effect */}
+                {/* border-border references the semantic border color which adapts to light/dark/accent */}
+                <header className="sticky top-0 bg-background/80 backdrop-blur-2xl border-b border-border/10 z-50">
                     <div className="flex items-center justify-between  max-w-7xl mx-auto px-6 py-4">
                         <div className="flex items-center gap-6 min-w-0">
                             <div className="flex items-center gap-4">
 
-                                <div className="h-6 w-px bg-white/10" />
+                                <div className="h-6 w-px bg-border/20" />
                                 <div className="flex flex-col">
                                     <div className="flex items-center gap-2">
-                                        <h1 className="text-xl font-bold text-white/95">Weekly Roadmap</h1>
+                                        <h1 className="text-xl font-bold text-foreground/95">Weekly Roadmap</h1>
                                         <div className="px-1.5 py-0.5 rounded-md bg-primary/20 border border-primary/30">
                                             <span className="text-[9px] font-bold text-primary uppercase tracking-wider">Alpha</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 mt-0.5">
                                         <div className="flex items-center gap-1.5">
-                                            <Target className="w-3 h-3 text-white/20" />
-                                            <span className="text-[10px] text-white/30 font-bold uppercase tracking-wider">
+                                            <Target className="w-3 h-3 text-foreground/20" />
+                                            <span className="text-[10px] text-foreground/30 font-bold uppercase tracking-wider">
                                                 {globalCompletedTasks}/{globalTotalTasks} Resolved
                                             </span>
                                         </div>
-                                        <div className="w-1 h-1 rounded-full bg-white/10" />
-                                        <span className="text-[10px] text-white/20 font-bold uppercase tracking-wider">
+                                        <div className="w-1 h-1 rounded-full bg-foreground/10" />
+                                        <span className="text-[10px] text-foreground/20 font-bold uppercase tracking-wider">
                                             Week {getWeekDates(weekOffset)[0].weekNumber}
                                         </span>
                                     </div>
@@ -562,7 +590,7 @@ const WeeklyRoadmap = () => {
 
 
 
-                            <div className="h-8 w-px bg-white/5" />
+                            <div className="h-8 w-px bg-border/10" />
 
                             <ProjectNavigator
                                 projects={projects}
@@ -577,11 +605,11 @@ const WeeklyRoadmap = () => {
                         <div className="flex items-center gap-4">
                             <Link
                                 href="/"
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 hover:border-primary/40 hover:bg-white/[0.05] transition-all group"
+                                className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-foreground/[0.03] border border-border/20 hover:border-primary/40 hover:bg-foreground/[0.05] transition-all group"
                                 onClick={() => selectedProjectId && handleSelectProject(selectedProjectId)}
                             >
-                                <ArrowLeft className="w-4 h-4 text-white/40 group-hover:text-primary transition-colors" />
-                                <span className="text-[11px] font-bold uppercase tracking-widest text-white/20 group-hover:text-white/60">Explorer</span>
+                                <ArrowLeft className="w-4 h-4 text-foreground/40 group-hover:text-primary transition-colors" />
+                                <span className="text-[11px] font-bold uppercase tracking-widest text-foreground/20 group-hover:text-foreground/60">Explorer</span>
                             </Link>
                             <HeaderActions
                                 showCompleted={showCompleted}
@@ -595,15 +623,16 @@ const WeeklyRoadmap = () => {
                 </header>
 
                 <main className="flex-1 overflow-auto custom-scrollbar">
-                    <div className="max-w-7xl mx-auto py-8 px-8">
+                    <div className={`${viewMode === 'tree' ? 'w-full' : 'max-w-7xl mx-auto'} py-8 px-8`}>
                         {/* Interactive Date Selector */}
+                        {/* THEMING: bg-surface for elevated container; border-border for outline */}
                         <div className="flex justify-between mb-6">
-                            <div className="flex items-center gap-4 p-2 bg-[#161b22]/90 backdrop-blur-2xl rounded-2xl border border-white/[0.05] shadow-2xl overflow-hidden max-w-full">
+                            <div className="flex items-center gap-4 p-2 bg-surface/90 backdrop-blur-2xl rounded-2xl border border-border/10 shadow-2xl overflow-hidden max-w-full">
                                 {/* Left: Prev & Today */}
                                 <div className="flex items-center gap-1.5 pl-1">
                                     <button
                                         onClick={() => setWeekOffset(prev => prev - 1)}
-                                        className="p-2 rounded-xl hover:bg-white/5 text-white/30 hover:text-white transition-all"
+                                        className="p-2 rounded-xl hover:bg-foreground/5 text-foreground/30 hover:text-foreground transition-all"
                                     >
                                         <ChevronLeft className="w-4 h-4" />
                                     </button>
@@ -611,14 +640,14 @@ const WeeklyRoadmap = () => {
                                         onClick={handleGoToToday}
                                         className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.1em] rounded-lg transition-all border ${selectedDate === todayStr && weekOffset === 0
                                             ? "bg-primary/20 border-primary/30 text-primary"
-                                            : "bg-white/5 border-white/10 text-white/30 hover:text-white"
+                                            : "bg-foreground/5 border-border/20 text-foreground/30 hover:text-foreground"
                                             }`}
                                     >
                                         Today
                                     </button>
                                 </div>
 
-                                <div className="h-8 w-px bg-white/10" />
+                                <div className="h-8 w-px bg-border/20" />
 
                                 {/* Center: Date Chips */}
                                 <div className="flex gap-1 overflow-x-auto no-scrollbar py-0.5">
@@ -627,56 +656,57 @@ const WeeklyRoadmap = () => {
                                             key={day.date}
                                             onClick={() => setSelectedDate(day.date)}
                                             className={`flex flex-col items-center min-w-[64px] px-2.5 py-2 rounded-xl transition-all duration-300 relative group ${selectedDate === day.date
-                                                ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105 z-10"
-                                                : "text-white/20 hover:text-white/50 hover:bg-white/[0.02]"
+                                                ? "bg-primary text-foreground shadow-lg shadow-primary/20 scale-105 z-10"
+                                                : "text-foreground/20 hover:text-foreground/50 hover:bg-foreground/[0.02]"
                                                 }`}
                                         >
-                                            <span className={`text-[8px] font-bold uppercase tracking-wider mb-0.5 ${selectedDate === day.date ? 'text-white/80' : 'text-white/20 group-hover:text-white/40'}`}>
+                                            <span className={`text-[8px] font-bold uppercase tracking-wider mb-0.5 ${selectedDate === day.date ? 'text-foreground/80' : 'text-foreground/20 group-hover:text-foreground/40'}`}>
                                                 {day.name.slice(0, 3)}
                                             </span>
                                             <span className="text-xs font-black tracking-tight">{day.day}</span>
                                             {selectedDate === day.date && (
                                                 <motion.div
                                                     layoutId="activeDate"
-                                                    className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-white"
+                                                    className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-foreground"
                                                 />
                                             )}
                                         </button>
                                     ))}
                                 </div>
 
-                                <div className="h-8 w-px bg-white/10" />
+                                <div className="h-8 w-px bg-border/20" />
 
                                 {/* Right: Next & Context Info */}
                                 <div className="flex items-center gap-4 pr-4">
                                     <button
                                         onClick={() => setWeekOffset(prev => prev + 1)}
-                                        className="p-2 rounded-xl hover:bg-white/5 text-white/30 hover:text-white transition-all"
+                                        className="p-2 rounded-xl hover:bg-foreground/5 text-foreground/30 hover:text-foreground transition-all"
                                     >
                                         <ChevronRight className="w-4 h-4" />
                                     </button>
                                     <div className="flex flex-col items-end min-w-[90px]">
-                                        <span className="text-sm font-black text-white/90 tracking-tight leading-none">
+                                        <span className="text-sm font-black text-foreground/90 tracking-tight leading-none">
                                             {new Date(weekDates[0].date).toLocaleString('default', { month: 'short', year: 'numeric' })}
                                         </span>
-                                        <span className="text-right text-[8px] font-bold text-white/20 uppercase tracking-[0.2em] mt-1">
+                                        <span className="text-right text-[8px] font-bold text-foreground/20 uppercase tracking-[0.2em] mt-1">
                                             Week {weekDates[0].weekNumber}
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-1 p-1 bg-white/[0.02] rounded-xl border border-white/[0.05]">
+                            {/* View Mode Toggle */}
+                            <div className="flex items-center gap-1 p-1 bg-foreground/[0.02] rounded-xl border border-border/10">
                                 <button
                                     onClick={() => setViewMode('table')}
-                                    className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${viewMode === 'table' ? "bg-white/[0.08] text-white shadow-lg" : "text-white/30 hover:text-white"}`}
+                                    className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${viewMode === 'table' ? "bg-foreground/[0.08] text-foreground shadow-lg" : "text-foreground/30 hover:text-foreground"}`}
                                 >
                                     <LayoutDashboard className="w-3 h-3" />
                                     <span>Table</span>
                                 </button>
                                 <button
                                     onClick={() => setViewMode('tree')}
-                                    className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${viewMode === 'tree' ? "bg-white/[0.08] text-white shadow-lg" : "text-white/30 hover:text-white"}`}
+                                    className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${viewMode === 'tree' ? "bg-foreground/[0.08] text-foreground shadow-lg" : "text-foreground/30 hover:text-foreground"}`}
                                 >
                                     <Share2 className="w-3 h-3" />
                                     <span>Tree</span>
@@ -702,32 +732,32 @@ const WeeklyRoadmap = () => {
                                                 {/* Project Header Card */}
                                                 <div className="flex items-center justify-between ">
                                                     <div className="flex items-center gap-4">
-                                                        <div className={`p-3 rounded-2xl ${root.isFullyCompleted ? 'bg-white/5 text-white/20' : 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]'}`}>
+                                                        <div className={`p-3 rounded-2xl ${root.isFullyCompleted ? 'bg-foreground/5 text-foreground/20' : 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-primary/10'}`}>
                                                             <Hexagon className="w-5 h-5" />
                                                         </div>
                                                         <div>
-                                                            <h3 className="text-lg font-bold text-white/90">{root.projectName}</h3>
+                                                            <h3 className="text-lg font-bold text-foreground/90">{root.projectName}</h3>
                                                             <div className="flex items-center gap-3 mt-0.5">
                                                                 <div className="flex items-center gap-1.5">
-                                                                    <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                                                    <div className="w-24 h-1.5 bg-foreground/5 rounded-full overflow-hidden">
                                                                         <motion.div
                                                                             initial={{ width: 0 }}
                                                                             animate={{ width: `${root.progress}%` }}
                                                                             className="h-full bg-primary"
                                                                         />
                                                                     </div>
-                                                                    <span className="text-xs font-bold text-white/40 tabular-nums">{root.progress}%</span>
+                                                                    <span className="text-xs font-bold text-foreground/40 tabular-nums">{root.progress}%</span>
                                                                 </div>
-                                                                <div className="w-1 h-1 rounded-full bg-white/10" />
-                                                                <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest">{allRelevantThreads.length} Active Threads</span>
+                                                                <div className="w-1 h-1 rounded-full bg-foreground/10" />
+                                                                <span className="text-[10px] text-foreground/20 font-bold uppercase tracking-widest">{allRelevantThreads.length} Active Threads</span>
                                                             </div>
                                                         </div>
                                                     </div>
 
                                                 </div>
 
-                                                {/* Horizontal Threads Scroll Area */}
-                                                <div className="flex gap-4 overflow-x-auto pb-4 px-2 no-scrollbar">
+                                                {/* Threads Area — wraps to next line when there are many threads */}
+                                                <div className="flex flex-wrap gap-4 pb-2 px-2">
                                                     {allRelevantThreads.length > 0 ? (
                                                         allRelevantThreads.map((thread: any) => (
                                                             <motion.div
@@ -735,26 +765,26 @@ const WeeklyRoadmap = () => {
                                                                 whileHover={{ y: -5, scale: 1.02 }}
                                                                 initial={{ opacity: 0, scale: 0.95 }}
                                                                 animate={{ opacity: 1, scale: 1 }}
-                                                                className={`flex flex-col justify-between p-5 rounded-2xl border min-w-[280px] max-w-[340px] shrink-0 transition-all cursor-pointer shadow-xl relative overflow-hidden group/card
+                                                                className={`flex flex-col justify-between p-5 rounded-2xl border w-[280px] max-w-[340px] transition-all cursor-pointer shadow-xl relative overflow-hidden group/card
                                                                     ${!thread.hasPending
-                                                                        ? 'bg-white/[0.01] border-white/[0.04] opacity-30 grayscale pointer-events-none'
-                                                                        : 'bg-primary/[0.08] border-primary/20 hover:border-primary/40 hover:bg-primary/[0.12] shadow-[0_0_20px_rgba(59,130,246,0.05)]'}`}
+                                                                        ? 'bg-foreground/[0.01] border-border/10 opacity-30 grayscale pointer-events-none'
+                                                                        : 'bg-primary/[0.08] border-primary/20 hover:border-primary/40 hover:bg-primary/[0.12]'}`}
                                                                 onClick={() => handleThreadClick(root.projectId, thread.id)}
                                                             >
                                                                 <div className="relative z-10">
                                                                     <div className="flex items-start justify-between gap-4 mb-4">
-                                                                        <span className={`text-sm font-bold leading-snug transition-colors ${!thread.hasPending ? 'text-white/30' : 'text-white/90 group-hover/card:text-white'}`}>
+                                                                        <span className={`text-sm font-bold leading-snug transition-colors ${!thread.hasPending ? 'text-foreground/30' : 'text-foreground/90 group-hover/card:text-foreground'}`}>
                                                                             {thread.title}
                                                                         </span>
-                                                                        <div className={`shrink-0 px-2 py-1 rounded-lg border ${!thread.hasPending ? 'bg-white/5 border-white/10' : 'bg-primary/15 border-primary/20'}`}>
-                                                                            <span className={`text-[11px] font-bold tabular-nums ${!thread.hasPending ? 'text-white/20' : 'text-primary'}`}>
+                                                                        <div className={`shrink-0 px-2 py-1 rounded-lg border ${!thread.hasPending ? 'bg-foreground/5 border-border/10' : 'bg-primary/15 border-primary/20'}`}>
+                                                                            <span className={`text-[11px] font-bold tabular-nums ${!thread.hasPending ? 'text-foreground/20' : 'text-primary'}`}>
                                                                                 {thread.visibleTasks.length}
                                                                             </span>
                                                                         </div>
                                                                     </div>
 
                                                                     {thread.breadcrumb && thread.isChild && (
-                                                                        <div className="flex items-center gap-2 text-xs text-white/20 font-semibold uppercase tracking-wider">
+                                                                        <div className="flex items-center gap-2 text-xs text-foreground/20 font-semibold uppercase tracking-wider">
                                                                             <Layers className="w-3 h-3" />
                                                                             <span className="truncate">
                                                                                 {thread.breadcrumb.split(' / ').slice(1).join(' / ')}
@@ -762,7 +792,7 @@ const WeeklyRoadmap = () => {
                                                                         </div>
                                                                     )}
                                                                     {!thread.hasPending && (
-                                                                        <div className="flex items-center gap-1.5 text-[10px] text-white/20 font-semibold uppercase tracking-wider mt-1">
+                                                                        <div className="flex items-center gap-1.5 text-[10px] text-foreground/20 font-semibold uppercase tracking-wider mt-1">
                                                                             <CheckCircle2 className="w-3 h-3" />
                                                                             <span>Completed</span>
                                                                         </div>
@@ -774,22 +804,22 @@ const WeeklyRoadmap = () => {
                                                             </motion.div>
                                                         ))
                                                     ) : (
-                                                        <div className="flex flex-col items-center justify-center w-full py-12 rounded-2xl border border-dashed border-white/5 bg-white/[0.01]">
-                                                            <Activity className="w-6 h-6 text-white/5 mb-2" />
-                                                            <span className="text-[11px] font-bold text-white/10 uppercase tracking-[0.2em]">Deployment Clear</span>
+                                                        <div className="flex flex-col items-center justify-center w-full py-12 rounded-2xl border border-dashed border-border/10 bg-foreground/[0.01]">
+                                                            <Activity className="w-6 h-6 text-foreground/5 mb-2" />
+                                                            <span className="text-[11px] font-bold text-foreground/10 uppercase tracking-[0.2em]">Deployment Clear</span>
                                                         </div>
                                                     )}
                                                 </div>
 
                                                 {/* Divider between projects */}
-                                                <div className="h-px bg-gradient-to-r from-transparent via-white/[0.05] to-transparent mt-4" />
+                                                <div className="h-px bg-gradient-to-r from-transparent via-border/10 to-transparent mt-4" />
                                             </motion.div>
                                         );
                                     })}
                                 </div>
                             ) : (
                                 /* BLUEPRINT VIEW: Hierarchical graph structure */
-                                <div className="inline-flex flex-row items-start gap-32 justify-start min-w-full">
+                                <div className="flex flex-row items-start gap-12 justify-start w-full pb-8">
                                     {treeData.map((root) => (
                                         <div key={root.projectId} className="flex flex-col items-center shrink-0">
                                             <div className="relative">
@@ -802,7 +832,7 @@ const WeeklyRoadmap = () => {
                                                 />
                                             </div>
 
-                                            <div className="flex items-start gap-12 relative flex-wrap justify-center mt-12">
+                                            <div className="flex items-start gap-6 relative flex-wrap justify-center mt-10">
                                                 {/* Horizontal Branching Line */}
                                                 {expandedNodes.has(root.projectId) && root.subfolders.length > 1 && (
                                                     <div className="absolute top-0 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
@@ -825,7 +855,7 @@ const WeeklyRoadmap = () => {
                                                             depth={1}
                                                         />
 
-                                                        <div className="flex items-start gap-12 relative flex-wrap justify-center">
+                                                        <div className="flex items-start gap-6 relative flex-wrap justify-center mt-8">
                                                             {expandedNodes.has(child.projectId) && child.subfolders.map((grandchild) => (
                                                                 <div key={grandchild.projectId} className="relative flex flex-col items-center">
                                                                     {/* Organic connector to grandchild */}
@@ -852,9 +882,9 @@ const WeeklyRoadmap = () => {
 
                             {treeData.length === 0 && (
                                 <div className="flex flex-col items-center justify-center py-48 opacity-20">
-                                    <Hexagon className="w-16 h-16 mb-4 text-white animate-pulse" />
-                                    <h3 className="text-xl font-bold uppercase tracking-[0.4em] text-white/50">Frequency Silent</h3>
-                                    <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest mt-2">No active projects found for this cycle</p>
+                                    <Hexagon className="w-16 h-16 mb-4 text-foreground animate-pulse" />
+                                    <h3 className="text-xl font-bold uppercase tracking-[0.4em] text-foreground/50">Frequency Silent</h3>
+                                    <p className="text-[10px] text-foreground/20 font-bold uppercase tracking-widest mt-2">No active projects found for this cycle</p>
                                 </div>
                             )}
                         </div>
@@ -868,9 +898,6 @@ const WeeklyRoadmap = () => {
             />
 
             <style jsx global>{`
-                :root {
-                    --color-primary-rgb: 59, 130, 246;
-                }
                 .no-scrollbar::-webkit-scrollbar {
                     display: none;
                 }
@@ -886,11 +913,11 @@ const WeeklyRoadmap = () => {
                     background: transparent;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.05);
+                    background: hsl(var(--color-border) / 0.2);
                     border-radius: 20px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(59, 130, 246, 0.3);
+                    background: hsl(var(--color-primary) / 0.3);
                 }
             `}</style>
         </div >
