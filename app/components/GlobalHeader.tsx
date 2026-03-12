@@ -73,6 +73,16 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({
 
                             <nav className="flex items-center gap-1.5 p-1 bg-background/50 rounded-xl border border-border/10">
                                 <Link
+                                    href="/weekly"
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${activeRoute === 'weekly'
+                                        ? "bg-surface text-primary shadow-sm border border-border/50"
+                                        : "text-text-secondary hover:text-text-primary hover:bg-surface/50"
+                                        }`}
+                                >
+                                    <LayoutDashboard className="w-3.5 h-3.5" />
+                                    <span className="hidden lg:inline">Roadmap</span>
+                                </Link>
+                                <Link
                                     href="/"
                                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${activeRoute === 'explorer'
                                         ? "bg-surface text-primary shadow-sm border border-border/50"
@@ -92,16 +102,7 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                                     <Lightbulb className="w-3.5 h-3.5" />
                                     <span className="hidden lg:inline">Lucid</span>
                                 </Link>
-                                <Link
-                                    href="/weekly"
-                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${activeRoute === 'weekly'
-                                        ? "bg-surface text-primary shadow-sm border border-border/50"
-                                        : "text-text-secondary hover:text-text-primary hover:bg-surface/50"
-                                        }`}
-                                >
-                                    <LayoutDashboard className="w-3.5 h-3.5" />
-                                    <span className="hidden lg:inline">Roadmap</span>
-                                </Link>
+                                
                             </nav>
                         </div>
                     </div>
