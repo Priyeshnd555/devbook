@@ -3,6 +3,6 @@
 4:I[97367,["/devbook/_next/static/chunks/ff1a16fafef87110.js","/devbook/_next/static/chunks/247eb132b7f7b574.js"],"MetadataBoundary"]
 5:"$Sreact.suspense"
 7:I[27201,["/devbook/_next/static/chunks/ff1a16fafef87110.js","/devbook/_next/static/chunks/247eb132b7f7b574.js"],"IconMark"]
-0:{"buildId":"ECRZuGR2qsO77-awLjmSh","rsc":["$","$1","h",{"children":[null,["$","$L2",null,{"children":"$@3"}],["$","div",null,{"hidden":true,"children":["$","$L4",null,{"children":["$","$5",null,{"name":"Next.Metadata","children":"$@6"}]}]}],null]}],"loading":null,"isPartial":false}
+0:{"buildId":"w8yyZPTJ7FSXx7Tpf7F17","rsc":["$","$1","h",{"children":[null,["$","$L2",null,{"children":"$@3"}],["$","div",null,{"hidden":true,"children":["$","$L4",null,{"children":["$","$5",null,{"name":"Next.Metadata","children":"$@6"}]}]}],null]}],"loading":null,"isPartial":false}
 3:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
 6:[["$","title","0",{"children":"Thread Note"}],["$","meta","1",{"name":"description","content":"Nested Note"}],["$","link","2",{"rel":"icon","href":"https://priyeshnd555.github.io/devbook/newLogo.png"}],["$","$L7","3",{}]]
