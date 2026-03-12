@@ -76,6 +76,7 @@ import { Task } from "../types";
  * - Clicking a Thread card calls `handleThreadClick`, which selects the project+thread in
  *   `useWorkflowManager` state and navigates back to `app/page.tsx` (`/`) via `router.push`.
  *   This preserves the selected thread context across the route change.
+ * - Header includes links to `/` (Explorer) and `/lucid` (Lucid Brainstorming).
  *
  * @ai_note
  * - The `treeData` memoization is the most complex part of this file. It recursively builds

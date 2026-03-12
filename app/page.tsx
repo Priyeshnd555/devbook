@@ -95,6 +95,12 @@
 //   - UI: Breadcrumb-based trigger button for instant location awareness.
 //   - STABILITY: Explicit event propagation handling for blocking confirmation dialogs.
 //
+// # GENERATION 8: Lucid Thoughts Integration (Latest State)
+//   - FEATURE: Integrated "Lucid", a spatial brainstorming canvas, as a new route (/lucid).
+//   - UI: Added a "Lucid" entry point in the main header next to "Roadmap".
+//   - CONTEXT: This provides an unstructured workspace for non-linear thinking, complementing
+//              the structured explorer and roadmap views.
+//
 // STRATEGY:
 // - STYLE INJECTION: The `ThemeProvider` injects the `dark` class, `data-color` attribute, and root `font-size`.
 // - DYNAMIC CALCULATION: `themeUtils.ts` converts user Hex selection to HSL and generates variants
@@ -109,34 +115,42 @@
 // =================================================================================================
 
 // =================================================================================================
-// CONTEXT ANCHOR: WEEKLY DASHBOARD INTEGRATION (from app/page.tsx perspective)
+// CONTEXT ANCHOR: EXTERNAL FEATURE INTEGRATION (Roadmap & Lucid)
 // =================================================================================================
-// PURPOSE: To document how this page (`page.tsx`) integrates with the Weekly Roadmap (`/weekly`),
-//          enabling seamless thread navigation between the two views.
+// PURPOSE: To document how this page maps to secondary features `/weekly` and `/lucid`.
 //
-// INTEGRATION OVERVIEW:
-// - The `Weekly Roadmap` (/weekly/page.tsx) is a companion view that provides a date-oriented,
-//   project-level summary of all threads and their tasks.
-// - Both pages share state through the `useWorkflowManager` hook, which is the single source
-//   of truth. No state is passed between pages via URL params (except implicit navigation).
+// 1. WEEKLY ROADMAP (`/weekly`):
+//    - State-synchronized companion view for structured project summaries.
+//    - Clicking a thread in Roadmap sets selection and navigates back here.
 //
-// DATA FLOW FOR WEEKLY NAVIGATION:
-// 1. USER is on the Weekly Roadmap (`/weekly/page.tsx`).
-// 2. USER clicks a Thread card -> `handleThreadClick(projectId, threadId)` is called.
-// 3. `useWorkflowManager.handleSelectProject(projectId)` + `handleSelectThread(threadId)` are
-//    called, updating `selectedProjectId` and `selectedThreadId` in localStorage-backed state.
-// 4. `router.push('/')` navigates back to this page.
-// 5. This page reads `selectedProjectId` and `selectedThreadId` from `useWorkflowManager`,
-//    which are already set, resulting in the correct thread being highlighted.
+//    - INTEGRATION OVERVIEW:
+//      - The `Weekly Roadmap` (/weekly/page.tsx) is a companion view that provides a date-oriented,
+//        project-level summary of all threads and their tasks.
+//      - Both pages share state through the `useWorkflowManager` hook, which is the single source
+//        of truth. No state is passed between pages via URL params (except implicit navigation).
 //
-// KEY STATE PRODUCED BY useWorkflowManager FOR WEEKLY VIEW:
-// - `weeklyOverviewData`: A derived array that aggregates per-project thread/task stats.
-//   Format: `{ projectId, projectName, parentId, pendingDays, progress, threads: [{id, title, undoneTasks, tasks}] }`
-//   - This is the primary input for the Weekly Roadmap's `treeData` computation.
+//    - DATA FLOW FOR WEEKLY NAVIGATION:
+//      1. USER is on the Weekly Roadmap (`/weekly/page.tsx`).
+//      2. USER clicks a Thread card -> `handleThreadClick(projectId, threadId)` is called.
+//      3. `useWorkflowManager.handleSelectProject(projectId)` + `handleSelectThread(threadId)` are
+//         called, updating `selectedProjectId` and `selectedThreadId` in localStorage-backed state.
+//      4. `router.push('/')` navigates back to this page.
+//      5. This page reads `selectedProjectId` and `selectedThreadId` from `useWorkflowManager`,
+//         which are already set, resulting in the correct thread being highlighted.
 //
-// NAVIGATION ENTRY POINT (in this file):
-// - The `<Link href="/weekly">` button in the header ("Roadmap") navigates TO the weekly view.
-// - CONSTRAINT: The Link button is always visible, regardless of selected project.
+//    - KEY STATE PRODUCED BY useWorkflowManager FOR WEEKLY VIEW:
+//      - `weeklyOverviewData`: A derived array that aggregates per-project thread/task stats.
+//        Format: `{ projectId, projectName, parentId, pendingDays, progress, threads: [{id, title, undoneTasks, tasks}] }`
+//        - This is the primary input for the Weekly Roadmap's `treeData` computation.
+//
+//    - NAVIGATION ENTRY POINT (in this file):
+//      - The `<Link href="/weekly">` button in the header ("Roadmap") navigates TO the weekly view.
+//      - CONSTRAINT: The Link button is always visible, regardless of selected project.
+//
+// 2. LUCID THOUGHTS (`/lucid`):
+//    - Spatial brainstorming canvas with independent state (separate localStorage key).
+//    - Acts as a loose brainstorming layer before commitment to a project/thread.
+//    - ENTRY POINT: `<Link href="/lucid">` in header ("Lucid") is always visible.
 // =================================================================================================
 
 import React from "react";

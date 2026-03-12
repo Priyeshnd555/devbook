@@ -3,6 +3,32 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Plus, Lightbulb, Lock, Trash2, X, Link as LinkIcon, Unlink, FolderPlus, ChevronRight } from 'lucide-react';
 
+// =================================================================================================
+// CONTEXT ANCHOR: LUCID THOUGHTS PAGE (app/lucid/page.tsx)
+// =================================================================================================
+// PURPOSE: A spatial brainstorming surface where users can capture "Lucid Thoughts" as floating
+// cards, connect them to form relationships, and commit to a "Final Goal" per folder.
+//
+// DEPENDENCIES:
+// - lucide-react: For all visual icons.
+// - localStorage: Primary persistence layer via STORAGE_KEY.
+// - crypto.randomUUID(): For unique ID generation of cards, connections, and folders.
+//
+// STATE MUTATIONS:
+// - cards: Array of LucidCard. Modified via add, updateContent, and delete.
+// - connections: Array of LucidConnection. Modified via linking two cards or unlinking.
+// - commitments: Dictionary mapping FolderID to CardID (Final Goal).
+//
+// EVOLUTIONARY FOOTPRINT:
+// # GENERATION 1: Standalone Prototype (Initial State)
+//   - Existed as `app/LucidThough.tsx` with unsafe types and standalone architecture.
+// # GENERATION 2: Stabilization & Integration (Current State)
+//   - Moved to `app/lucid/page.tsx` for Next.js routing.
+//   - Stabilized with strict TypeScript interfaces.
+//   - Added `dragPosition` state to resolve React ref access during render (lint requirement).
+//   - Integrated into main app header navigation.
+// =================================================================================================
+
 /**
  * LUCID - Compact Notepad Edition
  * Reduced card footprint to accommodate more items on screen.
@@ -46,6 +72,14 @@ interface DragData {
   lastX: number;
 }
 
+// =================================================================================================
+// CONTEXT ANCHOR: LucidPage Component
+// PURPOSE: Manages the spatial canvas and sidebar for brainstorming.
+// DEPENDENCIES: uses custom state hooks and refs for high-performance dragging.
+// INVARIANTS: 
+// - Every card must belong to exactly one folder.
+// - Active commitment must be one of the cards in the current folder.
+// =================================================================================================
 export default function LucidPage() {
   const [folders, setFolders] = useState<LucidFolder[]>([{ id: 'default', name: 'General Chaos' }]);
   const [activeFolderId, setActiveFolderId] = useState<string>('default');
