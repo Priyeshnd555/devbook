@@ -117,7 +117,7 @@ const SimpleDevNotebook = () => {
         
         {/* Notebook Header */}
         <div className="mb-12 pb-6 border-b-2 border-amber-900">
-          <h1 className="text-5xl font-serif text-amber-900 mb-2">Dev Notebook</h1>
+          <h1 className="text-5xl font-sans text-amber-900 mb-2">Dev Notebook</h1>
           <p className="text-amber-700 text-lg">Deep Linking Implementation - Phase 2</p>
         </div>
 
@@ -180,7 +180,7 @@ const SimpleDevNotebook = () => {
             <div key={idx} className="bg-white p-8 rounded-lg shadow-sm border border-amber-200">
               
               {/* Date */}
-              <h2 className="text-2xl font-serif text-amber-900 mb-6 pb-3 border-b border-amber-200">
+              <h2 className="text-2xl font-sans text-amber-900 mb-6 pb-3 border-b border-amber-200">
                 {entry.date}
               </h2>
 

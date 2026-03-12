@@ -48,7 +48,7 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                     <div className="min-w-0 flex items-center gap-6">
                         <div className="flex items-center gap-3">
                             <Link href="/" className="flex flex-col hover:opacity-80 transition-opacity">
-                                <h1 className="text-2xl font-serif font-bold text-text-primary leading-tight">
+                                <h1 className="text-2xl font-sans font-bold text-text-primary leading-tight">
                                     Thread Notes
                                 </h1>
                                 {taskStats && (
@@ -102,7 +102,7 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                                     <Lightbulb className="w-3.5 h-3.5" />
                                     <span className="hidden lg:inline">Lucid</span>
                                 </Link>
-                                
+
                             </nav>
                         </div>
                     </div>

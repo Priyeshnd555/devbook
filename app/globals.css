@@ -108,8 +108,8 @@
   
   --color-border: 265 20% 85%;   /* #D5D1DE */
 
-  --font-sans: 'Inter', sans-serif;
-  --font-serif: 'EB Garamond', serif;
+  --font-sans:  sans-serif;
+  --font-serif: sans-serif;
 }
 [data-color='ornamental'].dark {
   --color-primary: 265 38% 65%;
@@ -127,8 +127,8 @@
   
   --color-border: 265 15% 25%;
   
-  --font-sans: 'Inter', sans-serif;
-  --font-serif: 'EB Garamond', serif;
+  --font-sans:  sans-serif;
+  --font-serif: sans-serif;
 }
 
 

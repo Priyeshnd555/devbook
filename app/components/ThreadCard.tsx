@@ -238,7 +238,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
-                <h3 className="text-xl font-serif font-bold text-text-primary" onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }}>{thread.title}</h3>
+                <h3 className="text-xl font-sans font-bold text-text-primary" onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }}>{thread.title}</h3>
               )}
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
                 <button onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }} className="p-1 text-text-secondary hover:text-primary transition-colors"><Pencil className="w-3.5 h-3.5" /></button>

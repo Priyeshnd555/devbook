@@ -542,7 +542,7 @@ export default function LucidPage() {
 
                     <div className="relative">
                       <textarea
-                        className="w-full bg-transparent resize-none border-none outline-none ring-0 focus:ring-0 focus:outline-none p-0 text-text-primary font-serif italic text-lg placeholder:text-text-secondary/20 leading-relaxed cursor-text overflow-hidden"
+                        className="w-full bg-transparent resize-none border-none outline-none ring-0 focus:ring-0 focus:outline-none p-0 text-text-primary font-sans italic text-lg placeholder:text-text-secondary/20 leading-relaxed cursor-text overflow-hidden"
                         value={card.content}
                         onChange={(e) => {
                           updateCardContent(card.id, e.target.value);
@@ -610,7 +610,7 @@ export default function LucidPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-black text-text-secondary/40 uppercase tracking-widest mb-1">Final Goal</p>
-                    <p className="text-text-primary font-bold text-xl truncate tracking-tight italic font-serif">{activeCommitment.content}</p>
+                    <p className="text-text-primary font-bold text-xl truncate tracking-tight italic font-sans">{activeCommitment.content}</p>
                   </div>
                   <button onClick={() => {
                     setCommitments(prev => {
@@ -640,7 +640,7 @@ export default function LucidPage() {
                     <Lightbulb size={28} />
                   </div>
                   <input name="goal" autoComplete="off" placeholder="What's the ultimate goal?"
-                    className="flex-1 bg-transparent border-none outline-none focus:ring-0 text-xl font-medium text-text-primary placeholder:text-text-secondary/20 font-serif italic" />
+                    className="flex-1 bg-transparent border-none outline-none focus:ring-0 text-xl font-medium text-text-primary placeholder:text-text-secondary/20 font-sans italic" />
                   <button type="submit" className="bg-primary text-white px-8 py-3 rounded-2xl font-bold text-sm hover:bg-primary-hover transition-all">ACTIVATE</button>
                 </form>
               )}
