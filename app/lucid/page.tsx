@@ -18,23 +18,26 @@ import { Task } from '../types';
 // cards, connect them to form relationships, and commit to a "Final Goal" per folder.
 //
 // DEPENDENCIES:
-// - lucide-react: For all visual icons.
-// - localStorage: Primary persistence layer via STORAGE_KEY.
-// - crypto.randomUUID(): For unique ID generation of cards, connections, and folders.
+// - useWorkflowManager: Single source of truth for project-level data and task handlers.
+// - localStorage: Primary persistence layer via STORAGE_KEY ('lucid_web_v12').
+// - lucide-react: Standardized icon set for visual continuity.
+// - requestAnimationFrame: High-performance animation loop for spatial interactions.
+//
+// INVARIANTS:
+// - Every card must be assigned to an active `projectId` (defaults to 'default').
+// - Connections are bidirectional in visual logic but have directional 'from'/'to' metadata.
+// - Cards and their sub-tasks are saved to local storage on a debounced timer (500ms).
 //
 // STATE MUTATIONS:
-// - cards: Array of LucidCard. Modified via add, updateContent, and delete.
-// - connections: Array of LucidConnection. Modified via linking two cards or unlinking.
-// - commitments: Dictionary mapping FolderID to CardID (Final Goal).
+// - setCards: Modifies the global list of brainstorm cards.
+// - setConnections: Manages the relationship links between cards.
+// - setCommitments: Stores the single "Final Goal" card ID for each project.
 //
 // EVOLUTIONARY FOOTPRINT:
-// # GENERATION 1: Standalone Prototype (Initial State)
-//   - Existed as `app/LucidThough.tsx` with unsafe types and standalone architecture.
-// # GENERATION 2: Stabilization & Integration (Current State)
-//   - Moved to `app/lucid/page.tsx` for Next.js routing.
-//   - Stabilized with strict TypeScript interfaces.
-//   - Added `dragPosition` state to resolve React ref access during render (lint requirement).
-//   - Integrated into main app header navigation.
+// # GENERATION 1: Standalone Prototype (LucidThough.tsx) - basic spatial cards.
+// # GENERATION 2: Layout & System Integration - migration to app/lucid, theme support.
+// # GENERATION 3: Hierarchical Task Integration - added sub-task support within cards.
+// # GENERATION 4: High-Performance Canvas - shifted drag/connection logic to direct DOM manipulation.
 // =================================================================================================
 
 /**
@@ -106,7 +109,7 @@ export default function LucidPage() {
   const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
   const [linkingFromId, setLinkingFromId] = useState<string | null>(null);
   const [proximityTargetId, setProximityTargetId] = useState<string | null>(null);
-  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+  const dragPositionRef = useRef({ x: 0, y: 0 });
 
   // --- Local Task Management for Lucid Cards ---
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
@@ -121,10 +124,13 @@ export default function LucidPage() {
   });
 
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const connectionRefs = useRef<Record<string, SVGLineElement | null>>({});
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const requestRef = useRef<number | null>(null);
 
   // --- Persistence ---
+  // STRATEGY: Hydrate the canvas state from localStorage on mount.
+  // We use a single STORAGE_KEY to avoid multiple lookups for related spatial data.
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -135,6 +141,8 @@ export default function LucidPage() {
     }
   }, []);
 
+  // STRATEGY: Debounced persistence to avoid blocking UI during high-frequency edits.
+  // 500ms allows for rapid typing and card placement without excessive disk I/O.
   useEffect(() => {
     const timeout = setTimeout(() => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -144,14 +152,36 @@ export default function LucidPage() {
     return () => clearTimeout(timeout);
   }, [cards, connections, commitments]);
 
+  // --- Performance Refs ---
+  const activeConnectionsRef = useRef<LucidConnection[]>([]);
+  const lastProximityCheckRef = useRef<number>(0);
+
   // --- Animation Loop ---
+  // PERFORMANCE CONSTRAINT: We bypass React's standard state-driven render path for spatial motion.
+  // By updating the DOM directly via requestAnimationFrame, we achieve 60FPS even with complex canvas graphs.
+  // React state is only updated on 'mouseup' to finalize the position in the source of truth.
   const animate = () => {
-    if (dragData.current.id) {
-      const el = cardRefs.current[dragData.current.id];
+    const dragId = dragData.current.id;
+    if (dragId) {
+      const el = cardRefs.current[dragId];
       if (el) {
         const tilt = Math.min(Math.max((dragData.current.currentX - dragData.current.lastX) * 0.6, -12), 12);
         el.style.transform = `translate3d(${dragData.current.currentX}px, ${dragData.current.currentY}px, 0) rotate(${tilt}deg) scale(1.02)`;
         dragData.current.lastX = dragData.current.currentX;
+
+        // Update ONLY connected lines directly (using pre-filtered ref)
+        activeConnectionsRef.current.forEach(conn => {
+          const line = connectionRefs.current[conn.id];
+          if (!line) return;
+
+          if (conn.from === dragId) {
+            line.setAttribute('x1', (dragData.current.currentX + 110).toString());
+            line.setAttribute('y1', (dragData.current.currentY + 30).toString());
+          } else if (conn.to === dragId) {
+            line.setAttribute('x2', (dragData.current.currentX + 110).toString());
+            line.setAttribute('y2', (dragData.current.currentY + 30).toString());
+          }
+        });
       }
       requestRef.current = requestAnimationFrame(animate);
     }
@@ -175,10 +205,16 @@ export default function LucidPage() {
       lastX: card.x
     };
 
+    // Pre-filter connections for only what needs to move
+    activeConnectionsRef.current = connections.filter(c => c.from === card.id || c.to === card.id);
+
     setDraggedCardId(card.id);
     requestRef.current = requestAnimationFrame(animate);
   };
 
+  // STRATEGY: Snap-Target Detection
+  // We use a throttled proximity check (50ms) to identify potential connection targets.
+  // This minimizes CPU usage while maintaining a high perceived "responsiveness" for snapping.
   const handleGlobalMouseMove = (e: MouseEvent) => {
     if (!dragData.current.id) return;
 
@@ -188,19 +224,27 @@ export default function LucidPage() {
     dragData.current.currentX = dragData.current.cardX + deltaX;
     dragData.current.currentY = dragData.current.cardY + deltaY;
 
-    setDragPosition({ x: dragData.current.currentX, y: dragData.current.currentY });
+    dragPositionRef.current = { x: dragData.current.currentX, y: dragData.current.currentY };
 
-    const target = folderCards.find(c =>
-      c.id !== dragData.current.id &&
-      Math.abs(c.x - dragData.current.currentX) < 180 &&
-      Math.abs(c.y - dragData.current.currentY) < 180
-    );
+    // Throttled proximity detection (every 50ms)
+    const now = Date.now();
+    if (now - lastProximityCheckRef.current > 50) {
+      lastProximityCheckRef.current = now;
+      const target = folderCards.find(c =>
+        c.id !== dragData.current.id &&
+        Math.abs(c.x - dragData.current.currentX) < 180 &&
+        Math.abs(c.y - dragData.current.currentY) < 180
+      );
 
-    if (target?.id !== proximityTargetId) {
-      setProximityTargetId(target ? target.id : null);
+      if (target?.id !== proximityTargetId) {
+        setProximityTargetId(target ? target.id : null);
+      }
     }
   };
 
+  // STRATEGY: Finalizing Position
+  // On mouse up, we commit the transient drag positions back to React state and localStorage.
+  // This ensures the "Source of Truth" remains consistent with the visual state.
   const handleGlobalMouseUp = () => {
     if (!dragData.current.id) return;
     const finalX = dragData.current.currentX;
@@ -211,7 +255,8 @@ export default function LucidPage() {
     }
 
     setCards(prev => prev.map(c => c.id === finishedId ? { ...c, x: finalX, y: finalY } : c));
-    setDragPosition({ x: 0, y: 0 });
+    dragPositionRef.current = { x: 0, y: 0 };
+    activeConnectionsRef.current = []; // Clear active connections
 
     if (proximityTargetId) {
       createConnection(finishedId, proximityTargetId);
@@ -238,6 +283,11 @@ export default function LucidPage() {
 
   const activeCommitment = useMemo(() => cards.find(c => c.id === commitments[activeProjectId]), [cards, commitments, activeProjectId]);
 
+  // --- CRUD OPERATIONS: SPATIAL ELEMENTS ---
+
+  // STRATEGY: Absolute Placement vs Random Scatter
+  // If x/y are provided (e.g., from double-click), use them directly.
+  // Otherwise, scatter cards randomly within a safe padding zone to minimize initial overlap.
   const addCard = (content = "", x?: number, y?: number) => {
     const padding = 100;
     const randomX = x ?? (padding + Math.random() * (window.innerWidth - padding * 2 - 220));
@@ -272,6 +322,11 @@ export default function LucidPage() {
     setCards(prev => prev.map(c => c.id === cardId ? { ...c, tasks: updatedTasks } : c));
   };
 
+  // --- RECURSIVE DATA OPS: HIERARCHICAL TASKS ---
+
+  // STRATEGY: Deep-Tree Immutable Updates
+  // Since tasks can be nested up to N levels, we use a recursive pattern to find and 
+  // update the target task while preserving the immutability of the surrounding object graph.
   const recursiveUpdateTask = (tasks: Task[], taskId: string, update: (t: Task) => Task): Task[] => {
     return tasks.map(t => {
       if (t.id === taskId) return update(t);
@@ -280,6 +335,9 @@ export default function LucidPage() {
     });
   };
 
+  // CONTEXT ANCHOR: Lucid Task Handlers
+  // PURPOSE: Maps Lucid-specific card-task interactions to the standard TaskItem component.
+  // This bridge allows for total styling parity between the Explorer and Lucid views.
   const lucidTaskItemProps = {
     expandedTasks,
     editingNote,
@@ -445,14 +503,20 @@ export default function LucidPage() {
                 const to = cards.find(c => c.id === conn.to);
                 if (!from || !to) return null;
 
-                const x1 = (draggedCardId === from.id ? dragPosition.x : from.x) + 110;
-                const y1 = (draggedCardId === from.id ? dragPosition.y : from.y) + 30;
-                const x2 = (draggedCardId === to.id ? dragPosition.x : to.x) + 110;
-                const y2 = (draggedCardId === to.id ? dragPosition.y : to.y) + 30;
+                const x1 = from.x + 110;
+                const y1 = from.y + 30;
+                const x2 = to.x + 110;
+                const y2 = to.y + 30;
 
                 return (
                   <g key={conn.id} className="group pointer-events-auto">
-                    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth="1.5" markerEnd="url(#arrowhead)" className="text-border opacity-60 group-hover:opacity-100 transition-opacity" />
+                    <line
+                      ref={el => { connectionRefs.current[conn.id] = el }}
+                      x1={x1} y1={y1} x2={x2} y2={y2}
+                      stroke="currentColor" strokeWidth="1.5"
+                      markerEnd="url(#arrowhead)"
+                      className="text-border opacity-60 group-hover:opacity-100 transition-opacity"
+                    />
                     <circle cx={(x1 + x2) / 2} cy={(y1 + y2) / 2} r="12" fill="var(--color-surface)" stroke="currentColor" className="text-border opacity-0 group-hover:opacity-100 cursor-pointer shadow-sm transition-all" onClick={() => setConnections(prev => prev.filter(c => c.id !== conn.id))} />
                     <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 + 4} textAnchor="middle" className="pointer-events-none opacity-0 group-hover:opacity-100 fill-text-secondary font-bold text-[10px]">×</text>
                   </g>
@@ -475,12 +539,13 @@ export default function LucidPage() {
                     className={`absolute p-5 w-[240px] bg-surface border rounded-xl flex flex-col group
                         ${draggedCardId === card.id ? 'z-50 shadow-2xl border-primary/40' : 'z-10 border-border shadow-sm hover:shadow-md hover:border-border/80'}
                         ${isSource || isTarget ? 'border-primary z-40 scale-[1.02]' : ''}
-                        transition-all duration-300
+                        ${draggedCardId === card.id ? '' : 'transition-all duration-300'}
                        `}
                     style={{
                       left: 0, top: 0,
                       transform: `translate3d(${card.x}px, ${card.y}px, 0)`,
                       cursor: linkingFromId ? 'crosshair' : (draggedCardId === card.id ? 'grabbing' : 'grab'),
+                      willChange: 'transform',
                     }}>
 
                     <div className="flex justify-between items-center mb-3 h-4 pointer-events-none">
