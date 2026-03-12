@@ -12,7 +12,8 @@ import {
     Target,
     Layers,
     Hexagon,
-    CheckCircle2
+    CheckCircle2,
+    Lightbulb
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -604,6 +605,14 @@ const WeeklyRoadmap = () => {
 
                         <div className="flex items-center gap-4">
                             <Link
+                                href="/lucid"
+                                className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-foreground/[0.03] border border-border/20 hover:border-primary/40 hover:bg-foreground/[0.05] transition-all group"
+                                title="Lucid Thoughts"
+                            >
+                                <Lightbulb className="w-4 h-4 text-foreground/40 group-hover:text-primary transition-colors" />
+                                <span className="text-[11px] font-bold uppercase tracking-widest text-foreground/20 group-hover:text-foreground/60">Lucid</span>
+                            </Link>
+                            <Link
                                 href="/"
                                 className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-foreground/[0.03] border border-border/20 hover:border-primary/40 hover:bg-foreground/[0.05] transition-all group"
                                 onClick={() => selectedProjectId && handleSelectProject(selectedProjectId)}
@@ -759,7 +768,7 @@ const WeeklyRoadmap = () => {
                                                 {/* Threads Area — wraps to next line when there are many threads */}
                                                 <div className="flex flex-wrap gap-4 pb-2 px-2">
                                                     {allRelevantThreads.length > 0 ? (
-                                                        allRelevantThreads.map((thread: any) => (
+                                                        allRelevantThreads.map((thread: FolderedProject['allThreadsWithContext'][number]) => (
                                                             <motion.div
                                                                 key={thread.id}
                                                                 whileHover={{ y: -5, scale: 1.02 }}

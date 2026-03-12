@@ -140,7 +140,7 @@
 // =================================================================================================
 
 import React from "react";
-import { Plus, ArrowUp, ArrowDown, LayoutDashboard } from "lucide-react";
+import { Plus, ArrowUp, ArrowDown, LayoutDashboard, Lightbulb } from "lucide-react";
 import { ThreadCard } from "./components/ThreadCard"; // Import ThreadCard
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -356,6 +356,14 @@ const NestedWorkflow = () => {
                       {threadsSortDirection === 'asc' ? 'Oldest first' : 'Newest first'}
                     </span>
                   </button>
+                  <Link
+                    href="/lucid"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface transition-all border border-transparent hover:border-border"
+                    title="Lucid Thoughts"
+                  >
+                    <Lightbulb className="w-4 h-4" />
+                    <span className="hidden lg:inline">Lucid</span>
+                  </Link>
                   <Link
                     href="/weekly"
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface transition-all border border-transparent hover:border-border"
