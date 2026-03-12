@@ -1,7 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Lightbulb, Lock, Trash2, X, Link as LinkIcon, Unlink, FolderPlus, ChevronRight } from 'lucide-react';
+import { Plus, Lightbulb, Lock, Trash2, X, Link as LinkIcon, Unlink, ArrowLeft, LayoutDashboard } from 'lucide-react';
+import Link from 'next/link';
+import useWorkflowManager from '../hooks/useWorkflowManager';
+import ProjectSidebar from '../components/ProjectSidebar';
+import ProjectNavigator from '../components/ProjectNavigator';
+import HeaderActions from '../components/HeaderActions';
+import SettingsModal from '../components/SettingsModal';
+import { TaskItem } from '../components/TaskItem';
+import { Task } from '../types';
 
 // =================================================================================================
 // CONTEXT ANCHOR: LUCID THOUGHTS PAGE (app/lucid/page.tsx)
@@ -37,15 +45,11 @@ import { Plus, Lightbulb, Lock, Trash2, X, Link as LinkIcon, Unlink, FolderPlus,
 
 const STORAGE_KEY = 'lucid_web_v12';
 
-interface LucidFolder {
-  id: string;
-  name: string;
-}
-
 interface LucidCard {
   id: string;
-  folderId: string;
+  projectId: string;
   content: string;
+  tasks: Task[];
   x: number;
   y: number;
   createdAt: number;
@@ -58,7 +62,7 @@ interface LucidConnection {
 }
 
 interface LucidCommitments {
-  [folderId: string]: string;
+  [projectId: string]: string;
 }
 
 interface DragData {
@@ -81,23 +85,43 @@ interface DragData {
 // - Active commitment must be one of the cards in the current folder.
 // =================================================================================================
 export default function LucidPage() {
-  const [folders, setFolders] = useState<LucidFolder[]>([{ id: 'default', name: 'General Chaos' }]);
-  const [activeFolderId, setActiveFolderId] = useState<string>('default');
+  const {
+    projects,
+    selectedProjectId,
+    handleSelectProject,
+    addProject,
+    deleteProject,
+    renameProject,
+    taskItemProps,
+    showCompleted,
+    setShowCompleted
+  } = useWorkflowManager();
+
   const [cards, setCards] = useState<LucidCard[]>([]);
   const [connections, setConnections] = useState<LucidConnection[]>([]);
   const [commitments, setCommitments] = useState<LucidCommitments>({});
 
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarVisible, setSidebarVisible] = useState(false);
+  const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
   const [linkingFromId, setLinkingFromId] = useState<string | null>(null);
   const [proximityTargetId, setProximityTargetId] = useState<string | null>(null);
   const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+
+  // --- Local Task Management for Lucid Cards ---
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const [editingNote, setEditingNote] = useState<string | null>(null);
+  const [addingChildTo, setAddingChildTo] = useState<string | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editedTaskText, setEditedTaskText] = useState<string>("");
+  const [newChildText, setNewChildText] = useState<string>("");
 
   const dragData = useRef<DragData>({
     id: null, startX: 0, startY: 0, cardX: 0, cardY: 0, currentX: 0, currentY: 0, lastX: 0
   });
 
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const canvasRef = useRef<HTMLDivElement | null>(null);
   const requestRef = useRef<number | null>(null);
 
   // --- Persistence ---
@@ -107,20 +131,18 @@ export default function LucidPage() {
       const parsed = JSON.parse(saved);
       setCards(parsed.cards || []);
       setConnections(parsed.connections || []);
-      setFolders(parsed.folders || [{ id: 'default', name: 'General Chaos' }]);
       setCommitments(parsed.commitments || {});
-      setActiveFolderId(parsed.activeFolderId || 'default');
     }
   }, []);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        cards, connections, folders, commitments, activeFolderId
+        cards, connections, commitments
       }));
     }, 500);
     return () => clearTimeout(timeout);
-  }, [cards, connections, folders, commitments, activeFolderId]);
+  }, [cards, connections, commitments]);
 
   // --- Animation Loop ---
   const animate = () => {
@@ -140,10 +162,11 @@ export default function LucidPage() {
     setConnections(prev => [...prev, { id: crypto.randomUUID(), from: fromId, to: toId }]);
   };
 
-  const folderCards = useMemo(() => cards.filter(c => (c.folderId || 'default') === activeFolderId), [cards, activeFolderId]);
+  const activeProjectId = selectedProjectId || 'default';
+  const folderCards = useMemo(() => cards.filter(c => (c.projectId || 'default') === activeProjectId), [cards, activeProjectId]);
 
   const handleMouseDown = (e: React.MouseEvent | MouseEvent, card: LucidCard) => {
-    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
+    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).tagName === 'TEXTAREA' || (e.target as HTMLElement).tagName === 'INPUT') return;
     if (linkingFromId) return;
 
     dragData.current = {
@@ -213,17 +236,18 @@ export default function LucidPage() {
     return connections.filter(conn => cardIds.has(conn.from) && cardIds.has(conn.to));
   }, [connections, folderCards]);
 
-  const activeCommitment = useMemo(() => cards.find(c => c.id === commitments[activeFolderId]), [cards, commitments, activeFolderId]);
+  const activeCommitment = useMemo(() => cards.find(c => c.id === commitments[activeProjectId]), [cards, commitments, activeProjectId]);
 
-  const addCard = (content = "") => {
+  const addCard = (content = "", x?: number, y?: number) => {
     const padding = 100;
-    const randomX = padding + Math.random() * (window.innerWidth - padding * 2 - 220);
-    const randomY = padding + Math.random() * (window.innerHeight - padding * 2 - 150);
+    const randomX = x ?? (padding + Math.random() * (window.innerWidth - padding * 2 - 220));
+    const randomY = y ?? (padding + Math.random() * (window.innerHeight - padding * 2 - 150));
 
     const newCard: LucidCard = {
       id: crypto.randomUUID(),
-      folderId: activeFolderId,
+      projectId: activeProjectId,
       content,
+      tasks: [],
       x: randomX,
       y: randomY,
       createdAt: Date.now()
@@ -244,204 +268,352 @@ export default function LucidPage() {
     setConnections(prev => prev.filter(conn => conn.from !== id && conn.to !== id));
   };
 
+  const updateCardTasks = (cardId: string, updatedTasks: Task[]) => {
+    setCards(prev => prev.map(c => c.id === cardId ? { ...c, tasks: updatedTasks } : c));
+  };
+
+  const recursiveUpdateTask = (tasks: Task[], taskId: string, update: (t: Task) => Task): Task[] => {
+    return tasks.map(t => {
+      if (t.id === taskId) return update(t);
+      if (t.children.length > 0) return { ...t, children: recursiveUpdateTask(t.children, taskId, update) };
+      return t;
+    });
+  };
+
+  const lucidTaskItemProps = {
+    expandedTasks,
+    editingNote,
+    addingChildTo,
+    editingTaskId,
+    editedTaskText,
+    setEditingNote,
+    setAddingChildTo,
+    newChildText,
+    setNewChildText,
+    setEditingTaskId,
+    setEditedTaskText,
+    toggleTask: (taskId: string) => {
+      setExpandedTasks(prev => {
+        const next = new Set(prev);
+        if (next.has(taskId)) next.delete(taskId);
+        else next.add(taskId);
+        return next;
+      });
+    },
+    toggleTaskDone: (cardId: string, taskId: string) => {
+      setCards(prev => prev.map(c => c.id === cardId ? {
+        ...c,
+        tasks: recursiveUpdateTask(c.tasks, taskId, t => ({ ...t, done: !t.done, completedAt: !t.done ? Date.now() : undefined }))
+      } : c));
+    },
+    saveNote: (cardId: string, taskId: string, note: string) => {
+      setCards(prev => prev.map(c => c.id === cardId ? {
+        ...c,
+        tasks: recursiveUpdateTask(c.tasks, taskId, t => ({ ...t, note }))
+      } : c));
+      setEditingNote(null);
+    },
+    addChild: (cardId: string, parentId: string) => {
+      if (!newChildText.trim()) return;
+      const newTask: Task = {
+        id: crypto.randomUUID(),
+        text: newChildText.trim(),
+        done: false,
+        note: "",
+        children: [],
+        priority: 0,
+        createdAt: Date.now()
+      };
+      setCards(prev => prev.map(c => c.id === cardId ? {
+        ...c,
+        tasks: recursiveUpdateTask(c.tasks, parentId, t => ({ ...t, children: [...t.children, newTask] }))
+      } : c));
+      setAddingChildTo(null);
+      setNewChildText("");
+      setExpandedTasks(prev => new Set(prev).add(parentId));
+    },
+    updateTaskText: (cardId: string, taskId: string, text: string) => {
+      setCards(prev => prev.map(c => c.id === cardId ? {
+        ...c,
+        tasks: recursiveUpdateTask(c.tasks, taskId, t => ({ ...t, text }))
+      } : c));
+      setEditingTaskId(null);
+    },
+    setTaskPriority: (cardId: string, taskId: string, priority: number) => {
+      setCards(prev => prev.map(c => c.id === cardId ? {
+        ...c,
+        tasks: recursiveUpdateTask(c.tasks, taskId, t => ({ ...t, priority }))
+      } : c));
+    },
+    updateTaskSort: (cardId: string, taskId: string, config: any) => {
+      setCards(prev => prev.map(c => c.id === cardId ? {
+        ...c,
+        tasks: recursiveUpdateTask(c.tasks, taskId, t => ({ ...t, sortConfig: config }))
+      } : c));
+    },
+  };
 
   return (
-    <div className="fixed inset-0 bg-[#f9f8f6] flex overflow-hidden font-sans select-none text-stone-900">
+    <div className="flex h-screen bg-background font-sans overflow-hidden">
+      <ProjectSidebar
+        projects={projects}
+        selectedProjectId={selectedProjectId}
+        onAddProject={addProject}
+        onSelectProject={handleSelectProject}
+        onDeleteProject={deleteProject}
+        onRenameProject={renameProject}
+        isSidebarVisible={isSidebarVisible}
+        onToggle={() => setSidebarVisible(!isSidebarVisible)}
+      />
 
-      {/* --- SIDEBAR --- */}
-      <aside className={`bg-white border-r border-stone-200/60 transition-all duration-300 flex flex-col z-50 ${isSidebarOpen ? 'w-72' : 'w-0 overflow-hidden'}`}>
-        <div className="p-8 flex items-center justify-between flex-shrink-0">
-          <h1 className="font-black tracking-tighter text-stone-900 text-xl italic uppercase">Lucid</h1>
-          <button onClick={() => setFolders(f => [...f, { id: crypto.randomUUID(), name: 'New Stack' }])} className="p-2 hover:bg-stone-100 rounded-full transition-all text-stone-400">
-            <FolderPlus size={18} />
-          </button>
-        </div>
-        <div className="px-4 space-y-1 overflow-y-auto max-h-[30%] flex-shrink-0">
-          {folders.map(f => (
-            <button key={f.id} onClick={() => setActiveFolderId(f.id)}
-              className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl font-bold transition-all text-sm ${activeFolderId === f.id ? 'bg-stone-900 text-white' : 'text-stone-400 hover:text-stone-600'}`}>
-              <span className="truncate">{f.name}</span>
+      <div className="flex-1 flex flex-col min-w-0 relative h-full">
+        {/* --- Standard Thread Notes Header --- */}
+        <header className="sticky top-0 z-30 bg-surface border-b border-border px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+              <h1 className="text-2xl font-bold font-serif tracking-tight text-text-primary">Thread Notes</h1>
+            </Link>
+            <div className="h-8 w-px bg-border mx-2 hidden md:block" />
+            <nav className="flex items-center gap-4">
+              <ProjectNavigator
+                projects={projects}
+                selectedProjectId={selectedProjectId}
+                onSelectProject={handleSelectProject}
+                onAddProject={addProject}
+                onRenameProject={renameProject}
+                onDeleteProject={deleteProject}
+              />
+              <Link
+                href="/"
+                className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
+              >
+                Explorer
+              </Link>
+              <Link
+                href="/weekly"
+                className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
+              >
+                Roadmap
+              </Link>
+              <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold ring-1 ring-primary/20">
+                Lucid
+              </div>
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => addCard()}
+              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-lg hover:bg-primary-hover transition-all transform hover:scale-105 active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Card</span>
             </button>
-          ))}
-        </div>
-        <div className="flex-1 p-8 overflow-y-auto">
-          <div className="space-y-6">
-            {[...folderCards].sort((a, b) => a.createdAt - b.createdAt).map((card, idx) => (
-              <div key={card.id} className="opacity-40 hover:opacity-100 transition-opacity">
-                <p className="text-[10px] font-black text-stone-300 uppercase mb-2">Note {idx + 1}</p>
-                <p className="text-xs font-medium text-stone-800 line-clamp-2 leading-relaxed">{card.content || "Untitled"}</p>
-              </div>
-            ))}
+            <HeaderActions
+              showCompleted={showCompleted}
+              onToggleShowCompleted={setShowCompleted}
+              onOpenSettings={() => setSettingsModalOpen(true)}
+            />
           </div>
-        </div>
-      </aside>
+        </header>
 
-      {/* --- CANVAS --- */}
-      <main className={`flex-1 relative overflow-hidden transition-colors duration-500 ${linkingFromId ? 'bg-stone-200/30' : ''}`}>
+        {/* --- Canvas Area --- */}
+        <main
+          ref={canvasRef}
+          className="flex-1 relative overflow-hidden bg-background cursor-crosshair selection:bg-primary/20"
+          onMouseMove={() => { }} // Global handlers are used
+          onMouseUp={handleGlobalMouseUp}
+          onMouseLeave={handleGlobalMouseUp}
+          onDoubleClick={(e) => {
+            if (e.target === canvasRef.current) {
+              const rect = canvasRef.current.getBoundingClientRect();
+              addCard("", e.clientX - rect.left - 150, e.clientY - rect.top - 100);
+            }
+          }}
+        >
+          {/* Canvas area - cards are rendered absolutely within this relative container */}
+          <div className="absolute inset-0 z-0">
+            {/* --- CONNECTIONS LAYER --- */}
+            <svg className="absolute inset-0 pointer-events-none z-0 w-full h-full overflow-visible">
+              <defs>
+                <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                  <polygon points="0 0, 8 3, 0 6" fill="currentColor" className="text-border" />
+                </marker>
+              </defs>
+              {folderConnections.map(conn => {
+                const from = cards.find(c => c.id === conn.from);
+                const to = cards.find(c => c.id === conn.to);
+                if (!from || !to) return null;
 
-        {linkingFromId && (
-          <div className="absolute top-10 left-1/2 -translate-x-1/2 z-[70] bg-stone-900 text-white px-6 py-3 rounded-full font-bold text-sm shadow-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-2">
-            Connecting...
-            <button onClick={() => setLinkingFromId(null)} className="opacity-50 hover:opacity-100"><X size={16} /></button>
+                const x1 = (draggedCardId === from.id ? dragPosition.x : from.x) + 110;
+                const y1 = (draggedCardId === from.id ? dragPosition.y : from.y) + 30;
+                const x2 = (draggedCardId === to.id ? dragPosition.x : to.x) + 110;
+                const y2 = (draggedCardId === to.id ? dragPosition.y : to.y) + 30;
+
+                return (
+                  <g key={conn.id} className="group pointer-events-auto">
+                    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth="1.5" markerEnd="url(#arrowhead)" className="text-border opacity-60 group-hover:opacity-100 transition-opacity" />
+                    <circle cx={(x1 + x2) / 2} cy={(y1 + y2) / 2} r="12" fill="var(--color-surface)" stroke="currentColor" className="text-border opacity-0 group-hover:opacity-100 cursor-pointer shadow-sm transition-all" onClick={() => setConnections(prev => prev.filter(c => c.id !== conn.id))} />
+                    <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 + 4} textAnchor="middle" className="pointer-events-none opacity-0 group-hover:opacity-100 fill-text-secondary font-bold text-[10px]">×</text>
+                  </g>
+                );
+              })}
+            </svg>
+
+            {/* --- CARDS LAYER --- */}
+            <div className="w-full h-full relative">
+              {folderCards.map(card => {
+                const isSource = linkingFromId === card.id;
+                const isTarget = proximityTargetId === card.id;
+                const connCount = connections.filter(cn => cn.from === card.id || cn.to === card.id).length;
+
+                return (
+                  <div key={card.id}
+                    ref={el => { cardRefs.current[card.id] = el }}
+                    onMouseDown={(e) => handleMouseDown(e, card)}
+                    onClick={() => linkingFromId && linkingFromId !== card.id && (createConnection(linkingFromId, card.id), setLinkingFromId(null))}
+                    className={`absolute p-5 w-[240px] bg-surface border rounded-xl flex flex-col group
+                        ${draggedCardId === card.id ? 'z-50 shadow-2xl border-primary/40' : 'z-10 border-border shadow-sm hover:shadow-md hover:border-border/80'}
+                        ${isSource || isTarget ? 'border-primary z-40 scale-[1.02]' : ''}
+                        transition-all duration-300
+                       `}
+                    style={{
+                      left: 0, top: 0,
+                      transform: `translate3d(${card.x}px, ${card.y}px, 0)`,
+                      cursor: linkingFromId ? 'crosshair' : (draggedCardId === card.id ? 'grabbing' : 'grab'),
+                    }}>
+
+                    <div className="flex justify-between items-center mb-3 h-4 pointer-events-none">
+                      <div className="text-[9px] font-bold text-text-secondary/40 tracking-wider">
+                        {connCount > 0 && `${connCount} LINK${connCount > 1 ? 'S' : ''}`}
+                      </div>
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
+                        {connCount > 0 && (
+                          <button onClick={(e) => { e.stopPropagation(); unlinkCard(card.id); }} className="text-text-secondary/40 hover:text-danger transition-colors" title="Unlink Card">
+                            <Unlink size={12} />
+                          </button>
+                        )}
+                        <button onClick={(e) => { e.stopPropagation(); setLinkingFromId(card.id); }} className="text-text-secondary/40 hover:text-primary transition-colors" title="Link Card">
+                          <LinkIcon size={12} />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); deleteCard(card.id); }} className="text-text-secondary/40 hover:text-danger transition-colors" title="Delete Card">
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="relative">
+                      <textarea
+                        className="w-full bg-transparent resize-none border-none outline-none ring-0 focus:ring-0 focus:outline-none p-0 text-text-primary font-serif italic text-lg placeholder:text-text-secondary/20 leading-relaxed cursor-text overflow-hidden"
+                        value={card.content}
+                        onChange={(e) => {
+                          updateCardContent(card.id, e.target.value);
+                          e.target.style.height = 'auto';
+                          e.target.style.height = e.target.scrollHeight + 'px';
+                        }}
+                        autoFocus={card.content === ""}
+                        spellCheck={false}
+                        rows={1}
+                        placeholder="Thought..."
+                      />
+                    </div>
+
+                    {/* Task List Integration */}
+                    <div className="mt-4 pt-4 border-t border-border/10">
+                      <div className="space-y-1">
+                        {card.tasks.map((task) => (
+                          <TaskItem
+                            key={`${card.id}-${task.id}`}
+                            {...lucidTaskItemProps}
+                            task={task}
+                            threadId={card.id}
+                            showCompleted={showCompleted}
+                          />
+                        ))}
+                      </div>
+                      <div className="mt-2 flex items-center gap-2 group/add px-1">
+                        <Plus className="w-3.5 h-3.5 text-text-secondary/40 group-hover/add:text-primary transition-colors" />
+                        <input
+                          type="text"
+                          placeholder="Add task..."
+                          className="flex-1 bg-transparent border-none outline-none focus:ring-0 text-xs text-text-secondary placeholder:text-text-secondary/20"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                              const newTask: Task = {
+                                id: crypto.randomUUID(),
+                                text: e.currentTarget.value.trim(),
+                                done: false,
+                                note: "",
+                                children: [],
+                                priority: 0,
+                                createdAt: Date.now(),
+                                sortConfig: { direction: 'desc' }
+                              };
+                              updateCardTasks(card.id, [...card.tasks, newTask]);
+                              e.currentTarget.value = "";
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        )}
 
-        <div className="absolute top-8 right-8 z-[60]">
-          <button onClick={() => addCard("")}
-            className="bg-stone-900 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all">
-            <Plus size={24} />
-          </button>
-        </div>
+          {/* DOCK / COMMITMENT area */}
+          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-full max-w-2xl z-40 px-6">
+            <div className="bg-surface border border-border shadow-xl rounded-[32px] p-6 flex items-center gap-6">
+              {activeCommitment ? (
+                <div className="flex-1 flex items-center gap-6 animate-in slide-in-from-bottom-2">
+                  <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg">
+                    <Lock size={28} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black text-text-secondary/40 uppercase tracking-widest mb-1">Final Goal</p>
+                    <p className="text-text-primary font-bold text-xl truncate tracking-tight italic font-serif">{activeCommitment.content}</p>
+                  </div>
+                  <button onClick={() => {
+                    setCommitments(prev => {
+                      const next = { ...prev };
+                      delete next[activeProjectId];
+                      return next;
+                    });
+                  }} className="p-4 text-text-secondary/40 hover:text-danger transition-all"><X size={20} /></button>
+                </div>
+              ) : (
+                <form className="flex-1 flex items-center gap-6" onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.target as HTMLFormElement;
+                  const goalInput = form.elements.namedItem('goal') as HTMLInputElement;
+                  const val = goalInput.value;
+                  if (!val) return;
+                  const newId = crypto.randomUUID();
+                  const padding = 100;
+                  const randomX = padding + Math.random() * (window.innerWidth - padding * 2 - 240);
+                  const randomY = padding + Math.random() * (window.innerHeight - padding * 2 - 150);
 
-        {/* --- CONNECTIONS --- */}
-        <svg className="absolute inset-0 pointer-events-none z-0 w-full h-full overflow-visible">
-          <defs>
-            <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-              <polygon points="0 0, 8 3, 0 6" fill="#a8a29e" />
-            </marker>
-          </defs>
-          {folderConnections.map(conn => {
-            const from = cards.find(c => c.id === conn.from);
-            const to = cards.find(c => c.id === conn.to);
-            if (!from || !to) return null;
-
-            const x1 = (draggedCardId === from.id ? dragPosition.x : from.x) + 110;
-            const y1 = (draggedCardId === from.id ? dragPosition.y : from.y) + 30;
-            const x2 = (draggedCardId === to.id ? dragPosition.x : to.x) + 110;
-            const y2 = (draggedCardId === to.id ? dragPosition.y : to.y) + 30;
-
-            return (
-              <g key={conn.id} className="group pointer-events-auto">
-                <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#d6d3d1" strokeWidth="1.5" markerEnd="url(#arrowhead)" className="opacity-60 group-hover:opacity-100 transition-opacity" />
-                <circle cx={(x1 + x2) / 2} cy={(y1 + y2) / 2} r="12" fill="white" stroke="#d6d3d1" className="opacity-0 group-hover:opacity-100 cursor-pointer shadow-sm transition-all" onClick={() => setConnections(prev => prev.filter(c => c.id !== conn.id))} />
-                <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 + 4} textAnchor="middle" className="pointer-events-none opacity-0 group-hover:opacity-100 fill-stone-400 font-bold text-[10px]">×</text>
-              </g>
-            );
-          })}
-        </svg>
-
-        {/* --- CARDS --- */}
-        <div className="w-full h-full relative">
-          {folderCards.map(card => {
-            const isSource = linkingFromId === card.id;
-            const isTarget = proximityTargetId === card.id;
-            const connCount = connections.filter(cn => cn.from === card.id || cn.to === card.id).length;
-
-            return (
-              <div key={card.id}
-                ref={el => { cardRefs.current[card.id] = el }}
-                onMouseDown={(e) => handleMouseDown(e, card)}
-                onClick={() => linkingFromId && linkingFromId !== card.id && (createConnection(linkingFromId, card.id), setLinkingFromId(null))}
-                className={`absolute p-5 w-[220px] bg-white border border-stone-200/40 flex flex-col group
-                    ${draggedCardId === card.id ? 'z-50 shadow-[30px_30px_60px_-10px_rgba(0,0,0,0.08)]' : 'z-10 shadow-[10px_10px_20px_-5px_rgba(0,0,0,0.03)] hover:shadow-[15px_15px_30px_-5px_rgba(0,0,0,0.05)]'}
-                    ${isSource || isTarget ? 'border-stone-400 z-40 scale-[1.02]' : ''}
-                   `}
-                style={{
-                  left: 0, top: 0,
-                  transform: `translate3d(${card.x}px, ${card.y}px, 0)`,
-                  cursor: linkingFromId ? 'crosshair' : (draggedCardId === card.id ? 'grabbing' : 'grab'),
-                  transition: draggedCardId === card.id ? 'none' : 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), shadow 0.3s'
+                  setCards(prev => [...prev, { id: newId, projectId: activeProjectId, content: val, tasks: [], x: randomX, y: randomY, createdAt: Date.now() }]);
+                  setCommitments(prev => ({ ...prev, [activeProjectId]: newId }));
+                  form.reset();
                 }}>
-
-                {/* Minimal Header */}
-                <div className="flex justify-between items-center mb-2 h-4 pointer-events-none">
-                  <div className="text-[9px] font-bold text-stone-300 tracking-wider">
-                    {connCount > 0 && `${connCount} LINK${connCount > 1 ? 'S' : ''}`}
+                  <div className="w-12 h-12 flex items-center justify-center text-primary/40">
+                    <Lightbulb size={28} />
                   </div>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
-                    {connCount > 0 && (
-                      <button onClick={(e) => { e.stopPropagation(); unlinkCard(card.id); }} className="text-stone-300 hover:text-red-400 transition-colors" title="Unlink Card">
-                        <Unlink size={12} />
-                      </button>
-                    )}
-                    <button onClick={(e) => { e.stopPropagation(); setLinkingFromId(card.id); }} className="text-stone-300 hover:text-stone-900 transition-colors" title="Link Card">
-                      <LinkIcon size={12} />
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); deleteCard(card.id); }} className="text-stone-200 hover:text-red-400 transition-colors" title="Delete Card">
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Pure Writing Surface */}
-                <div className="relative cursor-text">
-                  <textarea className="w-full bg-transparent resize-none border-none outline-none ring-0 focus:ring-0 focus:outline-none p-0 text-stone-800 font-serif italic text-lg placeholder:text-stone-200 leading-relaxed cursor-text overflow-hidden appearance-none shadow-none"
-                    style={{ boxShadow: 'none' }}
-                    value={card.content}
-                    onChange={(e) => {
-                      updateCardContent(card.id, e.target.value);
-                      e.target.style.height = 'auto';
-                      e.target.style.height = e.target.scrollHeight + 'px';
-                    }}
-                    onFocus={(e) => {
-                      const target = e.target as HTMLTextAreaElement;
-                      target.style.height = 'auto';
-                      target.style.height = target.scrollHeight + 'px';
-                    }}
-                    autoFocus={card.content === ""}
-                    spellCheck={false}
-                    rows={1} placeholder="Write something..." />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* --- DOCK --- */}
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-full max-w-2xl z-50 px-6">
-          <div className="bg-white border border-stone-200/60 shadow-[20px_20px_60px_-10px_rgba(0,0,0,0.1)] rounded-[32px] p-6 flex items-center gap-6">
-            {activeCommitment ? (
-              <div className="flex-1 flex items-center gap-6 animate-in slide-in-from-bottom-2">
-                <div className="w-14 h-14 bg-stone-900 rounded-2xl flex items-center justify-center text-white shadow-xl">
-                  <Lock size={28} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Final Goal</p>
-                  <p className="text-stone-900 font-bold text-xl truncate tracking-tight italic font-serif">{activeCommitment.content}</p>
-                </div>
-                <button onClick={() => {
-                  setCommitments(prev => {
-                    const next = { ...prev };
-                    delete next[activeFolderId];
-                    return next;
-                  });
-                }} className="p-4 text-stone-300 hover:text-red-500 transition-all"><X size={20} /></button>
-              </div>
-            ) : (
-              <form className="flex-1 flex items-center gap-6" onSubmit={(e) => {
-                e.preventDefault();
-                const form = e.target as HTMLFormElement;
-                const goalInput = form.elements.namedItem('goal') as HTMLInputElement;
-                const val = goalInput.value;
-                if (!val) return;
-                const newId = crypto.randomUUID();
-                // Spawn the goal-related card with the same random logic
-                const padding = 100;
-                const randomX = padding + Math.random() * (window.innerWidth - padding * 2 - 220);
-                const randomY = padding + Math.random() * (window.innerHeight - padding * 2 - 150);
-
-                setCards(prev => [...prev, { id: newId, folderId: activeFolderId, content: val, x: randomX, y: randomY, createdAt: Date.now() }]);
-                setCommitments(prev => ({ ...prev, [activeFolderId]: newId }));
-                form.reset();
-              }}>
-                <div className="w-12 h-12 flex items-center justify-center text-stone-200">
-                  <Lightbulb size={28} />
-                </div>
-                <input name="goal" autoComplete="off" placeholder="What's the ultimate goal?"
-                  className="flex-1 bg-transparent border-none outline-none focus:ring-0 text-xl font-medium text-stone-900 placeholder:text-stone-200 font-serif italic" />
-                <button type="submit" className="bg-stone-900 text-white px-8 py-3 rounded-2xl font-bold text-sm hover:scale-105 transition-all">ACTIVATE</button>
-              </form>
-            )}
+                  <input name="goal" autoComplete="off" placeholder="What's the ultimate goal?"
+                    className="flex-1 bg-transparent border-none outline-none focus:ring-0 text-xl font-medium text-text-primary placeholder:text-text-secondary/20 font-serif italic" />
+                  <button type="submit" className="bg-primary text-white px-8 py-3 rounded-2xl font-bold text-sm hover:bg-primary-hover transition-all">ACTIVATE</button>
+                </form>
+              )}
+            </div>
           </div>
-        </div>
-
-        <div className="absolute bottom-10 left-10 z-50">
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-3 bg-white border border-stone-200/60 shadow-sm rounded-full text-stone-400 hover:text-stone-900 transition-all">
-            <ChevronRight size={18} className={`transition-transform duration-300 ${isSidebarOpen ? 'rotate-180' : ''}`} />
-          </button>
-        </div>
-      </main>
+        </main>
+      </div>
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setSettingsModalOpen(false)}
+      />
     </div>
   );
 }
