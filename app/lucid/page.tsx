@@ -8,6 +8,7 @@ import ProjectSidebar from '../components/ProjectSidebar';
 import ProjectNavigator from '../components/ProjectNavigator';
 import HeaderActions from '../components/HeaderActions';
 import SettingsModal from '../components/SettingsModal';
+import GlobalHeader from '../components/GlobalHeader';
 import { TaskItem } from '../components/TaskItem';
 import { Task } from '../types';
 
@@ -425,41 +426,18 @@ export default function LucidPage() {
       />
 
       <div className="flex-1 flex flex-col min-w-0 relative h-full">
-        {/* --- Standard Thread Notes Header --- */}
-        <header className="sticky top-0 z-30 bg-surface border-b border-border px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-              <h1 className="text-2xl font-bold font-serif tracking-tight text-text-primary">Thread Notes</h1>
-            </Link>
-            <div className="h-8 w-px bg-border mx-2 hidden md:block" />
-            <nav className="flex items-center gap-4">
-              <ProjectNavigator
-                projects={projects}
-                selectedProjectId={selectedProjectId}
-                onSelectProject={handleSelectProject}
-                onAddProject={addProject}
-                onRenameProject={renameProject}
-                onDeleteProject={deleteProject}
-              />
-              <Link
-                href="/"
-                className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
-              >
-                Explorer
-              </Link>
-              <Link
-                href="/weekly"
-                className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
-              >
-                Roadmap
-              </Link>
-              <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold ring-1 ring-primary/20">
-                Lucid
-              </div>
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-4">
+        <GlobalHeader
+          activeRoute="lucid"
+          projects={projects}
+          selectedProjectId={selectedProjectId}
+          onSelectProject={handleSelectProject}
+          onAddProject={addProject}
+          onRenameProject={renameProject}
+          onDeleteProject={deleteProject}
+          showCompleted={showCompleted}
+          onToggleShowCompleted={setShowCompleted}
+          onOpenSettings={() => setSettingsModalOpen(true)}
+          primaryAction={
             <button
               onClick={() => addCard()}
               className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-lg hover:bg-primary-hover transition-all transform hover:scale-105 active:scale-95"
@@ -467,13 +445,8 @@ export default function LucidPage() {
               <Plus className="w-4 h-4" />
               <span>Add Card</span>
             </button>
-            <HeaderActions
-              showCompleted={showCompleted}
-              onToggleShowCompleted={setShowCompleted}
-              onOpenSettings={() => setSettingsModalOpen(true)}
-            />
-          </div>
-        </header>
+          }
+        />
 
         {/* --- Canvas Area --- */}
         <main

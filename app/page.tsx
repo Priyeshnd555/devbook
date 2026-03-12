@@ -165,6 +165,7 @@ import { formatRelativeDate } from "./utils/dateUtils";
 import SettingsModal from "./components/SettingsModal";
 import ProjectNavigator from "./components/ProjectNavigator";
 import HeaderActions from "./components/HeaderActions";
+import GlobalHeader from "./components/GlobalHeader";
 
 // ============================================================================
 // COMPONENT CONTEXT: High-level overview of imported components for AI reference.
@@ -324,93 +325,49 @@ const NestedWorkflow = () => {
         onToggle={() => setSidebarVisible(!isSidebarVisible)}
       />
       <div className="flex-1 flex flex-col">
-        <header className="bg-surface border-b border-border shadow-xs z-20">
-          <div className="max-w-7xl mx-auto px-6 py-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0 flex items-center gap-4">
-                <div>
-                  <h1 className="text-2xl font-serif font-bold text-text-primary">
-                    Thread Notes
-                  </h1>
-                  <p className="text-xs text-text-secondary mt-0.5">
-                    {globalCompletedTasks}/{globalTotalTasks} Tasks
-                  </p>
-                </div>
-
-                <div className="h-10 w-[1px] bg-border mx-1" />
-
-                {/* 
-                  STRATEGY: The ProjectNavigator provides a centralized hierarchical management portal. 
-                  It receives all CRUD operations (add, rename, delete) from the useWorkflowManager brain.
-                  CONSTRAINT: Must pass onSelectProject and onClose-related data to ensure immediate UI feedback.
-                */}
-                <ProjectNavigator
-                  projects={projects}
-                  selectedProjectId={selectedProjectId}
-                  onSelectProject={handleSelectProject}
-                  onAddProject={addProject}
-                  onRenameProject={renameProject}
-                  onDeleteProject={deleteProject}
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setThreadsSortDirection(threadsSortDirection === 'asc' ? 'desc' : 'asc')}
-                    className="group flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors focus:outline-none text-text-secondary/40 hover:text-text-secondary/80"
-                    aria-label={`Threads sorted by ${threadsSortDirection === 'asc' ? 'oldest first' : 'newest first'}. Click to toggle.`}
-                  >
-                    {threadsSortDirection === 'asc' ? (
-                      <ArrowUp className="h-3.5 w-3.5" />
-                    ) : (
-                      <ArrowDown className="h-3.5 w-3.5" />
-                    )}
-                    <span className="text-[10px] uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                      {threadsSortDirection === 'asc' ? 'Oldest first' : 'Newest first'}
-                    </span>
-                  </button>
-                  <Link
-                    href="/lucid"
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface transition-all border border-transparent hover:border-border"
-                    title="Lucid Thoughts"
-                  >
-                    <Lightbulb className="w-4 h-4" />
-                    <span className="hidden lg:inline">Lucid</span>
-                  </Link>
-                  <Link
-                    href="/weekly"
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface transition-all border border-transparent hover:border-border"
-                    title="Weekly Overview"
-                  >
-                    <LayoutDashboard className="w-4 h-4" />
-                    <span className="hidden lg:inline">Roadmap</span>
-                  </Link>
-                  <button
-                    onClick={() => setIsAddingThread(true)}
-                    className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-lg hover:bg-primary-hover transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                    // CONSTRAINT: New thread button is disabled if no project is selected to ensure threads are always associated with a project.
-                    disabled={!selectedProjectId}
-                    title={
-                      !selectedProjectId
-                        ? "Select a project to add a thread"
-                        : "Add new thread"
-                    }
-                  >
-                    <Plus className="w-4 h-4" /> New Thread
-                  </button>
-                </div>
-                {/* UX STRATEGY: To minimize cognitive load, secondary actions ('Show Completed', 'Settings') are consolidated into a dropdown menu.
-                    This elevates the 'New Thread' button as the sole, unambiguous primary action in this area, directly addressing user feedback about a cluttered interface. */}
-                <HeaderActions
-                  showCompleted={showCompleted}
-                  onToggleShowCompleted={setShowCompleted}
-                  onOpenSettings={() => setSettingsModalOpen(true)}
-                />
-              </div>
-            </div>
-          </div>
-        </header>
+        <GlobalHeader
+          activeRoute="explorer"
+          projects={projects}
+          selectedProjectId={selectedProjectId}
+          onSelectProject={handleSelectProject}
+          onAddProject={addProject}
+          onRenameProject={renameProject}
+          onDeleteProject={deleteProject}
+          showCompleted={showCompleted}
+          onToggleShowCompleted={setShowCompleted}
+          onOpenSettings={() => setSettingsModalOpen(true)}
+          taskStats={{ completed: globalCompletedTasks, total: globalTotalTasks }}
+          secondaryActions={
+            <button
+              onClick={() => setThreadsSortDirection(threadsSortDirection === 'asc' ? 'desc' : 'asc')}
+              className="group flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors focus:outline-none text-text-secondary/40 hover:text-text-secondary/80"
+              aria-label={`Threads sorted by ${threadsSortDirection === 'asc' ? 'oldest first' : 'newest first'}. Click to toggle.`}
+            >
+              {threadsSortDirection === 'asc' ? (
+                <ArrowUp className="h-3.5 w-3.5" />
+              ) : (
+                <ArrowDown className="h-3.5 w-3.5" />
+              )}
+              <span className="text-[10px] uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                {threadsSortDirection === 'asc' ? 'Oldest first' : 'Newest first'}
+              </span>
+            </button>
+          }
+          primaryAction={
+            <button
+              onClick={() => setIsAddingThread(true)}
+              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-lg hover:bg-primary-hover transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!selectedProjectId}
+              title={
+                !selectedProjectId
+                  ? "Select a project to add a thread"
+                  : "Add new thread"
+              }
+            >
+              <Plus className="w-4 h-4" /> New Thread
+            </button>
+          }
+        />
 
         <main
           className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto px-8 py-6 w-full overflow-auto
