@@ -79,7 +79,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     // Match Read View Styles: mt-1 ml-0.5 bg-primary/5 rounded-md px-2 py-1 -mx-2
     // Added onClick to trigger edit mode when in read mode
     <div
-      className={`mt-1 ml-0.5 -mx-2 px-2 py-1 bg-primary/5 rounded-md group/editor transition-colors ${!isEditing ? 'cursor-text hover:bg-primary/10' : ''}`}
+      className={`mt-1.5 ml-0.5 px-3 py-2 border border-border/10 rounded transition-all ${!isEditing ? 'cursor-text hover:bg-background/20' : 'bg-background/10'}`}
       onClick={() => {
         if (!isEditing) {
           setEditingNote(taskId); // Parent handles this state update
@@ -95,12 +95,12 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       </div>
       {isEditing && (
         <div
-          className="flex gap-2 animate-in fade-in duration-200 mt-2"
+          className="flex gap-2 animate-in fade-in duration-200 mt-3"
           onClick={(e) => e.stopPropagation()} // Prevent bubbling
         >
           <button
             onClick={() => saveNote(threadId, taskId, editedNoteText)}
-            className="px-3 py-1.5 bg-primary text-white text-xs rounded hover:bg-primary-hover transition-colors font-medium shadow-sm"
+            className="px-3 py-1.5 bg-primary text-primary-light text-[10px] uppercase tracking-widest rounded hover:bg-primary-hover transition-all font-medium"
           >
             Save
           </button>
@@ -109,7 +109,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
               setEditingNote(null);
               setEditedNoteText(initialContent); // Reset on cancel
             }}
-            className="px-3 py-1.5 bg-background text-text-secondary text-xs border border-border rounded hover:bg-surface transition-colors shadow-sm"
+            className="px-3 py-1.5 text-text-secondary text-[10px] uppercase tracking-widest border border-border rounded hover:bg-surface transition-all"
           >
             Cancel
           </button>

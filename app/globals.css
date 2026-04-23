@@ -1,15 +1,15 @@
 @import "tailwindcss";
-/* @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;700&family=Inter:wght@400;500;700&display=swap'); */
 
 :root {
-  /* HSL Channel definitions - Light Theme (Default) */
-  --color-primary: 24 99% 55%;   /* #FB8500 */
-  --color-primary-hover: 17 99% 48%; /* #ea580c */
-  --color-primary-light: 32 98% 93%; /* #ffedd5 */
-  --color-primary-text: 15 79% 34%; /* #c2410c */
-
-  --color-accent: 201 98% 41%;   /* #0288D1 */
+  /* ================================================================================================= */
+  /* CLASSIC THEME (Default when Muji Emptiness is OFF)                                               */
+  /* ================================================================================================= */
+  --color-primary: 24 99% 55%;   /* #FB8500 - Vibrant Orange */
+  --color-primary-hover: 24 99% 45%;
+  --color-primary-light: 24 99% 95%;
+  --color-primary-text: 0 0% 100%;
   
+  --color-accent: 201 98% 41%;   /* #0288D1 */
   --color-background: 0 0% 100%; /* #FFFFFF */
   --color-surface: 0 0% 97%;    /* #F8F8F8 */
   
@@ -17,125 +17,86 @@
   --color-text-secondary: 218 11% 54%; /* #6B7280 */
   
   --color-border: 220 14% 90%;   /* #E5E7EB */
-  --color-shadow: 0 0% 0%;      /* #000000 */
+  --color-shadow: 0 0% 0% / 0.1;
   
   --color-success: 135 63% 41%; /* #28A745 */
-  
   --color-danger: 355 70% 54%;  /* #DC3545 */
-  --color-danger-bg: 0 93% 94%; /* #fee2e2 */
-  --color-danger-text: 0 74% 42%; /* #b91c1c */
-
   --color-warning: 45 100% 50%; /* #FFC107 */
+
+  --font-sans: system-ui, -apple-system, sans-serif;
+  --radius-ui: 8px;
 }
 
 /* ================================================================================================= */
-/* CONTEXT ANCHOR: DARK THEME VARIABLES                                                              */
+/* MUJI EMPTINESS THEME OVERRIDES                                                                    */
 /* ================================================================================================= */
-/* PURPOSE: Defines CSS variables for dark mode.                                                     */
-/* STRATEGY: Uses .dark class instead of media queries to allow manual toggle overriding system.     */
+[data-muji="true"] {
+  --color-primary: 0 0% 15%;      /* Functional Charcoal */
+  --color-primary-hover: 0 0% 25%;
+  --color-primary-light: 30 20% 98%; /* Warm Creme */
+  --color-primary-text: 0 0% 10%;
+
+  --color-accent: 350 100% 25%;   /* Muji Signature Red */
+  
+  --color-background: 40 20% 97%; /* Warm Off-White */
+  --color-surface: 0 0% 100%;    /* Pure Paper White */
+  
+  --color-text-primary: 0 0% 18%; /* Soft Black/Charcoal */
+  --color-text-secondary: 0 0% 45%; /* Serene Gray */
+  
+  --color-border: 30 15% 90%;   /* Subtle transition */
+  --color-shadow: 0 0% 0% / 0.03;
+  
+  --font-sans: 'Outfit', 'Public Sans', system-ui, sans-serif;
+  --radius-ui: 4px;
+}
+
+/* ================================================================================================= */
+/* DARK THEMES                                                                                      */
 /* ================================================================================================= */
 .dark {
-    /* HSL Channel definitions - Dark Theme */
-    --color-primary: 24 99% 55%;   /* Keep primary consistent or adjust slightly */
-    --color-primary-hover: 24 99% 65%; 
-    --color-primary-light: 24 40% 20%; 
-    --color-primary-text: 24 99% 80%; 
+    /* Classic Dark Theme */
+    --color-primary: 24 99% 55%;
+    --color-primary-hover: 24 99% 65%;
+    --color-primary-light: 24 99% 15%;
+    --color-primary-text: 0 0% 95%;
+
+    --color-accent: 198 90% 70%;
+    --color-background: 0 0% 7%;
+    --color-surface: 0 0% 12%;
     
-    --color-accent: 198 90% 70%; 
-    --color-background: 0 0% 7%;  /* #121212 */
-    --color-surface: 0 0% 12%;    /* #1F1F1F */
+    --color-text-primary: 0 0% 88%;
+    --color-text-secondary: 0 0% 63%;
+    --color-border: 0 0% 22%;
+    --color-shadow: 0 0% 0% / 0.3;
     
-    --color-text-primary: 0 0% 88%; /* #E0E0E0 */
-    --color-text-secondary: 0 0% 63%; 
+    --color-success: 124 39% 57%;
+    --color-danger: 2 85% 63%;
+    --color-warning: 60 96% 65%;
+}
+
+.dark[data-muji="true"] {
+    /* Muji Dark Theme: Soft Darkness */
+    --color-primary: 0 0% 90%; 
+    --color-primary-hover: 0 0% 100%; 
+    --color-primary-light: 0 0% 15%; 
+    --color-primary-text: 0 0% 95%; 
     
-    --color-border: 0 0% 22%;     
-    --color-shadow: 0 0% 0%;      
-    --color-success: 124 39% 57%; 
+    --color-accent: 350 80% 45%; 
+    --color-background: 0 0% 10%;  /* Deep Atmospheric Gray */
+    --color-surface: 0 0% 14%;    /* Elevated Surface */
     
-    --color-danger: 2 85% 63%;    
-    --color-danger-bg: 0 40% 20%; 
-    --color-danger-text: 2 95% 85%; 
+    --color-text-primary: 0 0% 88%; 
+    --color-text-secondary: 0 0% 55%; 
     
-    --color-warning: 60 96% 65%;  
+    --color-border: 0 0% 20%;     
+    --color-shadow: 0 0% 0% / 0.2;      
 }
 
 /* ================================================================================================= */
-/* COLOR THEMES (Data Attribute Overrides)                                                           */
+/* TAILWIND INTEGRATION                                                                             */
 /* ================================================================================================= */
-
-/* GREEN THEME */
-[data-color='green'] {
-  --color-primary: 142 71% 45%;      /* #22c55e (green-500) */
-  --color-primary-hover: 142 76% 36%; /* #16a34a (green-600) */
-  --color-primary-light: 142 69% 94%; /* #dcfce7 (green-100) */
-  --color-primary-text: 145 80% 25%;  /* #14532d (green-900) */
-}
-[data-color='green'].dark {
-  --color-primary: 142 71% 45%; 
-  --color-primary-hover: 142 71% 55%; 
-  --color-primary-light: 142 71% 20%; 
-  --color-primary-text: 142 71% 80%;
-}
-
-/* BLUE THEME */
-[data-color='blue'] {
-  --color-primary: 217 91% 60%;      /* #3b82f6 (blue-500) */
-  --color-primary-hover: 221 83% 53%; /* #2563eb (blue-600) */
-  --color-primary-light: 214 94% 93%; /* #dbeafe (blue-100) */
-  --color-primary-text: 224 76% 30%;  /* #1e3a8a (blue-900) */
-}
-[data-color='blue'].dark {
-  --color-primary: 217 91% 60%;
-  --color-primary-hover: 217 91% 70%;
-  --color-primary-light: 217 91% 20%;
-  --color-primary-text: 217 91% 80%;
-}
-
-/* ORNAMENTAL THEME */
-[data-color='ornamental'] {
-  --color-primary: 265 38% 35%;      /* #584976 */
-  --color-primary-hover: 265 38% 25%; /* #40355E */
-  --color-primary-light: 265 38% 95%; /* #F1EFF6 */
-  --color-primary-text: 265 38% 15%;  /* #29213B */
-
-  --color-accent: 45 100% 70%;   /* #FFD266 */
-  
-  --color-background: 45 33% 97%; /* #FCF9F2 */
-  --color-surface: 45 33% 99%;    /* #FEFDF9 */
-  
-  --color-text-primary: 265 38% 10%; /* #1A1424 */
-  --color-text-secondary: 265 15% 40%; /* #5A526B */
-  
-  --color-border: 265 20% 85%;   /* #D5D1DE */
-
-  --font-sans:  sans-serif;
-  --font-serif: sans-serif;
-}
-[data-color='ornamental'].dark {
-  --color-primary: 265 38% 65%;
-  --color-primary-hover: 265 38% 75%;
-  --color-primary-light: 265 38% 15%;
-  --color-primary-text: 265 38% 95%;
-  
-  --color-accent: 45 100% 70%; 
-  
-  --color-background: 265 15% 10%;    /* #1A181D */
-  --color-surface: 265 15% 15%;    /* #232027 */
-  
-  --color-text-primary: 265 20% 90%; /* #E2E0E7 */
-  --color-text-secondary: 265 10% 60%; /* #938FA1 */
-  
-  --color-border: 265 15% 25%;
-  
-  --font-sans:  sans-serif;
-  --font-serif: sans-serif;
-}
-
-
 @theme inline {
-  /* Mapping semantic names to HSL variables */
-  /* Usage: bg-background (maps to --color-background), text-foreground (maps to --color-text-primary) */
-  
   --color-background: hsl(var(--color-background));
   --color-foreground: hsl(var(--color-text-primary));
   
@@ -154,31 +115,74 @@
   --color-shadow: hsl(var(--color-shadow));
   
   --color-success: hsl(var(--color-success));
-  
   --color-danger: hsl(var(--color-danger));
   --color-danger-bg: hsl(var(--color-danger-bg));
   --color-danger-text: hsl(var(--color-danger-text));
-  
   --color-warning: hsl(var(--color-warning));
 
-  --font-sans: var(--font-sans, --font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-serif: var(--font-serif);
+  --font-sans: var(--font-sans);
+  --font-serif: 'Public Sans', serif;
+  
+  --radius-lg: var(--radius-ui);
 }
 
 body {
-  background-color: var(--color-background); /* Using the mapped theme variable */
-  color: var(--color-foreground); /* Using the mapped theme variable */
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for theme switching */
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-weight: 300;
+  letter-spacing: 0.015em;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+              color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.ProseMirror ul {
-  list-style-type: disc;
-  margin-left: 1rem;
+/* Breathable Headers */
+h1, h2, h3, h4 {
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+  margin-bottom: 1.5em;
 }
 
-.ProseMirror ol {
-  list-style-type: decimal;
-  margin-left: 1rem;
+/* Softening UI Elements */
+input, textarea, .card, .container, .btn-primary {
+  border-radius: var(--radius-ui);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  transition: all 0.3s ease;
+}
+
+/* Scrollbar: Almost invisible */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 10px;
+}
+
+.ProseMirror {
+  outline: none;
+  font-size: 1.05rem;
+}
+
+[data-muji="true"] .ProseMirror ul {
+  list-style-type: none;
+  padding-left: 1.5rem;
+}
+
+[data-muji="true"] .ProseMirror ul li::before {
+  content: "—";
+  position: absolute;
+  left: -1.5rem;
+  color: var(--color-text-secondary);
 }

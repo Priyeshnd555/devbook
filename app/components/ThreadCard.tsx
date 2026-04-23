@@ -207,7 +207,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
 
   return (
     <div
-      className={`bg-surface rounded-lg border mb-4 shadow-sm transition-all ${isSelected ? 'border-primary/60 shadow-md' : 'border-border'}`}
+      className={`bg-surface border mb-6 transition-all rounded ${isSelected ? 'border-primary/20' : 'border-border'}`}
       key={thread.id}
     >
       <div
@@ -216,12 +216,12 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 group mb-3">
-              <span className="shrink-0 w-6 text-center text-xs font-mono text-text-secondary" title={`Thread ${threadNumber}`}>
-                {threadNumber}.
+            <div className="flex items-center gap-2 group mb-4">
+              <span className="shrink-0 w-6 text-center text-[10px] font-medium text-text-secondary/40" title={`Thread ${threadNumber}`}>
+                {threadNumber}
               </span>
-              <button onClick={(e) => { e.stopPropagation(); toggleThread(thread.id); }} className="text-text-secondary hover:text-primary transition-colors shrink-0">
-                {isThreadExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+              <button onClick={(e) => { e.stopPropagation(); toggleThread(thread.id); }} className="text-text-secondary/30 hover:text-text-primary transition-colors shrink-0">
+                {isThreadExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
               </button>
               {editingThreadId === thread.id ? (
                 <input
@@ -238,7 +238,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
-                <h3 className="text-xl font-sans font-bold text-text-primary" onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }}>{thread.title}</h3>
+                <h3 className="text-lg font-medium text-text-primary tracking-tight" onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }}>{thread.title}</h3>
               )}
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
                 <button onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }} className="p-1 text-text-secondary hover:text-primary transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
@@ -256,9 +256,9 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                 <div className="bg-border rounded-full h-1 w-16"><div className="bg-primary h-1 rounded-full transition-all" style={{ width: `${totalTaskCount > 0 ? (completedTaskCount / totalTaskCount) * 100 : 0}%` }}></div></div>
               </div>
               <div className="relative">
-                <button onClick={(e) => { e.stopPropagation(); setIsStatusMenuOpen(!isStatusMenuOpen); }} onBlur={() => setIsStatusMenuOpen(false)} className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${statusStyle.bg} shrink-0`}>
-                  <div className={`w-1 h-1 rounded-full ${statusStyle.dot}`}></div>
-                  <span className={`text-xs font-medium ${statusStyle.text}`}>{thread.status}</span>
+                <button onClick={(e) => { e.stopPropagation(); setIsStatusMenuOpen(!isStatusMenuOpen); }} onBlur={() => setIsStatusMenuOpen(false)} className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-border shrink-0">
+                  <div className={`w-1 h-1 rounded-full ${statusStyle.dot} opacity-40`}></div>
+                  <span className="text-[10px] font-medium uppercase tracking-widest text-text-secondary">{thread.status}</span>
                 </button>
                 {isStatusMenuOpen && (
                   <div className="absolute top-full mt-1.5 w-24 bg-surface rounded-md shadow-lg border border-border z-10">
@@ -316,35 +316,35 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
 
           <button
             onClick={(e) => { e.stopPropagation(); setAddingSessionTo(thread.id); }}
-            className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors"
+            className="flex items-center gap-2 border border-border text-text-secondary px-3 py-1.5 rounded text-[10px] font-medium uppercase tracking-widest hover:bg-background transition-all"
           >
-            <Zap className="w-3.5 h-3.5" /> Log
+            <Clock className="w-3 h-3" />
+            <span>Log</span>
           </button>
         </div>
       </div>
 
       {/* STRATEGY: The "Log Session" form is conditionally rendered below the header when `isAddingSession` is true for this specific thread. */}
       {isAddingSession && (
-        <div className="p-4 bg-background border-b border-border">
-          <h4 className="text-sm font-medium text-text-primary mb-2">Work session</h4>
+        <div className="p-4 bg-background/30 border-b border-border">
           <textarea
             value={sessionNotes}
             onChange={(e) => setSessionNotes(e.target.value)}
-            placeholder="What did you work on?"
-            className="w-full p-3 border border-border rounded text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-surface text-text-primary"
+            placeholder="..."
+            className="w-full bg-transparent border-none outline-none focus:ring-0 p-0 text-text-primary font-light text-base placeholder:text-text-secondary/10 leading-relaxed cursor-text overflow-hidden"
             rows={2}
             autoFocus
           />
-          <div className="flex gap-2 mt-2">
+          <div className="flex gap-2 mt-4">
             <button
               onClick={() => { onAddSession(thread.id, sessionNotes); setSessionNotes('') }}
-              className="px-3 py-1.5 bg-primary text-white rounded text-xs hover:bg-primary-hover transition-colors font-medium"
+              className="px-4 py-2 bg-primary text-primary-light text-[10px] uppercase tracking-widest rounded hover:bg-primary-hover transition-all font-medium"
             >
               Save
             </button>
             <button
               onClick={() => { setAddingSessionTo(null); setSessionNotes(""); }}
-              className="px-3 py-1.5 bg-background text-text-secondary border border-border rounded text-xs hover:bg-surface transition-colors"
+              className="px-4 py-2 text-text-secondary text-[10px] uppercase tracking-widest border border-border rounded hover:bg-surface transition-all"
             >
               Cancel
             </button>
@@ -363,11 +363,9 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
               The `onChange` handler now re-establishes the context (`addingChildTo`) if the user starts typing again
               while the input is focused but no longer explicitly marked as the active root task input.
               Pressing Enter adds the task and keeps focus, with the input ready for the next entry. */}
-          <div className="group flex items-center gap-3 px-3 opacity-60 hover:opacity-100 focus-within:opacity-100 transition-opacity">
-            {/* Spacer to match chevron slot in TaskItem */}
-            <div className="w-4 shrink-0"></div>
-            {/* Plus icon matches Checkbox size (w-5) */}
-            <Plus className="w-5 h-5 text-text-secondary" />
+          <div className="group flex items-center gap-4 px-2 opacity-30 hover:opacity-100 focus-within:opacity-100 transition-opacity">
+            <div className="w-3.5 shrink-0"></div>
+            <Plus className="w-4 h-4 text-text-secondary/40" />
             <input
               type="text"
               value={isAddingThisRootTask ? taskItemProps.newChildText : ''}
@@ -389,8 +387,8 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                   // The handleAddTask clears the text but doesn't blur.
                 }
               }}
-              placeholder="New task..."
-              className="flex-1 py-1.5 bg-transparent text-sm border-none focus:outline-none focus:ring-0 placeholder:text-text-secondary/60 text-text-primary"
+              placeholder="..."
+              className="flex-1 py-1.5 bg-transparent text-sm border-none focus:outline-none focus:ring-0 placeholder:text-text-secondary/10 text-text-primary"
             />
           </div>
 

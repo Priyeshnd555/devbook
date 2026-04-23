@@ -440,9 +440,9 @@ export default function LucidPage() {
           primaryAction={
             <button
               onClick={() => addCard()}
-              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-lg hover:bg-primary-hover transition-all transform hover:scale-105 active:scale-95"
+              className="flex items-center gap-2 text-text-secondary border border-border px-4 py-2 rounded text-[10px] font-medium uppercase tracking-widest hover:bg-surface transition-all"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               <span>Add Card</span>
             </button>
           }
@@ -486,9 +486,9 @@ export default function LucidPage() {
                     <line
                       ref={el => { connectionRefs.current[conn.id] = el }}
                       x1={x1} y1={y1} x2={x2} y2={y2}
-                      stroke="currentColor" strokeWidth="1.5"
+                      stroke="currentColor" strokeWidth="1"
                       markerEnd="url(#arrowhead)"
-                      className="text-border opacity-60 group-hover:opacity-100 transition-opacity"
+                      className="text-border opacity-30 group-hover:opacity-80 transition-opacity"
                     />
                     <circle cx={(x1 + x2) / 2} cy={(y1 + y2) / 2} r="12" fill="var(--color-surface)" stroke="currentColor" className="text-border opacity-0 group-hover:opacity-100 cursor-pointer shadow-sm transition-all" onClick={() => setConnections(prev => prev.filter(c => c.id !== conn.id))} />
                     <text x={(x1 + x2) / 2} y={(y1 + y2) / 2 + 4} textAnchor="middle" className="pointer-events-none opacity-0 group-hover:opacity-100 fill-text-secondary font-bold text-[10px]">×</text>
@@ -509,9 +509,9 @@ export default function LucidPage() {
                     ref={el => { cardRefs.current[card.id] = el }}
                     onMouseDown={(e) => handleMouseDown(e, card)}
                     onClick={() => linkingFromId && linkingFromId !== card.id && (createConnection(linkingFromId, card.id), setLinkingFromId(null))}
-                    className={`absolute p-5 w-[240px] bg-surface border rounded-xl flex flex-col group
-                        ${draggedCardId === card.id ? 'z-50 shadow-2xl border-primary/40' : 'z-10 border-border shadow-sm hover:shadow-md hover:border-border/80'}
-                        ${isSource || isTarget ? 'border-primary z-40 scale-[1.02]' : ''}
+                    className={`absolute p-6 w-[260px] bg-surface border rounded flex flex-col group
+                        ${draggedCardId === card.id ? 'z-50 shadow-md border-primary/20' : 'z-10 border-border shadow-none hover:border-text-secondary/20'}
+                        ${isSource || isTarget ? 'border-primary z-40' : ''}
                         ${draggedCardId === card.id ? '' : 'transition-all duration-300'}
                        `}
                     style={{
@@ -542,7 +542,7 @@ export default function LucidPage() {
 
                     <div className="relative">
                       <textarea
-                        className="w-full bg-transparent resize-none border-none outline-none ring-0 focus:ring-0 focus:outline-none p-0 text-text-primary font-sans italic text-lg placeholder:text-text-secondary/20 leading-relaxed cursor-text overflow-hidden"
+                        className="w-full bg-transparent resize-none border-none outline-none ring-0 focus:ring-0 focus:outline-none p-0 text-text-primary font-sans text-lg placeholder:text-text-secondary/10 leading-relaxed cursor-text overflow-hidden"
                         value={card.content}
                         onChange={(e) => {
                           updateCardContent(card.id, e.target.value);
@@ -552,7 +552,7 @@ export default function LucidPage() {
                         autoFocus={card.content === ""}
                         spellCheck={false}
                         rows={1}
-                        placeholder="Thought..."
+                        placeholder="..."
                       />
                     </div>
 
@@ -601,16 +601,16 @@ export default function LucidPage() {
           </div>
 
           {/* DOCK / COMMITMENT area */}
-          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-full max-w-2xl z-40 px-6">
-            <div className="bg-surface border border-border shadow-xl rounded-[32px] p-6 flex items-center gap-6">
+          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-full max-w-xl z-40 px-6">
+            <div className="bg-surface border border-border rounded-lg p-6 flex items-center gap-6">
               {activeCommitment ? (
-                <div className="flex-1 flex items-center gap-6 animate-in slide-in-from-bottom-2">
-                  <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg">
-                    <Lock size={28} />
+                <div className="flex-1 flex items-center gap-6 animate-in slide-in-from-bottom-1">
+                  <div className="w-10 h-10 border border-primary/40 rounded flex items-center justify-center text-primary">
+                    <Lock size={20} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-black text-text-secondary/40 uppercase tracking-widest mb-1">Final Goal</p>
-                    <p className="text-text-primary font-bold text-xl truncate tracking-tight italic font-sans">{activeCommitment.content}</p>
+                    <p className="text-[9px] font-medium text-text-secondary/40 uppercase tracking-widest mb-1">Final Goal</p>
+                    <p className="text-text-primary font-medium text-lg truncate tracking-tight">{activeCommitment.content}</p>
                   </div>
                   <button onClick={() => {
                     setCommitments(prev => {
@@ -618,7 +618,7 @@ export default function LucidPage() {
                       delete next[activeProjectId];
                       return next;
                     });
-                  }} className="p-4 text-text-secondary/40 hover:text-danger transition-all"><X size={20} /></button>
+                  }} className="p-2 text-text-secondary/20 hover:text-danger transition-all"><X size={16} /></button>
                 </div>
               ) : (
                 <form className="flex-1 flex items-center gap-6" onSubmit={(e) => {
@@ -636,12 +636,12 @@ export default function LucidPage() {
                   setCommitments(prev => ({ ...prev, [activeProjectId]: newId }));
                   form.reset();
                 }}>
-                  <div className="w-12 h-12 flex items-center justify-center text-primary/40">
-                    <Lightbulb size={28} />
+                  <div className="w-10 h-10 flex items-center justify-center text-primary/20">
+                    <Lightbulb size={24} />
                   </div>
-                  <input name="goal" autoComplete="off" placeholder="What's the ultimate goal?"
-                    className="flex-1 bg-transparent border-none outline-none focus:ring-0 text-xl font-medium text-text-primary placeholder:text-text-secondary/20 font-sans italic" />
-                  <button type="submit" className="bg-primary text-white px-8 py-3 rounded-2xl font-bold text-sm hover:bg-primary-hover transition-all">ACTIVATE</button>
+                  <input name="goal" autoComplete="off" placeholder="What's the goal?"
+                    className="flex-1 bg-transparent border-none outline-none focus:ring-0 text-lg font-light text-text-primary placeholder:text-text-secondary/10 font-sans" />
+                  <button type="submit" className="text-text-secondary border border-border px-6 py-2 rounded text-[10px] font-medium uppercase tracking-widest hover:bg-surface transition-all">Activate</button>
                 </form>
               )}
             </div>

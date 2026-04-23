@@ -309,7 +309,7 @@ const NestedWorkflow = () => {
   // This is managed at the top-level page to allow the header button to control it,
   // while the modal itself is rendered at the root of the component.
   const [isSettingsModalOpen, setSettingsModalOpen] = React.useState(false);
-
+// need to make this perfect and publish it to whole world
   return (
     <div className="flex h-screen bg-background font-sans">
       <ProjectSidebar
@@ -348,7 +348,7 @@ const NestedWorkflow = () => {
               ) : (
                 <ArrowDown className="h-3.5 w-3.5" />
               )}
-              <span className="text-[10px] uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              <span className="text-[10px] uppercase tracjking-wider opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                 {threadsSortDirection === 'asc' ? 'Oldest first' : 'Newest first'}
               </span>
             </button>
@@ -356,7 +356,7 @@ const NestedWorkflow = () => {
           primaryAction={
             <button
               onClick={() => setIsAddingThread(true)}
-              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-lg hover:bg-primary-hover transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 text-text-secondary border border-border px-4 py-2 rounded text-[10px] font-medium uppercase tracking-widest hover:bg-surface transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               disabled={!selectedProjectId}
               title={
                 !selectedProjectId
@@ -364,7 +364,8 @@ const NestedWorkflow = () => {
                   : "Add new thread"
               }
             >
-              <Plus className="w-4 h-4" /> New Thread
+              <Plus className="w-3.5 h-3.5" />
+              <span>New Thread</span>
             </button>
           }
         />
@@ -377,23 +378,20 @@ const NestedWorkflow = () => {
           <div className="md:col-span-2">
             {/* STRATEGY: Conditionally render the "Add New Thread" input form based on the `isAddingThread` state. */}
             {isAddingThread && (
-              <div className="mb-3 p-4 bg-surface rounded-lg border border-border shadow-sm">
-                <h3 className="text-sm font-medium text-text-primary mb-2">
-                  New thread
-                </h3>
+              <div className="mb-6 p-4 border border-border/50 rounded flex flex-col gap-4">
                 <input
                   type="text"
                   value={newThreadTitle}
                   onChange={(e) => setNewThreadTitle(e.target.value)}
-                  placeholder="Title..."
-                  className="w-full px-3 py-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-text-primary"
+                  placeholder="New thread..."
+                  className="w-full bg-transparent border-none outline-none focus:ring-0 text-lg font-light text-text-primary placeholder:text-text-secondary/10"
                   autoFocus
                   onKeyPress={(e) => e.key === "Enter" && addThread()}
                 />
-                <div className="flex gap-2 mt-2">
+                <div className="flex gap-2">
                   <button
                     onClick={addThread}
-                    className="px-3 py-1.5 bg-primary text-white rounded text-xs hover:bg-primary-hover transition-colors font-medium"
+                    className="px-4 py-2 bg-primary text-primary-light text-[10px] uppercase tracking-widest rounded hover:bg-primary-hover transition-all font-medium"
                   >
                     Create
                   </button>
@@ -402,7 +400,7 @@ const NestedWorkflow = () => {
                       setIsAddingThread(false);
                       setNewThreadTitle("");
                     }}
-                    className="px-3 py-1.5 bg-background text-text-secondary border border-border rounded text-xs hover:bg-surface transition-colors"
+                    className="px-4 py-2 text-text-secondary text-[10px] uppercase tracking-widest border border-border rounded hover:bg-surface transition-all"
                   >
                     Cancel
                   </button>
@@ -476,13 +474,13 @@ const NestedWorkflow = () => {
               {/* STRATEGY: Conditionally render session log details or a placeholder message based on whether a thread is selected. */}
               {selectedThread ? (
                 <div
-                  className={`bg-surface rounded-lg border mb-4 shadow-sm transition-all ${selectedThreadId === selectedThread.id ? "border-primary/60 shadow-md" : "border-border"}`}
+                  className={`bg-surface rounded-lg border mb-4 transition-all ${selectedThreadId === selectedThread.id ? "border-primary/20" : "border-border"}`}
                 >
                   <div className="p-4 border-b border-border">
-                    <h2 className="text-base font-medium text-text-primary">
+                    <h2 className="text-xs font-medium text-text-primary uppercase tracking-widest">
                       Session Log
                     </h2>
-                    <p className="text-xs text-text-secondary mt-0.5 truncate">
+                    <p className="text-[10px] text-text-secondary mt-1 truncate opacity-60">
                       {selectedThread.title}
                     </p>
                   </div>
@@ -499,7 +497,7 @@ const NestedWorkflow = () => {
                           className="bg-background rounded p-3 text-xs border border-border wrap-break-word"
                         >
                           <div
-                            className="text-text-secondary mb-1.5 font-medium"
+                            className="text-text-secondary/40 mb-1.5 font-medium uppercase tracking-widest text-[9px]"
                             title={`${session.date} at ${session.time}`}
                           >
                             {formatRelativeDate(session.date)} at {session.time}

@@ -13,6 +13,7 @@ interface ThemeProviderProps {
   defaultColor?: ThemeColor;
   storageKey?: string;
   colorStorageKey?: string;
+  mujiStorageKey?: string;
   defaultCustomColor?: string;
   defaultFontSize?: FontSize;
   fontSizeStorageKey?: string;
@@ -27,6 +28,8 @@ interface ThemeProviderState {
   setCustomColor: (color: string) => void;
   fontSize: FontSize;
   setFontSize: (size: FontSize) => void;
+  isMujiMode: boolean;
+  setIsMujiMode: (enabled: boolean) => void;
 }
 
 const initialState: ThemeProviderState = {
@@ -38,6 +41,8 @@ const initialState: ThemeProviderState = {
   setCustomColor: () => null,
   fontSize: "normal",
   setFontSize: () => null,
+  isMujiMode: true,
+  setIsMujiMode: () => null,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -61,6 +66,7 @@ export function ThemeProvider({
   defaultFontSize = "normal",
   storageKey = "devbook-theme",
   colorStorageKey = "devbook-color-theme",
+  mujiStorageKey = "devbook-muji-mode",
   fontSizeStorageKey = "devbook-font-size",
   ...props
 }: ThemeProviderProps) {
@@ -93,6 +99,14 @@ export function ThemeProvider({
       return (localStorage.getItem(fontSizeStorageKey) as FontSize) || defaultFontSize;
     }
     return defaultFontSize;
+  });
+
+  const [isMujiMode, setIsMujiMode] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(mujiStorageKey);
+      return stored === null ? true : stored === "true";
+    }
+    return true;
   });
 
   // STRATEGY: Effect updates the DOM class list whenever the theme changes.
@@ -148,6 +162,12 @@ export function ThemeProvider({
     }
   }, [fontSize]);
 
+  // STRATEGY: Effect updates the Muji mode data attribute.
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.setAttribute("data-muji", isMujiMode.toString());
+  }, [isMujiMode]);
+
   const value = {
     theme,
     setTheme: (theme: Theme) => {
@@ -168,6 +188,11 @@ export function ThemeProvider({
     setFontSize: (size: FontSize) => {
       localStorage.setItem(fontSizeStorageKey, size);
       setFontSize(size);
+    },
+    isMujiMode,
+    setIsMujiMode: (enabled: boolean) => {
+      localStorage.setItem(mujiStorageKey, enabled.toString());
+      setIsMujiMode(enabled);
     },
   };
 

@@ -160,21 +160,20 @@ const FolderNode = ({
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`group flex flex-col transition-all duration-300 rounded-2xl relative z-20 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className={`group flex flex-col transition-all duration-300 rounded border overflow-hidden relative z-20 
                 ${data.isFullyCompleted
-                    ? 'bg-foreground/[0.01] border-border/10 opacity-40 grayscale'
-                    : 'bg-surface/80 backdrop-blur-xl border-border/20 hover:border-primary/50 shadow-2xl'
+                    ? 'bg-foreground/[0.01] border-border opacity-40 grayscale'
+                    : 'bg-surface border-border hover:border-text-secondary/20'
                 }
-                ${isExpanded ? 'min-w-[360px]' : 'w-72'}
-                border overflow-hidden`}
+                ${isExpanded ? 'min-w-[360px]' : 'w-72'}`}
         >
             <div className="p-5 flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className={`shrink-0 p-2 rounded-xl ${data.isFullyCompleted ? 'bg-foreground/5 text-foreground/20' : depth === 0 ? 'bg-primary/20 text-primary' : 'bg-foreground/5 text-foreground/40'}`}>
-                            <Hexagon className="w-4 h-4" />
+                        <div className={`shrink-0 p-2 rounded ${data.isFullyCompleted ? 'text-foreground/20' : depth === 0 ? 'text-primary' : 'text-foreground/30'}`}>
+                            <Hexagon className="w-3.5 h-3.5" />
                         </div>
                         <div className="min-w-0">
                             {depth > 0 && data.breadcrumb && (() => {
@@ -198,7 +197,7 @@ const FolderNode = ({
                                 );
                             })()}
                             {depth === 0 && (
-                                <h3 className={`text-sm font-bold truncate tracking-tight transition-colors ${data.isFullyCompleted ? 'text-foreground/30' : 'text-foreground/90 group-hover:text-primary'}`}>
+                                <h3 className={`text-sm font-medium truncate tracking-tight transition-colors ${data.isFullyCompleted ? 'text-foreground/30' : 'text-text-primary'}`}>
                                     {data.projectName}
                                 </h3>
                             )}
@@ -214,7 +213,7 @@ const FolderNode = ({
                                 e.stopPropagation();
                                 onToggleExpand();
                             }}
-                            className={`p-2 rounded-lg transition-all ${isExpanded ? 'bg-primary/20 text-primary' : 'bg-foreground/5 text-foreground/20 hover:text-foreground hover:bg-foreground/10'}`}
+                            className={`p-1.5 rounded transition-all ${isExpanded ? 'text-primary' : 'text-text-secondary/40 hover:text-text-primary'}`}
                         >
                             <Layers className="w-3.5 h-3.5" />
                         </button>
@@ -233,20 +232,20 @@ const FolderNode = ({
                                 <motion.div
                                     key={thread.id}
                                     layout
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    className={`flex flex-col justify-between p-4 rounded-2xl border transition-all cursor-pointer group/thread shadow-lg relative overflow-hidden
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className={`flex flex-col justify-between p-4 rounded border transition-all cursor-pointer group/thread relative overflow-hidden
                                         ${!thread.hasPending
-                                            ? 'bg-foreground/[0.01] border-border/10 opacity-30 grayscale pointer-events-none'
-                                            : 'bg-primary/[0.08] border-primary/20 hover:border-primary/40 hover:bg-primary/[0.12]'}`}
+                                            ? 'bg-foreground/[0.01] border-border opacity-30 grayscale pointer-events-none'
+                                            : 'bg-surface border-border hover:border-text-secondary/20'}`}
                                     onClick={() => onThreadClick(data.projectId, thread.id)}
                                 >
                                     <div className="flex items-start justify-between gap-3 mb-2">
                                         <span className={`text-[12px] font-bold leading-snug ${!thread.hasPending ? 'text-foreground/20' : 'text-foreground/90 group-hover/thread:text-foreground'} transition-colors`}>
                                             {thread.title}
                                         </span>
-                                        <div className={`shrink-0 px-2 py-0.5 rounded-lg border ${!thread.hasPending ? 'bg-foreground/5 border-border/10' : 'bg-primary/15 border-primary/20'}`}>
-                                            <span className={`text-[10px] font-bold tabular-nums ${!thread.hasPending ? 'text-foreground/20' : 'text-primary'}`}>
+                                        <div className={`shrink-0 px-2 py-0.5 rounded border ${!thread.hasPending ? 'border-border' : 'border-primary/20'}`}>
+                                            <span className={`text-[9px] font-medium tabular-nums ${!thread.hasPending ? 'text-foreground/20' : 'text-primary'}`}>
                                                 {thread.visibleTasks.length}
                                             </span>
                                         </div>
@@ -305,8 +304,8 @@ const CurvedLine = ({ start, end, active = false }: { start: { x: number, y: num
                 d={path}
                 fill="none"
                 stroke="currentColor"
-                strokeOpacity={active ? 0.4 : 0.2}
-                strokeWidth={active ? "1.5" : "1"}
+                strokeOpacity={active ? 0.3 : 0.15}
+                strokeWidth="1"
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 1 }}
                 transition={{ duration: 1, ease: "easeInOut" }}
@@ -316,11 +315,11 @@ const CurvedLine = ({ start, end, active = false }: { start: { x: number, y: num
                     d={path}
                     fill="none"
                     stroke="currentColor"
-                    strokeOpacity={0.15}
-                    strokeWidth="3"
-                    className="blur-md"
-                    animate={{ opacity: [0.1, 0.3, 0.1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
+                    strokeOpacity={0.05}
+                    strokeWidth="2"
+                    className="blur-sm"
+                    animate={{ opacity: [0.05, 0.1, 0.05] }}
+                    transition={{ duration: 3, repeat: Infinity }}
                 />
             )}
         </svg>
@@ -581,8 +580,8 @@ const WeeklyRoadmap = () => {
                     <div className={`${viewMode === 'tree' ? 'w-full' : 'max-w-7xl mx-auto'} py-8 px-8`}>
                         {/* Interactive Date Selector */}
                         {/* THEMING: bg-surface for elevated container; border-border for outline */}
-                        <div className="flex justify-between mb-6">
-                            <div className="flex items-center gap-4 p-2 bg-surface/90 backdrop-blur-2xl rounded-2xl border border-border/10 shadow-2xl overflow-hidden max-w-full">
+                        <div className="flex justify-between mb-8">
+                            <div className="flex items-center gap-4 p-1 bg-surface rounded border border-border overflow-hidden max-w-full">
                                 {/* Left: Prev & Today */}
                                 <div className="flex items-center gap-1.5 pl-1">
                                     <button
@@ -593,9 +592,9 @@ const WeeklyRoadmap = () => {
                                     </button>
                                     <button
                                         onClick={handleGoToToday}
-                                        className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.1em] rounded-lg transition-all border ${selectedDate === todayStr && weekOffset === 0
-                                            ? "bg-primary/20 border-primary/30 text-primary"
-                                            : "bg-foreground/5 border-border/20 text-foreground/30 hover:text-foreground"
+                                        className={`px-3 py-1.5 text-[8px] font-medium uppercase tracking-widest rounded transition-all border ${selectedDate === todayStr && weekOffset === 0
+                                            ? "bg-primary/5 border-primary/20 text-primary"
+                                            : "border-border text-text-secondary/40 hover:text-text-primary"
                                             }`}
                                     >
                                         Today
@@ -610,15 +609,15 @@ const WeeklyRoadmap = () => {
                                         <button
                                             key={day.date}
                                             onClick={() => setSelectedDate(day.date)}
-                                            className={`flex flex-col items-center min-w-[64px] px-2.5 py-2 rounded-xl transition-all duration-300 relative group ${selectedDate === day.date
-                                                ? "bg-primary text-foreground shadow-lg shadow-primary/20 scale-105 z-10"
-                                                : "text-foreground/20 hover:text-foreground/50 hover:bg-foreground/[0.02]"
+                                            className={`flex flex-col items-center min-w-[56px] px-2 py-1.5 rounded transition-all relative group ${selectedDate === day.date
+                                                ? "bg-primary text-primary-light"
+                                                : "text-text-secondary/30 hover:text-text-primary hover:bg-background"
                                                 }`}
                                         >
-                                            <span className={`text-[8px] font-bold uppercase tracking-wider mb-0.5 ${selectedDate === day.date ? 'text-foreground/80' : 'text-foreground/20 group-hover:text-foreground/40'}`}>
+                                            <span className={`text-[8px] font-medium uppercase tracking-widest mb-0.5 ${selectedDate === day.date ? 'opacity-80' : 'opacity-40'}`}>
                                                 {day.name.slice(0, 3)}
                                             </span>
-                                            <span className="text-xs font-black tracking-tight">{day.day}</span>
+                                            <span className="text-xs font-medium tracking-tight">{day.day}</span>
                                             {selectedDate === day.date && (
                                                 <motion.div
                                                     layoutId="activeDate"
@@ -639,11 +638,11 @@ const WeeklyRoadmap = () => {
                                     >
                                         <ChevronRight className="w-4 h-4" />
                                     </button>
-                                    <div className="flex flex-col items-end min-w-[90px]">
-                                        <span className="text-sm font-black text-foreground/90 tracking-tight leading-none">
+                                    <div className="flex flex-col items-end min-w-[80px]">
+                                        <span className="text-sm font-medium text-text-primary tracking-tight leading-none">
                                             {new Date(weekDates[0].date).toLocaleString('default', { month: 'short', year: 'numeric' })}
                                         </span>
-                                        <span className="text-right text-[8px] font-bold text-foreground/20 uppercase tracking-[0.2em] mt-1">
+                                        <span className="text-right text-[8px] font-medium text-text-secondary/20 uppercase tracking-widest mt-1">
                                             Week {weekDates[0].weekNumber}
                                         </span>
                                     </div>
@@ -654,14 +653,14 @@ const WeeklyRoadmap = () => {
                             <div className="flex items-center gap-1 p-1 bg-foreground/[0.02] rounded-xl border border-border/10">
                                 <button
                                     onClick={() => setViewMode('table')}
-                                    className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${viewMode === 'table' ? "bg-foreground/[0.08] text-foreground shadow-lg" : "text-foreground/30 hover:text-foreground"}`}
+                                    className={`flex items-center gap-2 px-3 py-1.5 text-[8px] font-medium uppercase tracking-widest rounded transition-all ${viewMode === 'table' ? "bg-background text-text-primary border border-border" : "text-text-secondary/40 hover:text-text-primary"}`}
                                 >
                                     <LayoutDashboard className="w-3 h-3" />
                                     <span>Table</span>
                                 </button>
                                 <button
                                     onClick={() => setViewMode('tree')}
-                                    className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${viewMode === 'tree' ? "bg-foreground/[0.08] text-foreground shadow-lg" : "text-foreground/30 hover:text-foreground"}`}
+                                    className={`flex items-center gap-2 px-3 py-1.5 text-[8px] font-medium uppercase tracking-widest rounded transition-all ${viewMode === 'tree' ? "bg-background text-text-primary border border-border" : "text-text-secondary/40 hover:text-text-primary"}`}
                                 >
                                     <Share2 className="w-3 h-3" />
                                     <span>Tree</span>
@@ -687,21 +686,21 @@ const WeeklyRoadmap = () => {
                                                 {/* Project Header Card */}
                                                 <div className="flex items-center justify-between ">
                                                     <div className="flex items-center gap-4">
-                                                        <div className={`p-3 rounded-2xl ${root.isFullyCompleted ? 'bg-foreground/5 text-foreground/20' : 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-primary/10'}`}>
-                                                            <Hexagon className="w-5 h-5" />
+                                                        <div className={`p-2 rounded ${root.isFullyCompleted ? 'text-foreground/20' : 'text-primary border border-primary/20'}`}>
+                                                            <Hexagon className="w-4 h-4" />
                                                         </div>
                                                         <div>
-                                                            <h3 className="text-lg font-bold text-foreground/90">{root.projectName}</h3>
-                                                            <div className="flex items-center gap-3 mt-0.5">
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <div className="w-24 h-1.5 bg-foreground/5 rounded-full overflow-hidden">
+                                                            <h3 className="text-md font-medium text-text-primary">{root.projectName}</h3>
+                                                            <div className="flex items-center gap-3 mt-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-20 h-1 bg-border rounded-full overflow-hidden">
                                                                         <motion.div
                                                                             initial={{ width: 0 }}
                                                                             animate={{ width: `${root.progress}%` }}
                                                                             className="h-full bg-primary"
                                                                         />
                                                                     </div>
-                                                                    <span className="text-xs font-bold text-foreground/40 tabular-nums">{root.progress}%</span>
+                                                                    <span className="text-[10px] font-medium text-text-secondary/40 tabular-nums">{root.progress}%</span>
                                                                 </div>
                                                                 <div className="w-1 h-1 rounded-full bg-foreground/10" />
                                                                 <span className="text-[10px] text-foreground/20 font-bold uppercase tracking-widest">{allRelevantThreads.length} Active Threads</span>
@@ -717,22 +716,21 @@ const WeeklyRoadmap = () => {
                                                         allRelevantThreads.map((thread: FolderedProject['allThreadsWithContext'][number]) => (
                                                             <motion.div
                                                                 key={thread.id}
-                                                                whileHover={{ y: -5, scale: 1.02 }}
-                                                                initial={{ opacity: 0, scale: 0.95 }}
-                                                                animate={{ opacity: 1, scale: 1 }}
-                                                                className={`flex flex-col justify-between p-5 rounded-2xl border w-[280px] max-w-[340px] transition-all cursor-pointer shadow-xl relative overflow-hidden group/card
+                                                                initial={{ opacity: 0 }}
+                                                                animate={{ opacity: 1 }}
+                                                                className={`flex flex-col justify-between p-5 rounded border w-[280px] transition-all cursor-pointer relative overflow-hidden group/card
                                                                     ${!thread.hasPending
-                                                                        ? 'bg-foreground/[0.01] border-border/10 opacity-30 grayscale pointer-events-none'
-                                                                        : 'bg-primary/[0.08] border-primary/20 hover:border-primary/40 hover:bg-primary/[0.12]'}`}
+                                                                        ? 'bg-foreground/[0.01] border-border opacity-30 grayscale pointer-events-none'
+                                                                        : 'bg-surface border-border hover:border-text-secondary/20'}`}
                                                                 onClick={() => handleThreadClick(root.projectId, thread.id)}
                                                             >
                                                                 <div className="relative z-10">
                                                                     <div className="flex items-start justify-between gap-4 mb-4">
-                                                                        <span className={`text-sm font-bold leading-snug transition-colors ${!thread.hasPending ? 'text-foreground/30' : 'text-foreground/90 group-hover/card:text-foreground'}`}>
+                                                                        <span className={`text-[13px] font-medium leading-snug transition-colors ${!thread.hasPending ? 'text-foreground/30' : 'text-text-primary'}`}>
                                                                             {thread.title}
                                                                         </span>
-                                                                        <div className={`shrink-0 px-2 py-1 rounded-lg border ${!thread.hasPending ? 'bg-foreground/5 border-border/10' : 'bg-primary/15 border-primary/20'}`}>
-                                                                            <span className={`text-[11px] font-bold tabular-nums ${!thread.hasPending ? 'text-foreground/20' : 'text-primary'}`}>
+                                                                        <div className={`shrink-0 px-2 py-0.5 rounded border ${!thread.hasPending ? 'border-border' : 'border-primary/20'}`}>
+                                                                            <span className={`text-[10px] font-medium tabular-nums ${!thread.hasPending ? 'text-foreground/20' : 'text-primary'}`}>
                                                                                 {thread.visibleTasks.length}
                                                                             </span>
                                                                         </div>

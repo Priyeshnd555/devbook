@@ -50,7 +50,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   if (!themeContext) {
     throw new Error("SettingsModal must be used within a ThemeProvider");
   }
-  const { theme, setTheme, themeColor, setThemeColor, customColor, setCustomColor, fontSize, setFontSize } = themeContext;
+  const { 
+    theme, setTheme, 
+    themeColor, setThemeColor, 
+    customColor, setCustomColor, 
+    fontSize, setFontSize,
+    isMujiMode, setIsMujiMode 
+  } = themeContext;
 
 
   // CONSTRAINT: Simple toggle logic assuming 'dark' vs 'light'. 
@@ -128,6 +134,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 >
                   <span
                     className={`${isDarkMode ? "translate-x-6" : "translate-x-1"
+                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                  />
+                </Switch>
+              </div>
+
+              {/* Muji Emptiness Toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-medium text-sm text-text-primary block">
+                    Muji Emptiness
+                  </span>
+                  <span className="text-xs text-text-secondary">
+                    Quiet, atmospheric design
+                  </span>
+                </div>
+                <Switch
+                  checked={isMujiMode}
+                  onChange={setIsMujiMode}
+                  className={`${isMujiMode ? "bg-primary" : "bg-border"
+                    } relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
+                >
+                  <span
+                    className={`${isMujiMode ? "translate-x-6" : "translate-x-1"
                       } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                   />
                 </Switch>
