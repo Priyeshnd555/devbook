@@ -46,7 +46,7 @@
  * - A completion animation is now triggered when a task is marked as done.
  * =================================================================================================
  */
-import NoteEditor from "./NoteEditor";
+import { NoteEditor } from "@features/notes";
 import { useState, useMemo, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import {
@@ -60,10 +60,10 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
-import { Task, SortConfig } from "../types";
-import { isTaskFullyCompleted } from "../utils/taskUtils";
+import { Task, SortConfig } from "@shared/types";
+import { isTaskFullyCompleted } from "@shared/utils";
 import { CompletionAnimation } from "./CompletionAnimation";
-import { sortTasks } from "../utils/sortUtils";
+import { sortTasks } from "@shared/utils";
 
 export interface TaskItemProps {
   task: Task;

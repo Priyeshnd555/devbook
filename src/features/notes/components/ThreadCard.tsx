@@ -55,11 +55,11 @@ import {
 } from "lucide-react";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { TaskItem, TaskItemProps } from "./TaskItem"; // Import TaskItem and its props
-import { Thread, THREAD_STATE_TRANSITIONS, ThreadStatus, SortConfig } from "../types";
-import { isTaskFullyCompleted } from "../utils/taskUtils";
-import { formatRelativeDate, formatFullDate } from "../utils/dateUtils";
-import { sortTasks } from "../utils/sortUtils";
+import { TaskItem, TaskItemProps } from "@features/tasks"; // Import TaskItem and its props
+import { Thread, THREAD_STATE_TRANSITIONS, ThreadStatus, SortConfig } from "@shared/types";
+import { isTaskFullyCompleted } from "@shared/utils";
+import { formatRelativeDate, formatFullDate } from "@shared/utils";
+import { sortTasks } from "@shared/utils";
 
 // CONTEXT ANCHOR: DUAL-VISIBILITY SYSTEM IMPLEMENTATION (in ThreadCard.tsx)
 // =================================================================================================

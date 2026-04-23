@@ -3,14 +3,14 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Plus, Lightbulb, Lock, Trash2, X, Link as LinkIcon, Unlink, ArrowLeft, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
-import useWorkflowManager from '../hooks/useWorkflowManager';
-import ProjectSidebar from '../components/ProjectSidebar';
-import ProjectNavigator from '../components/ProjectNavigator';
-import HeaderActions from '../components/HeaderActions';
-import SettingsModal from '../components/SettingsModal';
-import GlobalHeader from '../components/GlobalHeader';
-import { TaskItem } from '../components/TaskItem';
-import { Task } from '../types';
+import { useWorkflowManager } from '@features/workflow';
+import { ProjectSidebar } from '@features/projects';
+import { ProjectNavigator } from '@features/projects';
+import { HeaderActions } from '@features/layout';
+import { SettingsModal } from '@features/settings';
+import { GlobalHeader } from '@features/layout';
+import { TaskItem } from '@features/tasks';
+import { Task } from '@shared/types';
 
 // =================================================================================================
 // CONTEXT ANCHOR: LUCID THOUGHTS PAGE (app/lucid/page.tsx)

@@ -3,9 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { LayoutDashboard, Lightbulb, Compass } from "lucide-react";
-import ProjectNavigator from "./ProjectNavigator";
+import { ProjectNavigator } from "@features/projects";
 import HeaderActions from "./HeaderActions";
-import { Project } from "../types";
+import { Project } from "@shared/types";
 
 interface GlobalHeaderProps {
     activeRoute: 'explorer' | 'lucid' | 'weekly';

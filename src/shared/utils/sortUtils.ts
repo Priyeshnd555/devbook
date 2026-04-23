@@ -1,4 +1,4 @@
-import { Task, Thread, SortConfig, SortDirection } from "../types";
+import { Task, Thread, SortConfig, SortDirection } from "@shared/types";
 import { isTaskFullyCompleted } from "./taskUtils";
 
 /**

@@ -5,7 +5,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 type Theme = "dark" | "light" | "system";
 export type ThemeColor = "orange" | "green" | "blue" | "custom" | "ornamental";
 type FontSize = "small" | "normal" | "large";
-import { generateThemeVariables } from "../utils/themeUtils";
+import { generateThemeVariables } from "@shared/utils";
 
 interface ThemeProviderProps {
   children: React.ReactNode;

@@ -154,18 +154,15 @@
 // =================================================================================================
 
 import React from "react";
-import { Plus, ArrowUp, ArrowDown, LayoutDashboard, Lightbulb } from "lucide-react";
-import { ThreadCard } from "./components/ThreadCard"; // Import ThreadCard
+import { Plus, ArrowUp, ArrowDown } from "lucide-react";
+import { ThreadCard } from "@features/notes";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
-import ProjectSidebar from "./components/ProjectSidebar";
-import useWorkflowManager from "./hooks/useWorkflowManager";
-import { countAllTasks, countAllCompletedTasks } from "./utils/taskUtils";
-import { formatRelativeDate } from "./utils/dateUtils";
-import SettingsModal from "./components/SettingsModal";
-import ProjectNavigator from "./components/ProjectNavigator";
-import HeaderActions from "./components/HeaderActions";
-import GlobalHeader from "./components/GlobalHeader";
+import { ProjectSidebar, ProjectNavigator } from "@features/projects";
+import { useWorkflowManager } from "@features/workflow";
+import { countAllTasks, countAllCompletedTasks } from "@shared/utils";
+import { formatRelativeDate } from "@shared/utils";
+import { SettingsModal } from "@features/settings";
+import { GlobalHeader } from "@features/layout";
 
 // ============================================================================
 // COMPONENT CONTEXT: High-level overview of imported components for AI reference.

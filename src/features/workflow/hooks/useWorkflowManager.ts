@@ -50,7 +50,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 
-import usePersistentState from "./usePersistentState";
+import { usePersistentState } from "@shared/hooks";
 
 import {
   Project,
@@ -61,18 +61,18 @@ import {
   ThreadStatus,
   SortConfig,
   SortDirection,
-} from "../types";
+} from "@shared/types";
 
 import {
   updateTaskRecursive,
   countAllTasks,
   countAllCompletedTasks,
   findOldestUndoneTaskCreatedAt,
-} from "../utils/taskUtils";
+} from "@shared/utils";
 
-import { sortThreads } from "../utils/sortUtils";
+import { sortThreads } from "@shared/utils";
 
-import { TaskItemProps } from "../components/TaskItem";
+import { TaskItemProps } from "@features/tasks";
 
 const useWorkflowManager = () => {
   // ==========================================================================

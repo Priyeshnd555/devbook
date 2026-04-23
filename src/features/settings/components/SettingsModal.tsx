@@ -23,7 +23,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Plus } from "lucide-react";
 import { Switch, Listbox } from "@headlessui/react";
-import { useTheme, ThemeColor } from "../providers/ThemeProvider";
+import { useTheme, ThemeColor } from "@shared/providers";
 
 interface SettingsModalProps {
   isOpen: boolean;

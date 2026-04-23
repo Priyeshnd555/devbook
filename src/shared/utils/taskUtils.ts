@@ -6,7 +6,7 @@
 // as they have no side effects.
 // ============================================================================
 
-import { Task, SortConfig } from '../types';
+import { Task, SortConfig } from '@shared/types';
 
 /**
  * STRATEGY: Recursion is used to locate an item within the nested structure and apply an update, maintaining immutability.

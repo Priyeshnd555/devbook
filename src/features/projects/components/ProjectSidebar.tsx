@@ -47,7 +47,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
-import { Project, ProjectBaseProps } from "../types";
+import { Project, ProjectBaseProps } from "@shared/types";
 
 interface ProjectSidebarProps extends ProjectBaseProps {
   isSidebarVisible: boolean;

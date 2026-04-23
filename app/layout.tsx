@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
 
-import { ThemeProvider } from "./providers/ThemeProvider";
-import { PostHogProvider } from "./providers/PostHogProvider";
+import { ThemeProvider, PostHogProvider } from "@shared/providers";
 
 export const metadata: Metadata = {
   title: "Thread Note",

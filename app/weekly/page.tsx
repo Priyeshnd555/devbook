@@ -17,15 +17,15 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import useWorkflowManager from "../hooks/useWorkflowManager";
-import { getWeekDates } from "../utils/dateUtils";
+import { useWorkflowManager } from "@features/workflow";
+import { getWeekDates } from "@shared/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import ProjectSidebar from "../components/ProjectSidebar";
-import ProjectNavigator from "../components/ProjectNavigator";
-import HeaderActions from "../components/HeaderActions";
-import SettingsModal from "../components/SettingsModal";
-import GlobalHeader from "../components/GlobalHeader";
-import { Task } from "../types";
+import { ProjectSidebar } from "@features/projects";
+import { ProjectNavigator } from "@features/projects";
+import { HeaderActions } from "@features/layout";
+import { SettingsModal } from "@features/settings";
+import { GlobalHeader } from "@features/layout";
+import { Task } from "@shared/types";
 
 /**
  * =================================================================================================

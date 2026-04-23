@@ -15,7 +15,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Search, Plus, Folder, ChevronDown, Check, X, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Project, ProjectBaseProps } from "../types";
+import { Project, ProjectBaseProps } from "@shared/types";
 
 type ProjectNavigatorProps = ProjectBaseProps;
 
