@@ -1,10 +1,10 @@
 SHELL := /bin/bash
 NVM_DIR := $(HOME)/.nvm
 
-code:
+cli:
 	@source $(NVM_DIR)/nvm.sh && nvm use 20 && npx @google/gemini-cli   
 
-dev: 
+run: 
 	@source $(NVM_DIR)/nvm.sh && nvm use 20 && npm run dev
 
 build:
