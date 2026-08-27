@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Task } from "@shared/types";
 import { LucidCard, LucidConnection, LucidCommitments, DragData } from "../types";
-import { recursiveUpdateTask } from "@shared/utils";
 
 const STORAGE_KEY = 'lucid_web_v12';
 
@@ -231,6 +230,7 @@ export const useLucidManager = (activeProjectId: string) => {
     updateCardContent,
     deleteCard,
     unlinkCard,
+    createConnection,
     removeConnection,
     updateCardTasks,
     setCommitment,

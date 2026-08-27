@@ -31,6 +31,7 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
     updateCardContent,
     deleteCard,
     unlinkCard,
+    createConnection,
     removeConnection,
     updateCardTasks,
     setCommitment,
