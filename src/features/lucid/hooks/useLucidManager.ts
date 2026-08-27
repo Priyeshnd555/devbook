@@ -1,21 +1,59 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Task } from "@shared/types";
 import { LucidCard, LucidConnection, LucidCommitments, DragData } from "../types";
 
 const STORAGE_KEY = 'lucid_web_v12';
 
 export const useLucidManager = (activeProjectId: string) => {
-  const [cards, setCards] = useState<LucidCard[]>([]);
-  const [connections, setConnections] = useState<LucidConnection[]>([]);
-  const [commitments, setCommitments] = useState<LucidCommitments>({});
+  const [cards, setCards] = useState<LucidCard[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.cards || [];
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  });
+
+  const [connections, setConnections] = useState<LucidConnection[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.connections || [];
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  });
+
+  const [commitments, setCommitments] = useState<LucidCommitments>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.commitments || {};
+      }
+    } catch {
+      // ignore
+    }
+    return {};
+  });
 
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   const [linkingFromId, setLinkingFromId] = useState<string | null>(null);
   const [proximityTargetId, setProximityTargetId] = useState<string | null>(null);
-  
-  const dragData = useRef<DragData>({
+
+  const dragDataRef = useRef<DragData>({
     id: null, startX: 0, startY: 0, cardX: 0, cardY: 0, currentX: 0, currentY: 0, lastX: 0
   });
   const dragPositionRef = useRef({ x: 0, y: 0 });
@@ -24,17 +62,6 @@ export const useLucidManager = (activeProjectId: string) => {
   const requestRef = useRef<number | null>(null);
   const activeConnectionsRef = useRef<LucidConnection[]>([]);
   const lastProximityCheckRef = useRef<number>(0);
-
-  // Persistence
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setCards(parsed.cards || []);
-      setConnections(parsed.connections || []);
-      setCommitments(parsed.commitments || {});
-    }
-  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -61,24 +88,24 @@ export const useLucidManager = (activeProjectId: string) => {
   );
 
   const animate = () => {
-    const dragId = dragData.current.id;
+    const dragId = dragDataRef.current.id;
     if (dragId) {
       const el = cardRefs.current[dragId];
       if (el) {
-        const tilt = Math.min(Math.max((dragData.current.currentX - dragData.current.lastX) * 0.6, -12), 12);
-        el.style.transform = `translate3d(${dragData.current.currentX}px, ${dragData.current.currentY}px, 0) rotate(${tilt}deg) scale(1.02)`;
-        dragData.current.lastX = dragData.current.currentX;
+        const tilt = Math.min(Math.max((dragDataRef.current.currentX - dragDataRef.current.lastX) * 0.6, -12), 12);
+        el.style.transform = `translate3d(${dragDataRef.current.currentX}px, ${dragDataRef.current.currentY}px, 0) rotate(${tilt}deg) scale(1.02)`;
+        dragDataRef.current.lastX = dragDataRef.current.currentX;
 
         activeConnectionsRef.current.forEach(conn => {
           const line = connectionRefs.current[conn.id];
           if (!line) return;
 
           if (conn.from === dragId) {
-            line.setAttribute('x1', (dragData.current.currentX + 110).toString());
-            line.setAttribute('y1', (dragData.current.currentY + 30).toString());
+            line.setAttribute('x1', (dragDataRef.current.currentX + 110).toString());
+            line.setAttribute('y1', (dragDataRef.current.currentY + 30).toString());
           } else if (conn.to === dragId) {
-            line.setAttribute('x2', (dragData.current.currentX + 110).toString());
-            line.setAttribute('y2', (dragData.current.currentY + 30).toString());
+            line.setAttribute('x2', (dragDataRef.current.currentX + 110).toString());
+            line.setAttribute('y2', (dragDataRef.current.currentY + 30).toString());
           }
         });
       }
@@ -90,7 +117,7 @@ export const useLucidManager = (activeProjectId: string) => {
     if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).tagName === 'TEXTAREA' || (e.target as HTMLElement).tagName === 'INPUT') return;
     if (linkingFromId) return;
 
-    dragData.current = {
+    dragDataRef.current = {
       id: card.id, startX: e.clientX, startY: e.clientY,
       cardX: card.x, cardY: card.y, currentX: card.x, currentY: card.y,
       lastX: card.x
@@ -101,34 +128,39 @@ export const useLucidManager = (activeProjectId: string) => {
     requestRef.current = requestAnimationFrame(animate);
   };
 
-  const handleGlobalMouseMove = (e: MouseEvent) => {
-    if (!dragData.current.id) return;
+  const createConnection = useCallback((fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    setConnections(prev => [...prev, { id: crypto.randomUUID(), from: fromId, to: toId }]);
+  }, []);
 
-    const deltaX = e.clientX - dragData.current.startX;
-    const deltaY = e.clientY - dragData.current.startY;
+  const handleGlobalMouseMove = useCallback((e: MouseEvent) => {
+    if (!dragDataRef.current.id) return;
 
-    dragData.current.currentX = dragData.current.cardX + deltaX;
-    dragData.current.currentY = dragData.current.cardY + deltaY;
+    const deltaX = e.clientX - dragDataRef.current.startX;
+    const deltaY = e.clientY - dragDataRef.current.startY;
 
-    dragPositionRef.current = { x: dragData.current.currentX, y: dragData.current.currentY };
+    dragDataRef.current.currentX = dragDataRef.current.cardX + deltaX;
+    dragDataRef.current.currentY = dragDataRef.current.cardY + deltaY;
+
+    dragPositionRef.current = { x: dragDataRef.current.currentX, y: dragDataRef.current.currentY };
 
     const now = Date.now();
     if (now - lastProximityCheckRef.current > 50) {
       lastProximityCheckRef.current = now;
       const target = folderCards.find(c =>
-        c.id !== dragData.current.id &&
-        Math.abs(c.x - dragData.current.currentX) < 180 &&
-        Math.abs(c.y - dragData.current.currentY) < 180
+        c.id !== dragDataRef.current.id &&
+        Math.abs(c.x - dragDataRef.current.currentX) < 180 &&
+        Math.abs(c.y - dragDataRef.current.currentY) < 180
       );
       setProximityTargetId(target ? target.id : null);
     }
-  };
+  }, [folderCards]);
 
-  const handleGlobalMouseUp = () => {
-    if (!dragData.current.id) return;
-    const finalX = dragData.current.currentX;
-    const finalY = dragData.current.currentY;
-    const finishedId = dragData.current.id;
+  const handleGlobalMouseUp = useCallback(() => {
+    if (!dragDataRef.current.id) return;
+    const finalX = dragDataRef.current.currentX;
+    const finalY = dragDataRef.current.currentY;
+    const finishedId = dragDataRef.current.id;
     if (requestRef.current !== null) {
       cancelAnimationFrame(requestRef.current);
     }
@@ -141,10 +173,10 @@ export const useLucidManager = (activeProjectId: string) => {
       createConnection(finishedId, proximityTargetId);
     }
 
-    dragData.current.id = null;
+    dragDataRef.current.id = null;
     setDraggedCardId(null);
     setProximityTargetId(null);
-  };
+  }, [proximityTargetId, createConnection]);
 
   useEffect(() => {
     window.addEventListener('mousemove', handleGlobalMouseMove);
@@ -153,12 +185,7 @@ export const useLucidManager = (activeProjectId: string) => {
       window.removeEventListener('mousemove', handleGlobalMouseMove);
       window.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [proximityTargetId, folderCards]);
-
-  const createConnection = (fromId: string, toId: string) => {
-    if (fromId === toId) return;
-    setConnections(prev => [...prev, { id: crypto.randomUUID(), from: fromId, to: toId }]);
-  };
+  }, [handleGlobalMouseMove, handleGlobalMouseUp]);
 
   const addCard = (content = "", x?: number, y?: number) => {
     const padding = 100;

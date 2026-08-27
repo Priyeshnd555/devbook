@@ -323,7 +323,7 @@ const useWorkflowManager = () => {
     ) {
       setThreadOrder(newOrder);
     }
-  }, [threads, selectedThreadId, threadOrder, setThreadOrder]);
+  }, [threads, selectedThreadId, threadOrder, setThreadOrder, setSelectedThreadId]);
 
   // ==========================================================================
 

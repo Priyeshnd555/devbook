@@ -1,8 +1,24 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Outfit, Public_Sans } from "next/font/google";
 import "./globals.css";
 
 import { ThemeProvider, PostHogProvider } from "@shared/providers";
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  weight: ["300", "400", "500", "600"],
+  display: "swap",
+});
+
+const publicSans = Public_Sans({
+  subsets: ["latin"],
+  variable: "--font-public-sans",
+  weight: ["300", "400", "500"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Thread Note",
@@ -10,49 +26,22 @@ export const metadata: Metadata = {
   icons: "https://priyeshnd555.github.io/devbook/newLogo.png",
 };
 
-// =================================================================================================
-// CONTEXT ANCHOR: ROOT LAYOUT (app/layout.tsx)
-// =================================================================================================
-// PURPOSE: Defines the global HTML shell for the entire Next.js application. It is the outermost
-//          wrapper that persists across all route segments (e.g., `/`, `/weekly`).
-//
-// DEPENDENCIES:
-// - NEXT.JS METADATA: `metadata` export defines SEO-relevant `<title>`, `<meta>`, and `<link>`.
-// - PROVIDER: `ThemeProvider` (app/providers/ThemeProvider.tsx): Wraps the entire app to manage
-//   global theme state (dark/light mode, accent color, font size). ALL pages inherit this context.
-// - PROVIDER: `PostHogProvider` (app/providers/PostHogProvider.tsx): Wraps the app for analytics event tracking.
-// - SCRIPT: Ahrefs analytics injected via Next.js `<Script>` (async, non-blocking).
-// - CSS: `globals.css` initializes CSS variables and Tailwind base styles.
-//
-// PROVIDER HIERARCHY (outer to inner):
-//   PostHogProvider -> ThemeProvider -> {children}
-//
-// INVARIANTS:
-// - This layout persists across all routes. Code here runs on every page load.
-// - `suppressHydrationWarning` on `<html>` is required because ThemeProvider modifies
-//   the `class` attribute on the client side (for dark mode), which differs from SSR output.
-// - The `storageKey` prop on ThemeProvider must stay stable — changing it clears user preferences.
-// =================================================================================================
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <meta name="ahrefs-site-verification" content="63a3427c3074795b2225c5773fcbf0648b3ed76801494286f48e818d81c88224"></meta>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Public+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet" />
-
+    <html lang="en" suppressHydrationWarning className={`${outfit.variable} ${publicSans.variable}`}>
+      <head>
+        <meta name="ahrefs-site-verification" content="63a3427c3074795b2225c5773fcbf0648b3ed76801494286f48e818d81c88224" />
+      </head>
       <Script
         src="https://analytics.ahrefs.com/analytics.js"
         data-key="3kiXtPYkGutierGlX7ORRg"
         async
       />
-      <body
-        className={`antialiased`}
-      >
+      <body className="antialiased">
         <PostHogProvider>
           <ThemeProvider
             storageKey="devbook-theme"
@@ -61,7 +50,6 @@ export default function RootLayout({
             {children}
           </ThemeProvider>
         </PostHogProvider>
-
       </body>
     </html>
   );

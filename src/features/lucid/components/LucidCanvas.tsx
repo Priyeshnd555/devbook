@@ -1,16 +1,29 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Plus, Lightbulb, Lock, X } from 'lucide-react';
+import { Lightbulb, Lock, X } from 'lucide-react';
 import { LucidCardItem } from './LucidCardItem';
 import { useLucidManager } from '../hooks/useLucidManager';
 import { Task } from "@shared/types";
+import { TaskItemProps } from "@features/tasks";
 
 interface LucidCanvasProps {
   activeProjectId: string;
   showCompleted: boolean;
-  taskItemProps: any;
+  taskItemProps: Omit<TaskItemProps, "task" | "threadId" | "level">;
 }
+
+const updateTaskInTree = (tasks: Task[], taskId: string, updater: (t: Task) => Task): Task[] => {
+  return tasks.map(task => {
+    if (task.id === taskId) {
+      return updater(task);
+    }
+    if (task.children.length > 0) {
+      return { ...task, children: updateTaskInTree(task.children, taskId, updater) };
+    }
+    return task;
+  });
+};
 
 export const LucidCanvas: React.FC<LucidCanvasProps> = ({
   activeProjectId,
@@ -74,7 +87,7 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
     toggleTaskDone: (cardId: string, taskId: string) => {
       const card = folderCards.find(c => c.id === cardId);
       if (!card) return;
-      const updated = taskItemProps.recursiveUpdateTask(card.tasks, taskId, (t: Task) => ({ 
+      const updated = updateTaskInTree(card.tasks, taskId, (t: Task) => ({ 
         ...t, 
         done: !t.done, 
         completedAt: !t.done ? Date.now() : undefined 
@@ -84,7 +97,7 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
     saveNote: (cardId: string, taskId: string, note: string) => {
       const card = folderCards.find(c => c.id === cardId);
       if (!card) return;
-      const updated = taskItemProps.recursiveUpdateTask(card.tasks, taskId, (t: Task) => ({ ...t, note }));
+      const updated = updateTaskInTree(card.tasks, taskId, (t: Task) => ({ ...t, note }));
       updateCardTasks(cardId, updated);
       setEditingNote(null);
     },
@@ -101,7 +114,7 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
         priority: 0,
         createdAt: Date.now()
       };
-      const updated = taskItemProps.recursiveUpdateTask(card.tasks, parentId, (t: Task) => ({ 
+      const updated = updateTaskInTree(card.tasks, parentId, (t: Task) => ({ 
         ...t, 
         children: [...t.children, newTask] 
       }));
@@ -113,14 +126,14 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
     updateTaskText: (cardId: string, taskId: string, text: string) => {
       const card = folderCards.find(c => c.id === cardId);
       if (!card) return;
-      const updated = taskItemProps.recursiveUpdateTask(card.tasks, taskId, (t: Task) => ({ ...t, text }));
+      const updated = updateTaskInTree(card.tasks, taskId, (t: Task) => ({ ...t, text }));
       updateCardTasks(cardId, updated);
       setEditingTaskId(null);
     },
     setTaskPriority: (cardId: string, taskId: string, priority: number) => {
       const card = folderCards.find(c => c.id === cardId);
       if (!card) return;
-      const updated = taskItemProps.recursiveUpdateTask(card.tasks, taskId, (t: Task) => ({ ...t, priority }));
+      const updated = updateTaskInTree(card.tasks, taskId, (t: Task) => ({ ...t, priority }));
       updateCardTasks(cardId, updated);
     },
   };

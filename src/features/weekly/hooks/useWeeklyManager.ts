@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Task } from "@shared/types";
 import { getWeekDates } from "@shared/utils";
-import { FolderedProject } from "../types";
+import { FolderedProject, WeeklyOverviewItem } from "../types";
 
-export const useWeeklyManager = (weeklyOverviewData: any[], handleSelectProject: (id: string) => void, handleSelectThread: (id: string) => void) => {
+export const useWeeklyManager = (
+    weeklyOverviewData: WeeklyOverviewItem[], 
+    handleSelectProject: (id: string) => void, 
+    handleSelectThread: (id: string) => void
+) => {
     const router = useRouter();
     const [weekOffset, setWeekOffset] = useState(0);
     const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
@@ -16,15 +20,16 @@ export const useWeeklyManager = (weeklyOverviewData: any[], handleSelectProject:
     const todayStr = new Date().toISOString().split("T")[0];
 
     const [selectedDate, setSelectedDate] = useState<string>(() => {
-        const weekDates = getWeekDates(0);
-        return weekDates.find(d => d.date === todayStr)?.date || weekDates[0].date;
+        const initialDates = getWeekDates(0);
+        return initialDates.find(d => d.date === todayStr)?.date || initialDates[0]?.date || "";
     });
 
-    useEffect(() => {
-        if (!weekDates.some(d => d.date === selectedDate) && weekDates.length > 0) {
-            setSelectedDate(weekDates[0].date);
+    const effectiveSelectedDate = useMemo(() => {
+        if (weekDates.some(d => d.date === selectedDate)) {
+            return selectedDate;
         }
-    }, [weekDates, selectedDate]);
+        return weekDates.find(d => d.date === todayStr)?.date || weekDates[0]?.date || "";
+    }, [weekDates, selectedDate, todayStr]);
 
     const toggleNodeExpand = (id: string, recursive: boolean = false) => {
         setExpandedNodes((prev: Set<string>) => {
@@ -73,14 +78,14 @@ export const useWeeklyManager = (weeklyOverviewData: any[], handleSelectProject:
                 .map(p => {
                     const currentBC = breadcrumb ? `${breadcrumb} / ${p.projectName}` : p.projectName;
 
-                    const getAllDescendantThreads = (projId: string, currentPath: string): any[] => {
-                        const direct = weeklyOverviewData.find((wp: any) => wp.projectId === projId)?.threads || [];
-                        const formattedDirect = direct.map((t: any) => {
-                            const visibleTasks = (t.tasks as Task[]).filter((task: Task) => {
+                    const getAllDescendantThreads = (projId: string, currentPath: string): FolderedProject["allThreadsWithContext"] => {
+                        const direct = weeklyOverviewData.find(wp => wp.projectId === projId)?.threads || [];
+                        const formattedDirect = direct.map(t => {
+                            const visibleTasks = t.tasks.filter((task: Task) => {
                                 if (!task.done) return true;
                                 if (!task.completedAt) return false;
                                 const completedDateStr = new Date(task.completedAt).toISOString().split('T')[0];
-                                return completedDateStr === selectedDate;
+                                return completedDateStr === effectiveSelectedDate;
                             });
                             return {
                                 id: t.id,
@@ -93,8 +98,8 @@ export const useWeeklyManager = (weeklyOverviewData: any[], handleSelectProject:
                             };
                         });
 
-                        const children = weeklyOverviewData.filter((wp: any) => wp.parentId === projId);
-                        const childrenThreads = children.flatMap((child: any) =>
+                        const children = weeklyOverviewData.filter(wp => wp.parentId === projId);
+                        const childrenThreads = children.flatMap(child =>
                             getAllDescendantThreads(child.projectId, `${currentPath} / ${child.projectName}`)
                         );
 
@@ -103,12 +108,12 @@ export const useWeeklyManager = (weeklyOverviewData: any[], handleSelectProject:
 
                     const allThreadsRaw = getAllDescendantThreads(p.projectId, p.projectName);
 
-                    const directThreadsRaw = (p.threads || []).map((t: any) => {
-                        const visibleTasks = (t.tasks as Task[]).filter((task: Task) => {
+                    const directThreadsRaw = (p.threads || []).map(t => {
+                        const visibleTasks = t.tasks.filter((task: Task) => {
                             if (!task.done) return true;
                             if (!task.completedAt) return false;
                             const completedDateStr = new Date(task.completedAt).toISOString().split('T')[0];
-                            return completedDateStr === selectedDate;
+                            return completedDateStr === effectiveSelectedDate;
                         });
                         return {
                             id: t.id,
@@ -121,9 +126,9 @@ export const useWeeklyManager = (weeklyOverviewData: any[], handleSelectProject:
                         };
                     });
 
-                    const allThreadsWithContext = allThreadsRaw.filter((t: any) => t.hasPending || t.visibleTasks.length > 0);
-                    const directThreadsWithContext = directThreadsRaw.filter((t: any) => t.hasPending || t.visibleTasks.length > 0);
-                    const isFullyCompleted = allThreadsRaw.length > 0 && allThreadsRaw.every((t: any) => !t.hasPending);
+                    const allThreadsWithContext = allThreadsRaw.filter(t => t.hasPending || t.visibleTasks.length > 0);
+                    const directThreadsWithContext = directThreadsRaw.filter(t => t.hasPending || t.visibleTasks.length > 0);
+                    const isFullyCompleted = allThreadsRaw.length > 0 && allThreadsRaw.every(t => !t.hasPending);
 
                     return {
                         ...p,
@@ -134,13 +139,14 @@ export const useWeeklyManager = (weeklyOverviewData: any[], handleSelectProject:
                         subfolders: buildTree(p.projectId, depth + 1, currentBC)
                     } as FolderedProject;
                 })
-                .filter((p: any) => p.allThreadsWithContext.length > 0 || p.subfolders.length > 0);
+                .filter(p => p.allThreadsWithContext.length > 0 || p.subfolders.length > 0);
         };
         return buildTree(null, 0);
-    }, [weeklyOverviewData, selectedDate]);
+    }, [weeklyOverviewData, effectiveSelectedDate]);
 
-    useEffect(() => {
-        if (viewMode === 'tree' && expandedNodes.size === 0 && treeData.length > 0) {
+    const handleSetViewMode = (mode: 'table' | 'tree') => {
+        setViewMode(mode);
+        if (mode === 'tree' && expandedNodes.size === 0 && treeData.length > 0) {
             const allIds = new Set<string>();
             const collectIds = (nodes: FolderedProject[]) => {
                 nodes.forEach(n => {
@@ -151,7 +157,7 @@ export const useWeeklyManager = (weeklyOverviewData: any[], handleSelectProject:
             collectIds(treeData);
             setExpandedNodes(allIds);
         }
-    }, [viewMode, treeData]);
+    };
 
     return {
         weekOffset,
@@ -159,8 +165,8 @@ export const useWeeklyManager = (weeklyOverviewData: any[], handleSelectProject:
         expandedNodes,
         setExpandedNodes,
         viewMode,
-        setViewMode,
-        selectedDate,
+        setViewMode: handleSetViewMode,
+        selectedDate: effectiveSelectedDate,
         setSelectedDate,
         weekDates,
         todayStr,

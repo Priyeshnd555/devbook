@@ -53,8 +53,6 @@ import {
   Plus,
   ChevronDown,
   ChevronRight,
-  Circle,
-  CheckCircle2,
   MessageSquare,
   Star,
   ArrowUp,

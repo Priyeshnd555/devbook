@@ -47,7 +47,7 @@
   --color-border: 30 15% 90%;   /* Subtle transition */
   --color-shadow: 0 0% 0% / 0.03;
   
-  --font-sans: 'Outfit', 'Public Sans', system-ui, sans-serif;
+  --font-sans: var(--font-outfit), var(--font-public-sans), system-ui, sans-serif;
   --radius-ui: 4px;
 }
 

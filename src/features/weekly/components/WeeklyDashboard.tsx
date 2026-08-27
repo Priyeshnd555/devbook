@@ -1,10 +1,9 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { 
     LayoutDashboard, 
-    Clock, 
     ChevronLeft, 
     ChevronRight, 
     Share2, 
@@ -14,11 +13,11 @@ import {
     CheckCircle2 
 } from "lucide-react";
 import { FolderNode } from "./FolderNode";
-import { CurvedLine } from "./CurvedLine";
 import { useWeeklyManager } from "../hooks/useWeeklyManager";
+import { WeeklyOverviewItem } from "../types";
 
 interface WeeklyDashboardProps {
-    weeklyOverviewData: any[];
+    weeklyOverviewData: WeeklyOverviewItem[];
     handleSelectProject: (id: string) => void;
     handleSelectThread: (id: string) => void;
 }

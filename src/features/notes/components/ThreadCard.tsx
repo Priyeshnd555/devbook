@@ -45,7 +45,6 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
-  Zap,
   Pencil,
   Trash2,
   Eye,

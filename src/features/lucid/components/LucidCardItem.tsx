@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Trash2, Link as LinkIcon, Unlink, Plus } from "lucide-react";
-import { TaskItem } from "@features/tasks";
+import { TaskItem, TaskItemProps } from "@features/tasks";
 import { Task } from "@shared/types";
 import { LucidCard } from "../types";
 
@@ -21,7 +21,7 @@ interface LucidCardItemProps {
   onUnlink: (id: string) => void;
   onSetLinkingFrom: (id: string) => void;
   onUpdateTasks: (id: string, tasks: Task[]) => void;
-  taskItemProps: any; // Simplified for this component
+  taskItemProps: Omit<TaskItemProps, "task" | "threadId" | "level">;
   cardRef: (el: HTMLDivElement | null) => void;
 }
 

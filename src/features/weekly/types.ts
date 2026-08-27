@@ -29,6 +29,25 @@ export interface FolderedProject {
     isFullyCompleted: boolean;
 }
 
+export interface WeeklyOverviewThread {
+    id: string;
+    title: string;
+    undoneTasks: number;
+    tasks: Task[];
+}
+
+export interface WeeklyOverviewItem {
+    projectId: string;
+    projectName: string;
+    parentId: string | null;
+    pendingDays: number;
+    oldestTimestamp: number;
+    totalTasks: number;
+    completedTasks: number;
+    progress: number;
+    threads: WeeklyOverviewThread[];
+}
+
 export interface WeekDay {
     date: string;
     name: string;
