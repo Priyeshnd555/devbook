@@ -19,6 +19,6 @@ refactor:
 	@echo "Running jscpd..."
 	-@npx jscpd app --ignore "**/node_modules/**"
 	@echo "Running ast-grep..."
-	@npx sg run --pattern 'window.confirm($$MSG)' app
+	-@npx sg run --pattern 'window.confirm($$MSG)' src app
 	@echo "Running build and lint..."
 	@npm run build && npm run lint
