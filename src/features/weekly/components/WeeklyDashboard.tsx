@@ -50,8 +50,9 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
     return (
         <div className={`${viewMode === 'tree' ? 'w-full' : 'max-w-7xl mx-auto'} py-8 px-8`}>
             {/* Interactive Date Selector */}
-            <div className="flex justify-between mb-8">
-                <div className="flex items-center gap-4 p-1 bg-surface rounded border border-border overflow-hidden max-w-full">
+            <div className="flex justify-between mb-6">
+                <div className="flex items-center gap-4 p-2 bg-surface/90 backdrop-blur-2xl rounded-2xl border border-border/10 shadow-2xl overflow-hidden max-w-full">
+                    {/* Left: Prev & Today */}
                     <div className="flex items-center gap-1.5 pl-1">
                         <button
                             onClick={() => setWeekOffset(prev => prev - 1)}
@@ -61,9 +62,9 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
                         </button>
                         <button
                             onClick={handleGoToToday}
-                            className={`px-3 py-1.5 text-[8px] font-medium uppercase tracking-widest rounded transition-all border ${selectedDate === todayStr && weekOffset === 0
-                                ? "bg-primary/5 border-primary/20 text-primary"
-                                : "border-border text-text-secondary/40 hover:text-text-primary"
+                            className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.1em] rounded-lg transition-all border ${selectedDate === todayStr && weekOffset === 0
+                                ? "bg-primary/20 border-primary/30 text-primary"
+                                : "bg-foreground/5 border-border/20 text-foreground/30 hover:text-foreground"
                                 }`}
                         >
                             Today
@@ -72,24 +73,25 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
 
                     <div className="h-8 w-px bg-border/20" />
 
+                    {/* Center: Date Chips */}
                     <div className="flex gap-1 overflow-x-auto no-scrollbar py-0.5">
                         {weekDates.map((day) => (
                             <button
                                 key={day.date}
                                 onClick={() => setSelectedDate(day.date)}
-                                className={`flex flex-col items-center min-w-[56px] px-2 py-1.5 rounded transition-all relative group ${selectedDate === day.date
-                                    ? "bg-primary text-primary-light"
-                                    : "text-text-secondary/30 hover:text-text-primary hover:bg-background"
+                                className={`flex flex-col items-center min-w-[64px] px-2.5 py-2 rounded-xl transition-all duration-300 relative group ${selectedDate === day.date
+                                    ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105 z-10"
+                                    : "text-foreground/20 hover:text-foreground/50 hover:bg-foreground/[0.02]"
                                     }`}
                             >
-                                <span className={`text-[8px] font-medium uppercase tracking-widest mb-0.5 ${selectedDate === day.date ? 'opacity-80' : 'opacity-40'}`}>
+                                <span className={`text-[8px] font-bold uppercase tracking-wider mb-0.5 ${selectedDate === day.date ? 'text-white/80' : 'text-foreground/20 group-hover:text-foreground/40'}`}>
                                     {day.name.slice(0, 3)}
                                 </span>
-                                <span className="text-xs font-medium tracking-tight">{day.day}</span>
+                                <span className="text-xs font-black tracking-tight">{day.day}</span>
                                 {selectedDate === day.date && (
                                     <motion.div
                                         layoutId="activeDate"
-                                        className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-foreground"
+                                        className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-white"
                                     />
                                 )}
                             </button>
@@ -98,6 +100,7 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
 
                     <div className="h-8 w-px bg-border/20" />
 
+                    {/* Right: Next & Context Info */}
                     <div className="flex items-center gap-4 pr-4">
                         <button
                             onClick={() => setWeekOffset(prev => prev + 1)}
@@ -105,28 +108,29 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
                         >
                             <ChevronRight className="w-4 h-4" />
                         </button>
-                        <div className="flex flex-col items-end min-w-[80px]">
-                            <span className="text-sm font-medium text-text-primary tracking-tight leading-none">
+                        <div className="flex flex-col items-end min-w-[90px]">
+                            <span className="text-sm font-black text-foreground/90 tracking-tight leading-none">
                                 {new Date(weekDates[0].date).toLocaleString('default', { month: 'short', year: 'numeric' })}
                             </span>
-                            <span className="text-right text-[8px] font-medium text-text-secondary/20 uppercase tracking-widest mt-1">
+                            <span className="text-right text-[8px] font-bold text-foreground/20 uppercase tracking-[0.2em] mt-1">
                                 Week {weekDates[0].weekNumber}
                             </span>
                         </div>
                     </div>
                 </div>
 
+                {/* View Mode Toggle */}
                 <div className="flex items-center gap-1 p-1 bg-foreground/[0.02] rounded-xl border border-border/10">
                     <button
                         onClick={() => setViewMode('table')}
-                        className={`flex items-center gap-2 px-3 py-1.5 text-[8px] font-medium uppercase tracking-widest rounded transition-all ${viewMode === 'table' ? "bg-background text-text-primary border border-border" : "text-text-secondary/40 hover:text-text-primary"}`}
+                        className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${viewMode === 'table' ? "bg-surface text-primary shadow-sm border border-border/50" : "text-foreground/30 hover:text-foreground"}`}
                     >
                         <LayoutDashboard className="w-3 h-3" />
                         <span>Table</span>
                     </button>
                     <button
                         onClick={() => setViewMode('tree')}
-                        className={`flex items-center gap-2 px-3 py-1.5 text-[8px] font-medium uppercase tracking-widest rounded transition-all ${viewMode === 'tree' ? "bg-background text-text-primary border border-border" : "text-text-secondary/40 hover:text-text-primary"}`}
+                        className={`flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest rounded-lg transition-all ${viewMode === 'tree' ? "bg-surface text-primary shadow-sm border border-border/50" : "text-foreground/30 hover:text-foreground"}`}
                     >
                         <Share2 className="w-3 h-3" />
                         <span>Tree</span>
@@ -147,23 +151,24 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
                                     animate={{ opacity: 1, x: 0 }}
                                     className={`group relative flex flex-col gap-6 rounded-3xl transition-all ${root.isFullyCompleted ? 'opacity-40 grayscale' : ''}`}
                                 >
+                                    {/* Project Header Card */}
                                     <div className="flex items-center justify-between ">
                                         <div className="flex items-center gap-4">
-                                            <div className={`p-2 rounded ${root.isFullyCompleted ? 'text-foreground/20' : 'text-primary border border-primary/20'}`}>
-                                                <Hexagon className="w-4 h-4" />
+                                            <div className={`p-3 rounded-2xl ${root.isFullyCompleted ? 'bg-foreground/5 text-foreground/20' : 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-primary/10'}`}>
+                                                <Hexagon className="w-5 h-5" />
                                             </div>
                                             <div>
-                                                <h3 className="text-md font-medium text-text-primary">{root.projectName}</h3>
-                                                <div className="flex items-center gap-3 mt-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-20 h-1 bg-border rounded-full overflow-hidden">
+                                                <h3 className="text-lg font-bold text-foreground/90">{root.projectName}</h3>
+                                                <div className="flex items-center gap-3 mt-0.5">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className="w-24 h-1.5 bg-foreground/5 rounded-full overflow-hidden">
                                                             <motion.div
                                                                 initial={{ width: 0 }}
                                                                 animate={{ width: `${root.progress}%` }}
                                                                 className="h-full bg-primary"
                                                             />
                                                         </div>
-                                                        <span className="text-[10px] font-medium text-text-secondary/40 tabular-nums">{root.progress}%</span>
+                                                        <span className="text-xs font-bold text-foreground/40 tabular-nums">{root.progress}%</span>
                                                     </div>
                                                     <div className="w-1 h-1 rounded-full bg-foreground/10" />
                                                     <span className="text-[10px] text-foreground/20 font-bold uppercase tracking-widest">{allRelevantThreads.length} Active Threads</span>
@@ -172,26 +177,28 @@ export const WeeklyDashboard: React.FC<WeeklyDashboardProps> = ({
                                         </div>
                                     </div>
 
+                                    {/* Threads Area */}
                                     <div className="flex flex-wrap gap-4 pb-2 px-2">
                                         {allRelevantThreads.length > 0 ? (
                                             allRelevantThreads.map((thread) => (
                                                 <motion.div
                                                     key={thread.id}
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    className={`flex flex-col justify-between p-5 rounded border w-[280px] transition-all cursor-pointer relative overflow-hidden group/card
+                                                    whileHover={{ y: -5, scale: 1.02 }}
+                                                    initial={{ opacity: 0, scale: 0.95 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    className={`flex flex-col justify-between p-5 rounded-2xl border w-[280px] max-w-[340px] transition-all cursor-pointer shadow-xl relative overflow-hidden group/card
                                                         ${!thread.hasPending
-                                                            ? 'bg-foreground/[0.01] border-border opacity-30 grayscale pointer-events-none'
-                                                            : 'bg-surface border-border hover:border-text-secondary/20'}`}
+                                                            ? 'bg-foreground/[0.01] border-border/10 opacity-30 grayscale pointer-events-none'
+                                                            : 'bg-primary/[0.08] border-primary/20 hover:border-primary/40 hover:bg-primary/[0.12]'}`}
                                                     onClick={() => handleThreadClick(root.projectId, thread.id)}
                                                 >
                                                     <div className="relative z-10">
                                                         <div className="flex items-start justify-between gap-4 mb-4">
-                                                            <span className={`text-[13px] font-medium leading-snug transition-colors ${!thread.hasPending ? 'text-foreground/30' : 'text-text-primary'}`}>
+                                                            <span className={`text-sm font-bold leading-snug transition-colors ${!thread.hasPending ? 'text-foreground/30' : 'text-foreground/90 group-hover/card:text-foreground'}`}>
                                                                 {thread.title}
                                                             </span>
-                                                            <div className={`shrink-0 px-2 py-0.5 rounded border ${!thread.hasPending ? 'border-border' : 'border-primary/20'}`}>
-                                                                <span className={`text-[10px] font-medium tabular-nums ${!thread.hasPending ? 'text-foreground/20' : 'text-primary'}`}>
+                                                            <div className={`shrink-0 px-2 py-1 rounded-lg border ${!thread.hasPending ? 'bg-foreground/5 border-border/10' : 'bg-primary/15 border-primary/20'}`}>
+                                                                <span className={`text-[11px] font-bold tabular-nums ${!thread.hasPending ? 'text-foreground/20' : 'text-primary'}`}>
                                                                     {thread.visibleTasks.length}
                                                                 </span>
                                                             </div>

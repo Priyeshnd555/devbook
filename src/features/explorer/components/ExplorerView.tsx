@@ -84,7 +84,7 @@ export const ExplorerView = () => {
           secondaryActions={
             <button
               onClick={() => setThreadsSortDirection(threadsSortDirection === 'asc' ? 'desc' : 'asc')}
-              className="group flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors focus:outline-none text-text-secondary/40 hover:text-text-secondary/80"
+              className="group flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors focus:outline-none text-text-secondary hover:text-text-primary hover:bg-background"
               aria-label={`Threads sorted by ${threadsSortDirection === 'asc' ? 'oldest first' : 'newest first'}. Click to toggle.`}
             >
               {threadsSortDirection === 'asc' ? (
@@ -92,7 +92,7 @@ export const ExplorerView = () => {
               ) : (
                 <ArrowDown className="h-3.5 w-3.5" />
               )}
-              <span className="text-[10px] uppercase tracjking-wider opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              <span className="text-[10px] uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                 {threadsSortDirection === 'asc' ? 'Oldest first' : 'Newest first'}
               </span>
             </button>
@@ -100,7 +100,7 @@ export const ExplorerView = () => {
           primaryAction={
             <button
               onClick={() => setIsAddingThread(true)}
-              className="flex items-center gap-2 text-text-secondary border border-border px-4 py-2 rounded text-[10px] font-medium uppercase tracking-widest hover:bg-surface transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 bg-primary text-white px-3.5 py-1.5 rounded-md text-xs font-semibold hover:bg-primary-hover shadow-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               disabled={!selectedProjectId}
               title={
                 !selectedProjectId
@@ -121,20 +121,21 @@ export const ExplorerView = () => {
         >
           <div className="md:col-span-2">
             {isAddingThread && (
-              <div className="mb-6 p-4 border border-border/50 rounded flex flex-col gap-4">
+              <div className="mb-4 p-4 bg-surface rounded-lg border border-border shadow-sm flex flex-col gap-3">
+                <h3 className="text-sm font-semibold text-text-primary">New thread</h3>
                 <input
                   type="text"
                   value={newThreadTitle}
                   onChange={(e) => setNewThreadTitle(e.target.value)}
-                  placeholder="New thread..."
-                  className="w-full bg-transparent border-none outline-none focus:ring-0 text-lg font-light text-text-primary placeholder:text-text-secondary/10"
+                  placeholder="Thread title..."
+                  className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text-primary placeholder:text-text-secondary/60"
                   autoFocus
                   onKeyPress={(e) => e.key === "Enter" && addThread()}
                 />
                 <div className="flex gap-2">
                   <button
                     onClick={addThread}
-                    className="px-4 py-2 bg-primary text-primary-light text-[10px] uppercase tracking-widest rounded hover:bg-primary-hover transition-all font-medium"
+                    className="px-3.5 py-1.5 bg-primary text-white text-xs rounded-md hover:bg-primary-hover transition-colors font-medium shadow-sm"
                   >
                     Create
                   </button>
@@ -143,7 +144,7 @@ export const ExplorerView = () => {
                       setIsAddingThread(false);
                       setNewThreadTitle("");
                     }}
-                    className="px-4 py-2 text-text-secondary text-[10px] uppercase tracking-widest border border-border rounded hover:bg-surface transition-all"
+                    className="px-3.5 py-1.5 bg-surface text-text-secondary border border-border rounded-md text-xs hover:bg-background transition-colors"
                   >
                     Cancel
                   </button>
@@ -206,13 +207,13 @@ export const ExplorerView = () => {
             <div className="sticky top-6">
               {selectedThread ? (
                 <div
-                  className={`bg-surface rounded-lg border mb-4 transition-all ${selectedThreadId === selectedThread.id ? "border-primary/20" : "border-border"}`}
+                  className={`bg-surface rounded-lg border shadow-xs mb-4 transition-all ${selectedThreadId === selectedThread.id ? "border-primary/40 ring-1 ring-primary/20" : "border-border"}`}
                 >
                   <div className="p-4 border-b border-border">
-                    <h2 className="text-xs font-medium text-text-primary uppercase tracking-widest">
+                    <h2 className="text-base font-semibold text-text-primary">
                       Session Log
                     </h2>
-                    <p className="text-[10px] text-text-secondary mt-1 truncate opacity-60">
+                    <p className="text-xs text-text-secondary mt-0.5 truncate">
                       {selectedThread.title}
                     </p>
                   </div>
@@ -225,10 +226,10 @@ export const ExplorerView = () => {
                       selectedThread.sessions.map((session, idx) => (
                         <div
                           key={`${selectedThread.id}-session-${idx}`}
-                          className="bg-background rounded p-3 text-xs border border-border wrap-break-word"
+                          className="bg-background rounded-lg p-3 text-xs border border-border wrap-break-word shadow-2xs"
                         >
                           <div
-                            className="text-text-secondary/40 mb-1.5 font-medium uppercase tracking-widest text-[9px]"
+                            className="text-text-secondary mb-1.5 font-medium text-xs"
                             title={`${session.date} at ${session.time}`}
                           >
                             {formatRelativeDate(session.date)} at {session.time}

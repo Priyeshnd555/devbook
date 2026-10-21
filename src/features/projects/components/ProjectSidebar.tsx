@@ -180,20 +180,20 @@ const ProjectItem: React.FC<ProjectBaseProps & {
         <div className="mb-1">
           <button
             onClick={() => onSelectProject(project.id)}
-            className={`w-full p-2.5 rounded transition-all group relative ${isSelected
-              ? "bg-primary-light text-primary-text"
+            className={`w-full p-2.5 rounded-lg transition-all group relative ${isSelected
+              ? "bg-primary-light text-primary-text ring-1 ring-primary/20"
               : "hover:bg-background text-text-secondary"
               }`}
             title={project.name}
           >
             {isSelected ? (
-              <FolderOpen className="w-5 h-5 mx-auto opacity-80" />
+              <FolderOpen className="w-5 h-5 mx-auto" />
             ) : (
-              <Folder className="w-5 h-5 mx-auto opacity-40 group-hover:opacity-100" />
+              <Folder className="w-5 h-5 mx-auto" />
             )}
             {/* STRATEGY: A small dot indicates that a project has children, even in collapsed view. */}
             {hasChildren && !isSelected && (
-              <div className="absolute top-2 right-2 w-1 h-1 bg-text-secondary rounded-full"></div>
+              <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></div>
             )}
           </button>
         </div>
@@ -207,8 +207,8 @@ const ProjectItem: React.FC<ProjectBaseProps & {
     return (
       <div className="mb-0.5">
         <div
-          className={`group relative flex items-center gap-2 px-2 py-2 rounded cursor-pointer transition-all ${isSelected
-            ? "bg-primary-light text-primary-text"
+          className={`group relative flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer transition-all ${isSelected
+            ? "bg-primary-light text-primary-text ring-1 ring-primary/20"
             : "hover:bg-background text-text-primary"
             }`}
           style={{ paddingLeft: `${indentPx + 8}px` }}
@@ -245,10 +245,10 @@ const ProjectItem: React.FC<ProjectBaseProps & {
               }`}
           >
             {isSelected ? (
-              <FolderOpen className="w-4 h-4 text-primary" />
+              <FolderOpen className="w-5 h-5 text-primary" />
             ) : (
               <Folder
-                className={`w-4 h-4 ${hasChildren ? "text-primary opacity-60" : "text-text-secondary opacity-40"
+                className={`w-5 h-5 ${hasChildren ? "text-primary" : "text-text-secondary"
                   }`}
               />
             )}
@@ -268,12 +268,12 @@ const ProjectItem: React.FC<ProjectBaseProps & {
               onClick={(e) => e.stopPropagation()} // CONSTRAINT: Prevent clicks on the input from selecting the project.
             />
           ) : (
-          <span
-            className={`flex-1 truncate text-sm font-medium ${isSelected ? "text-primary-text" : "text-text-primary/70"
-              }`}
-          >
-            {project.name}
-          </span>
+            <span
+              className={`flex-1 truncate text-[15px] font-medium ${isSelected ? "text-primary-text" : "text-text-primary"
+                }`}
+            >
+              {project.name}
+            </span>
           )}
 
           {/* Child Count Badge */}
@@ -495,11 +495,15 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
         >
           {!isCollapsed && (
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 border border-border rounded flex items-center justify-center">
-                <Folder className="w-3 h-3 text-text-secondary" />
+              <div className="w-8 h-8 bg-linear-to-br from-primary to-primary-hover rounded-lg flex items-center justify-center shadow-sm">
+                <Folder className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h2 className="text-sm font-medium text-text-primary uppercase tracking-widest">Projects</h2>
+                <h2 className="text-base font-bold text-text-primary">Projects</h2>
+                <p className="text-[11px] text-text-secondary">
+                  {rootProjects.length} workspace
+                  {rootProjects.length !== 1 ? "s" : ""}
+                </p>
               </div>
             </div>
           )}
@@ -589,10 +593,10 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
             ) : (
               <button
                 onClick={() => setShowInput(true)}
-                className="flex items-center gap-2 text-text-secondary px-4 py-2 rounded text-[10px] font-medium uppercase tracking-widest w-full justify-center border border-border hover:bg-surface transition-all"
+                className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded text-xs font-medium shrink-0 hover:bg-primary-hover transition-colors w-full justify-center shadow-sm"
               >
-                <Plus className="w-3.5 h-3.5" />
-                New project
+                <Plus className="w-5 h-5" />
+                New Project
               </button>
             )}
           </div>

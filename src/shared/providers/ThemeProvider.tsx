@@ -13,7 +13,6 @@ interface ThemeProviderProps {
   defaultColor?: ThemeColor;
   storageKey?: string;
   colorStorageKey?: string;
-  mujiStorageKey?: string;
   defaultCustomColor?: string;
   defaultFontSize?: FontSize;
   fontSizeStorageKey?: string;
@@ -28,21 +27,17 @@ interface ThemeProviderState {
   setCustomColor: (color: string) => void;
   fontSize: FontSize;
   setFontSize: (size: FontSize) => void;
-  isMujiMode: boolean;
-  setIsMujiMode: (enabled: boolean) => void;
 }
 
 const initialState: ThemeProviderState = {
   theme: "system",
   setTheme: () => null,
-  themeColor: "ornamental",
+  themeColor: "orange",
   setThemeColor: () => null,
-  customColor: "#FB8500", // Default orange hex
+  customColor: "#FB8500", // Default vibrant orange hex
   setCustomColor: () => null,
   fontSize: "normal",
   setFontSize: () => null,
-  isMujiMode: true,
-  setIsMujiMode: () => null,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -61,19 +56,17 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  defaultColor = "ornamental",
+  defaultColor = "orange",
   defaultCustomColor = "#FB8500",
   defaultFontSize = "normal",
   storageKey = "devbook-theme",
   colorStorageKey = "devbook-color-theme",
-  mujiStorageKey = "devbook-muji-mode",
   fontSizeStorageKey = "devbook-font-size",
   ...props
 }: ThemeProviderProps) {
   // STRATEGY: Initialize state lazily to avoid hydration mismatch.
   // CONSTRAINT: Must check window existence for server-side rendering compatibility.
   const [theme, setTheme] = useState<Theme>(() => {
-    // Avoid hydration mismatch by checking if window is defined
     if (typeof window !== "undefined") {
       return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
     }
@@ -101,14 +94,6 @@ export function ThemeProvider({
     return defaultFontSize;
   });
 
-  const [isMujiMode, setIsMujiMode] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(mujiStorageKey);
-      return stored === null ? true : stored === "true";
-    }
-    return true;
-  });
-
   // STRATEGY: Effect updates the DOM class list whenever the theme changes.
   useEffect(() => {
     const root = window.document.documentElement;
@@ -127,6 +112,15 @@ export function ThemeProvider({
 
     root.classList.add(theme);
   }, [theme]);
+
+  // STRATEGY: Clean up any legacy data-muji attribute
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.removeAttribute("data-muji");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("devbook-muji-mode");
+    }
+  }, []);
 
   // STRATEGY: Effect updates the DOM data-color attribute or injects custom styles.
   useEffect(() => {
@@ -162,17 +156,11 @@ export function ThemeProvider({
     }
   }, [fontSize]);
 
-  // STRATEGY: Effect updates the Muji mode data attribute.
-  useEffect(() => {
-    const root = window.document.documentElement;
-    root.setAttribute("data-muji", isMujiMode.toString());
-  }, [isMujiMode]);
-
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
-      setTheme(theme);
+    setTheme: (newTheme: Theme) => {
+      localStorage.setItem(storageKey, newTheme);
+      setTheme(newTheme);
     },
     themeColor,
     setThemeColor: (color: ThemeColor) => {
@@ -188,11 +176,6 @@ export function ThemeProvider({
     setFontSize: (size: FontSize) => {
       localStorage.setItem(fontSizeStorageKey, size);
       setFontSize(size);
-    },
-    isMujiMode,
-    setIsMujiMode: (enabled: boolean) => {
-      localStorage.setItem(mujiStorageKey, enabled.toString());
-      setIsMujiMode(enabled);
     },
   };
 

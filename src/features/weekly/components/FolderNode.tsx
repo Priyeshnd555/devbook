@@ -28,20 +28,21 @@ export const FolderNode: React.FC<FolderNodeProps> = ({
     return (
         <motion.div
             layout
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className={`group flex flex-col transition-all duration-300 rounded border overflow-hidden relative z-20 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`group flex flex-col transition-all duration-300 rounded-2xl relative z-20 
                 ${data.isFullyCompleted
-                    ? 'bg-foreground/[0.01] border-border opacity-40 grayscale'
-                    : 'bg-surface border-border hover:border-text-secondary/20'
+                    ? 'bg-foreground/[0.01] border-border/10 opacity-40 grayscale'
+                    : 'bg-surface/80 backdrop-blur-xl border-border/20 hover:border-primary/50 shadow-2xl'
                 }
-                ${isExpanded ? 'min-w-[360px]' : 'w-72'}`}
+                ${isExpanded ? 'min-w-[360px]' : 'w-72'}
+                border overflow-hidden`}
         >
             <div className="p-5 flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className={`shrink-0 p-2 rounded ${data.isFullyCompleted ? 'text-foreground/20' : depth === 0 ? 'text-primary' : 'text-foreground/30'}`}>
-                            <Hexagon className="w-3.5 h-3.5" />
+                        <div className={`shrink-0 p-2 rounded-xl ${data.isFullyCompleted ? 'bg-foreground/5 text-foreground/20' : depth === 0 ? 'bg-primary/20 text-primary' : 'bg-foreground/5 text-foreground/40'}`}>
+                            <Hexagon className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
                             {depth > 0 && data.breadcrumb && (() => {
@@ -65,7 +66,7 @@ export const FolderNode: React.FC<FolderNodeProps> = ({
                                 );
                             })()}
                             {depth === 0 && (
-                                <h3 className={`text-sm font-medium truncate tracking-tight transition-colors ${data.isFullyCompleted ? 'text-foreground/30' : 'text-text-primary'}`}>
+                                <h3 className={`text-sm font-bold truncate tracking-tight transition-colors ${data.isFullyCompleted ? 'text-foreground/30' : 'text-foreground/90 group-hover:text-primary'}`}>
                                     {data.projectName}
                                 </h3>
                             )}
@@ -81,7 +82,7 @@ export const FolderNode: React.FC<FolderNodeProps> = ({
                                 e.stopPropagation();
                                 onToggleExpand();
                             }}
-                            className={`p-1.5 rounded transition-all ${isExpanded ? 'text-primary' : 'text-text-secondary/40 hover:text-text-primary'}`}
+                            className={`p-2 rounded-lg transition-all ${isExpanded ? 'bg-primary/20 text-primary' : 'bg-foreground/5 text-foreground/20 hover:text-foreground hover:bg-foreground/10'}`}
                         >
                             <Layers className="w-3.5 h-3.5" />
                         </button>
@@ -100,20 +101,20 @@ export const FolderNode: React.FC<FolderNodeProps> = ({
                                 <motion.div
                                     key={thread.id}
                                     layout
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className={`flex flex-col justify-between p-4 rounded border transition-all cursor-pointer group/thread relative overflow-hidden
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className={`flex flex-col justify-between p-4 rounded-2xl border transition-all cursor-pointer group/thread shadow-lg relative overflow-hidden
                                         ${!thread.hasPending
-                                            ? 'bg-foreground/[0.01] border-border opacity-30 grayscale pointer-events-none'
-                                            : 'bg-surface border-border hover:border-text-secondary/20'}`}
+                                            ? 'bg-foreground/[0.01] border-border/10 opacity-30 grayscale pointer-events-none'
+                                            : 'bg-primary/[0.08] border-primary/20 hover:border-primary/40 hover:bg-primary/[0.12]'}`}
                                     onClick={() => onThreadClick(data.projectId, thread.id)}
                                 >
                                     <div className="flex items-start justify-between gap-3 mb-2">
                                         <span className={`text-[12px] font-bold leading-snug ${!thread.hasPending ? 'text-foreground/20' : 'text-foreground/90 group-hover/thread:text-foreground'} transition-colors`}>
                                             {thread.title}
                                         </span>
-                                        <div className={`shrink-0 px-2 py-0.5 rounded border ${!thread.hasPending ? 'border-border' : 'border-primary/20'}`}>
-                                            <span className={`text-[9px] font-medium tabular-nums ${!thread.hasPending ? 'text-foreground/20' : 'text-primary'}`}>
+                                        <div className={`shrink-0 px-2 py-0.5 rounded-lg border ${!thread.hasPending ? 'bg-foreground/5 border-border/10' : 'bg-primary/15 border-primary/20'}`}>
+                                            <span className={`text-[10px] font-bold tabular-nums ${!thread.hasPending ? 'text-foreground/20' : 'text-primary'}`}>
                                                 {thread.visibleTasks.length}
                                             </span>
                                         </div>

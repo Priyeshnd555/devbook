@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { Plus } from 'lucide-react';
 import { useWorkflowManager } from '@features/workflow';
 import { ProjectSidebar } from '@features/projects';
 import { SettingsModal } from '@features/settings';
@@ -48,6 +49,15 @@ export default function LucidPage() {
           showCompleted={showCompleted}
           onToggleShowCompleted={setShowCompleted}
           onOpenSettings={() => setSettingsModalOpen(true)}
+          primaryAction={
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('lucid:addCard'))}
+              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-lg hover:bg-primary-hover transition-all transform hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Card</span>
+            </button>
+          }
         />
 
         <LucidCanvas 

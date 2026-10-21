@@ -39,8 +39,8 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({
   return (
     <Menu as="div" className="relative inline-block text-left">
       <div>
-        <Menu.Button className="p-2 rounded-full text-text-secondary/40 hover:text-text-secondary/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75">
-          <MoreVertical className="h-4.5 w-4.5" aria-hidden="true" />
+        <Menu.Button className="p-2 rounded-full text-text-secondary hover:bg-background hover:text-text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+          <MoreVertical className="h-5 w-5" aria-hidden="true" />
         </Menu.Button>
       </div>
       <AnimatePresence>
@@ -61,16 +61,16 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({
                 >
                   <div className="flex items-center">
                     {showCompleted ? (
-                      <Eye className="mr-2 h-4 w-4 text-text-secondary/80" />
+                      <Eye className="mr-2 h-4 w-4 text-primary" />
                     ) : (
-                      <EyeOff className="mr-2 h-4 w-4 text-text-secondary/40" />
+                      <EyeOff className="mr-2 h-4 w-4 text-text-secondary" />
                     )}
-                    <span className="text-text-secondary/80 group-hover:text-text-primary">Show Completed</span>
+                    <span className="text-text-primary">Show Completed</span>
                   </div>
                   <Switch
                     checked={showCompleted}
                     onChange={onToggleShowCompleted}
-                    className={`${showCompleted ? "bg-text-secondary/40" : "bg-border/60"
+                    className={`${showCompleted ? "bg-primary" : "bg-border"
                       } relative inline-flex h-5 w-9 items-center rounded-full transition-colors`}
                   >
                     <span
@@ -91,10 +91,10 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({
                     } group flex w-full items-center rounded-md px-2 py-2 text-sm text-text-primary transition-colors`}
                 >
                   <Settings
-                    className="mr-2 h-4 w-4 text-text-secondary/40 group-hover:text-text-secondary/80"
+                    className="mr-2 h-4 w-4 text-text-secondary group-hover:text-primary"
                     aria-hidden="true"
                   />
-                  <span className="text-text-secondary/80 group-hover:text-text-primary">Settings</span>
+                  <span className="text-text-primary">Settings</span>
                 </button>
               )}
             </Menu.Item>

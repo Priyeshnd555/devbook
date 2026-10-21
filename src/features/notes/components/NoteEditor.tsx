@@ -79,7 +79,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     // Match Read View Styles: mt-1 ml-0.5 bg-primary/5 rounded-md px-2 py-1 -mx-2
     // Added onClick to trigger edit mode when in read mode
     <div
-      className={`mt-1.5 ml-0.5 px-3 py-2 border border-border/10 rounded transition-all ${!isEditing ? 'cursor-text hover:bg-background/20' : 'bg-background/10'}`}
+      className={`mt-2 ml-0.5 px-3 py-2 border rounded-md transition-all ${!isEditing ? 'border-primary/20 bg-primary-light/40 hover:bg-primary-light/60 cursor-text' : 'border-primary/30 bg-surface shadow-xs'}`}
       onClick={() => {
         if (!isEditing) {
           setEditingNote(taskId); // Parent handles this state update
@@ -95,12 +95,12 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       </div>
       {isEditing && (
         <div
-          className="flex gap-2 animate-in fade-in duration-200 mt-3"
+          className="flex gap-2 animate-in fade-in duration-200 mt-2.5"
           onClick={(e) => e.stopPropagation()} // Prevent bubbling
         >
           <button
             onClick={() => saveNote(threadId, taskId, editedNoteText)}
-            className="px-3 py-1.5 bg-primary text-primary-light text-[10px] uppercase tracking-widest rounded hover:bg-primary-hover transition-all font-medium"
+            className="px-3.5 py-1.5 bg-primary text-white text-xs rounded-md hover:bg-primary-hover transition-colors font-medium shadow-sm"
           >
             Save
           </button>
@@ -109,7 +109,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
               setEditingNote(null);
               setEditedNoteText(initialContent); // Reset on cancel
             }}
-            className="px-3 py-1.5 text-text-secondary text-[10px] uppercase tracking-widest border border-border rounded hover:bg-surface transition-all"
+            className="px-3.5 py-1.5 bg-surface text-text-secondary text-xs rounded-md border border-border hover:bg-background transition-colors"
           >
             Cancel
           </button>

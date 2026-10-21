@@ -48,9 +48,9 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
       ref={cardRef}
       onMouseDown={(e) => onMouseDown(e, card)}
       onClick={onCardClick}
-      className={`absolute p-6 w-[260px] bg-surface border rounded flex flex-col group
-          ${isDragged ? 'z-50 shadow-md border-primary/20' : 'z-10 border-border shadow-none hover:border-text-secondary/20'}
-          ${isSource || isTarget ? 'border-primary z-40' : ''}
+      className={`absolute p-5 w-[240px] bg-surface border rounded-xl flex flex-col group
+          ${isDragged ? 'z-50 shadow-2xl border-primary/40' : 'z-10 border-border shadow-sm hover:shadow-md hover:border-border/80'}
+          ${isSource || isTarget ? 'border-primary z-40 scale-[1.02]' : ''}
           ${isDragged ? '' : 'transition-all duration-300'}
          `}
       style={{
@@ -93,7 +93,7 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
 
       <div className="relative">
         <textarea
-          className="w-full bg-transparent resize-none border-none outline-none ring-0 focus:ring-0 focus:outline-none p-0 text-text-primary font-sans text-lg placeholder:text-text-secondary/10 leading-relaxed cursor-text overflow-hidden"
+          className="w-full bg-transparent resize-none border-none outline-none ring-0 focus:ring-0 focus:outline-none p-0 text-text-primary font-sans italic text-lg placeholder:text-text-secondary/20 leading-relaxed cursor-text overflow-hidden"
           value={card.content}
           onChange={(e) => {
             onUpdateContent(card.id, e.target.value);
@@ -103,7 +103,7 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
           autoFocus={card.content === ""}
           spellCheck={false}
           rows={1}
-          placeholder="..."
+          placeholder="Thought..."
         />
       </div>
 

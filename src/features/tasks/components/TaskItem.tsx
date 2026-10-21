@@ -57,6 +57,8 @@ import {
   Star,
   ArrowUp,
   ArrowDown,
+  CheckCircle2,
+  Circle,
 } from "lucide-react";
 import { Task, SortConfig } from "@shared/types";
 import { isTaskFullyCompleted } from "@shared/utils";
@@ -185,37 +187,34 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
 
   return (
     <div
-      className={`${level > 0 ? "ml-6 pl-2 py-0.5" : ""
-        }`}
+      className={`${level > 0 ? "ml-6 border-l-2 border-primary/20 pl-3 py-0.5" : ""}`}
       key={`${threadId}-${task.id}`}
     >
-      <div className="mb-0.5">
-        <div className="flex items-start gap-4 group px-2 py-1.5 rounded transition-all">
+      <div className="mb-1">
+        <div className="flex items-start gap-3 group hover:bg-primary-light/30 px-3 py-1.5 rounded-md transition-colors">
           {hasChildren ? (
             <button
               onClick={() => toggleTask(task.id)}
-              className="mt-1 text-text-secondary/40 hover:text-text-primary transition-colors shrink-0"
+              className="mt-0.5 text-text-secondary hover:text-primary transition-colors shrink-0"
             >
               {isExpanded ? (
-                <ChevronDown className="w-3.5 h-3.5" />
+                <ChevronDown className="w-4 h-4" />
               ) : (
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-4 h-4" />
               )}
             </button>
           ) : (
-            <div className="w-3.5 shrink-0"></div>
+            <div className="w-4 shrink-0"></div>
           )}
 
           <button
             onClick={handleToggleDone}
-            className="relative mt-1 shrink-0 transition-opacity"
+            className="relative mt-0.5 shrink-0 transition-colors"
           >
             {task.done ? (
-              <div className="w-4 h-4 rounded-sm border border-primary/40 bg-primary/5 flex items-center justify-center">
-                <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-              </div>
+              <CheckCircle2 className="w-5 h-5 text-primary" />
             ) : (
-              <div className="w-4 h-4 rounded-sm border border-border group-hover:border-text-secondary/30 transition-colors" />
+              <Circle className="w-5 h-5 text-text-secondary/40 hover:text-primary transition-colors" />
             )}
             <AnimatePresence>
               {justCompleted && <CompletionAnimation />}
@@ -233,14 +232,14 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
                   if (e.key === "Enter") handleSaveTaskText();
                   if (e.key === "Escape") handleCancelEdit();
                 }}
-                className="w-full px-0 py-0 border-none bg-transparent text-sm focus:outline-none text-text-primary"
+                className="w-full px-2 py-1 border border-primary/40 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-surface text-text-primary"
                 autoFocus
               />
             ) : (
               <span
-                className={`text-[14px] leading-relaxed transition-colors ${task.done
-                  ? "text-text-secondary/50"
-                  : "text-text-primary/90"
+                className={`text-sm leading-relaxed ${task.done
+                  ? "line-through text-text-secondary/60"
+                  : "text-text-primary"
                   } cursor-text block`}
                 onClick={() => {
                   setEditingTaskId(task.id);
@@ -253,7 +252,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
 
             {/* Note Section */}
             {(task.note || isEditing) && (
-              <div className="mt-1 opacity-80">
+              <div className="mt-1">
                 <NoteEditor
                   initialContent={task.note}
                   threadId={threadId}
@@ -266,25 +265,24 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
             )}
           </div>
 
-          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
             <button
               onClick={handleCyclePriority}
-              className={`p-1 rounded transition-colors ${priorityStyles[task.priority || 0]
-                } hover:bg-background`}
+              className={`p-1.5 rounded transition-colors ${priorityStyles[task.priority || 0]} hover:bg-primary-light`}
               title="Set priority"
             >
               <Star
-                className="w-3 h-3"
+                className="w-3.5 h-3.5"
                 fill={task.priority > 0 ? "currentColor" : "none"}
               />
             </button>
             {!task.note && !isEditing && (
               <button
                 onClick={() => setEditingNote(task.id)}
-                className="p-1 text-text-secondary/30 hover:text-text-primary hover:bg-background rounded transition-colors"
+                className="p-1.5 text-text-secondary/60 hover:text-primary hover:bg-primary-light rounded transition-colors"
                 title="Add note"
               >
-                <MessageSquare className="w-3 h-3" />
+                <MessageSquare className="w-3.5 h-3.5" />
               </button>
             )}
             <button
@@ -292,10 +290,10 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
                 setAddingChildTo(task.id);
                 setNewChildText("");
               }}
-              className="p-1 text-text-secondary/30 hover:text-text-primary hover:bg-background rounded transition-colors"
+              className="p-1.5 text-text-secondary/60 hover:text-primary hover:bg-primary-light rounded transition-colors"
               title="Add subtask"
             >
-              <Plus className="w-3 h-3" />
+              <Plus className="w-3.5 h-3.5" />
             </button>
             {task.children.length > 0 && (
               <button
@@ -304,13 +302,13 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
                   const newDirection = task.sortConfig?.direction === 'asc' ? 'desc' : 'asc';
                   updateTaskSort(threadId, task.id, { direction: newDirection });
                 }}
-                className="p-1 text-text-secondary/20 hover:text-text-secondary/80 transition-colors"
+                className="p-1 text-text-secondary/40 hover:text-text-secondary/80 rounded transition-colors"
                 title="Sort subtasks"
               >
                 {task.sortConfig?.direction === 'asc' ? (
-                  <ArrowUp className="w-3 h-3" />
+                  <ArrowUp className="w-3.5 h-3.5" />
                 ) : (
-                  <ArrowDown className="w-3 h-3" />
+                  <ArrowDown className="w-3.5 h-3.5" />
                 )}
               </button>
             )}
@@ -318,14 +316,14 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
         </div>
 
         {isAddingChild && (
-          <div className="ml-12 mt-1 mb-2 flex items-center gap-3">
-            <div className="w-1 h-1 rounded-full bg-border shrink-0" />
+          <div className="ml-10 mt-1 mb-2 flex items-center gap-2 animate-in fade-in duration-200">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
             <input
               type="text"
               value={newChildText}
               onChange={(e) => setNewChildText(e.target.value)}
-              placeholder="..."
-              className="flex-1 py-1 bg-transparent text-sm border-none focus:outline-none text-text-primary placeholder:text-text-secondary/20"
+              placeholder="New subtask..."
+              className="flex-1 py-1 px-2.5 bg-surface text-sm border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-text-primary placeholder:text-text-secondary/50 shadow-xs"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") {

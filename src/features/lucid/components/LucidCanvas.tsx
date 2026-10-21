@@ -55,6 +55,12 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
 
   const canvasRef = React.useRef<HTMLDivElement | null>(null);
 
+  React.useEffect(() => {
+    const handleAddCardEvent = () => addCard();
+    window.addEventListener('lucid:addCard', handleAddCardEvent);
+    return () => window.removeEventListener('lucid:addCard', handleAddCardEvent);
+  }, [addCard]);
+
   // --- Local Task Logic Mapping ---
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [editingNote, setEditingNote] = useState<string | null>(null);
@@ -168,9 +174,9 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
                 <line
                   ref={el => { connectionRefs.current[conn.id] = el }}
                   x1={from.x + 110} y1={from.y + 30} x2={to.x + 110} y2={to.y + 30}
-                  stroke="currentColor" strokeWidth="1"
+                  stroke="currentColor" strokeWidth="1.5"
                   markerEnd="url(#arrowhead)"
-                  className="text-border opacity-30 group-hover:opacity-80 transition-opacity"
+                  className="text-border opacity-60 group-hover:opacity-100 transition-opacity"
                 />
                 <circle 
                   cx={(from.x + to.x + 220) / 2} 
@@ -218,18 +224,19 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
         </div>
       </div>
 
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-full max-w-xl z-40 px-6">
-        <div className="bg-surface border border-border rounded-lg p-6 flex items-center gap-6">
+      {/* DOCK / COMMITMENT area */}
+      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-full max-w-2xl z-40 px-6">
+        <div className="bg-surface border border-border shadow-xl rounded-[32px] p-6 flex items-center gap-6">
           {activeCommitment ? (
-            <div className="flex-1 flex items-center gap-6">
-              <div className="w-10 h-10 border border-primary/40 rounded flex items-center justify-center text-primary">
-                <Lock size={20} />
+            <div className="flex-1 flex items-center gap-6 animate-in slide-in-from-bottom-2">
+              <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg">
+                <Lock size={28} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[9px] font-medium text-text-secondary/40 uppercase tracking-widest mb-1">Final Goal</p>
-                <p className="text-text-primary font-medium text-lg truncate tracking-tight">{activeCommitment.content}</p>
+                <p className="text-[10px] font-black text-text-secondary/40 uppercase tracking-widest mb-1">Final Goal</p>
+                <p className="text-text-primary font-bold text-xl truncate tracking-tight italic font-sans">{activeCommitment.content}</p>
               </div>
-              <button onClick={clearCommitment} className="p-2 text-text-secondary/20 hover:text-danger transition-all"><X size={16} /></button>
+              <button onClick={clearCommitment} className="p-4 text-text-secondary/40 hover:text-danger transition-all"><X size={20} /></button>
             </div>
           ) : (
             <form className="flex-1 flex items-center gap-6" onSubmit={(e) => {
@@ -238,12 +245,12 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
               if (val) setCommitment(val);
               e.currentTarget.reset();
             }}>
-              <div className="w-10 h-10 flex items-center justify-center text-primary/20">
-                <Lightbulb size={24} />
+              <div className="w-12 h-12 flex items-center justify-center text-primary/40">
+                <Lightbulb size={28} />
               </div>
-              <input name="goal" autoComplete="off" placeholder="What's the goal?"
-                className="flex-1 bg-transparent border-none outline-none focus:ring-0 text-lg font-light text-text-primary placeholder:text-text-secondary/10 font-sans" />
-              <button type="submit" className="text-text-secondary border border-border px-6 py-2 rounded text-[10px] font-medium uppercase tracking-widest hover:bg-surface transition-all">Activate</button>
+              <input name="goal" autoComplete="off" placeholder="What's the ultimate goal?"
+                className="flex-1 bg-transparent border-none outline-none focus:ring-0 text-xl font-medium text-text-primary placeholder:text-text-secondary/20 font-sans italic" />
+              <button type="submit" className="bg-primary text-white px-8 py-3 rounded-2xl font-bold text-sm hover:bg-primary-hover transition-all">ACTIVATE</button>
             </form>
           )}
         </div>
