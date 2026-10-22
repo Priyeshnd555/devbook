@@ -1,12 +1,29 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Task } from "@shared/types";
+import { Task, Thread, ThreadConnection } from "@shared/types";
 import { LucidCard, LucidConnection, LucidCommitments, DragData } from "../types";
 
 const STORAGE_KEY = 'lucid_web_v12';
 
-export const useLucidManager = (activeProjectId: string) => {
+export interface LucidManagerActions {
+  addThread?: (title?: string, x?: number, y?: number) => void;
+  updateThreadPosition?: (id: string, x: number, y: number) => void;
+  updateThreadDimensions?: (id: string, width?: number, height?: number, x?: number, y?: number) => void;
+  updateThreadTitle?: (id: string, title: string) => void;
+  updateThreadTasks?: (id: string, tasks: Task[]) => void;
+  deleteThread?: (id: string) => void;
+  unlinkThread?: (id: string) => void;
+  createConnection?: (fromId: string, toId: string) => void;
+  removeConnection?: (id: string) => void;
+}
+
+export const useLucidManager = (
+  activeProjectId: string,
+  externalThreads?: Record<string, Thread>,
+  externalConnections?: ThreadConnection[],
+  actions?: LucidManagerActions
+) => {
   const [cards, setCards] = useState<LucidCard[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
@@ -64,27 +81,46 @@ export const useLucidManager = (activeProjectId: string) => {
   const lastProximityCheckRef = useRef<number>(0);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        cards, connections, commitments
+    if (!externalThreads) {
+      const timeout = setTimeout(() => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          cards, connections, commitments
+        }));
+      }, 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [cards, connections, commitments, externalThreads]);
+
+  // Derived folder cards: If externalThreads passed, derive from unified threads!
+  const folderCards = useMemo<LucidCard[]>(() => {
+    if (externalThreads) {
+      const projectThreads = Object.values(externalThreads).filter(
+        (t) => (t.projectId || 'default') === (activeProjectId || 'default')
+      );
+      return projectThreads.map((t, idx) => ({
+        id: t.id,
+        projectId: t.projectId,
+        content: t.title,
+        tasks: t.tasks || [],
+        x: t.x ?? (80 + (idx % 3) * 360),
+        y: t.y ?? (80 + Math.floor(idx / 3) * 260),
+        width: t.width,
+        height: t.height,
+        createdAt: t.createdAt,
       }));
-    }, 500);
-    return () => clearTimeout(timeout);
-  }, [cards, connections, commitments]);
+    }
+    return cards.filter((c) => (c.projectId || 'default') === activeProjectId);
+  }, [externalThreads, activeProjectId, cards]);
 
-  const folderCards = useMemo(() => 
-    cards.filter(c => (c.projectId || 'default') === activeProjectId), 
-    [cards, activeProjectId]
-  );
-
-  const folderConnections = useMemo(() => {
+  const activeConnections = externalConnections || connections;
+  const folderConnections = useMemo<LucidConnection[]>(() => {
     const cardIds = new Set(folderCards.map(c => c.id));
-    return connections.filter(conn => cardIds.has(conn.from) && cardIds.has(conn.to));
-  }, [connections, folderCards]);
+    return activeConnections.filter(conn => cardIds.has(conn.from) && cardIds.has(conn.to));
+  }, [activeConnections, folderCards]);
 
   const activeCommitment = useMemo(() => 
-    cards.find(c => c.id === commitments[activeProjectId]), 
-    [cards, commitments, activeProjectId]
+    folderCards.find(c => c.id === commitments[activeProjectId]), 
+    [folderCards, commitments, activeProjectId]
   );
 
   const animate = () => {
@@ -121,6 +157,7 @@ export const useLucidManager = (activeProjectId: string) => {
     if (
       (e.target as HTMLElement).closest('button') || 
       (e.target as HTMLElement).closest('.resize-handle') ||
+      (e.target as HTMLElement).classList.contains('resize-handle') ||
       (e.target as HTMLElement).tagName === 'TEXTAREA' || 
       (e.target as HTMLElement).tagName === 'INPUT'
     ) return;
@@ -132,15 +169,19 @@ export const useLucidManager = (activeProjectId: string) => {
       lastX: card.x
     };
 
-    activeConnectionsRef.current = connections.filter(c => c.from === card.id || c.to === card.id);
+    activeConnectionsRef.current = activeConnections.filter(c => c.from === card.id || c.to === card.id);
     setDraggedCardId(card.id);
     requestRef.current = requestAnimationFrame(animate);
   };
 
   const createConnection = useCallback((fromId: string, toId: string) => {
     if (fromId === toId) return;
-    setConnections(prev => [...prev, { id: crypto.randomUUID(), from: fromId, to: toId }]);
-  }, []);
+    if (actions?.createConnection) {
+      actions.createConnection(fromId, toId);
+    } else {
+      setConnections(prev => [...prev, { id: crypto.randomUUID(), from: fromId, to: toId }]);
+    }
+  }, [actions]);
 
   const handleGlobalMouseMove = useCallback((e: MouseEvent) => {
     if (!dragDataRef.current.id) return;
@@ -174,7 +215,12 @@ export const useLucidManager = (activeProjectId: string) => {
       cancelAnimationFrame(requestRef.current);
     }
 
-    setCards(prev => prev.map(c => c.id === finishedId ? { ...c, x: finalX, y: finalY } : c));
+    if (actions?.updateThreadPosition) {
+      actions.updateThreadPosition(finishedId, finalX, finalY);
+    } else {
+      setCards(prev => prev.map(c => c.id === finishedId ? { ...c, x: finalX, y: finalY } : c));
+    }
+
     dragPositionRef.current = { x: 0, y: 0 };
     activeConnectionsRef.current = [];
 
@@ -185,7 +231,7 @@ export const useLucidManager = (activeProjectId: string) => {
     dragDataRef.current.id = null;
     setDraggedCardId(null);
     setProximityTargetId(null);
-  }, [proximityTargetId, createConnection]);
+  }, [proximityTargetId, createConnection, actions]);
 
   useEffect(() => {
     window.addEventListener('mousemove', handleGlobalMouseMove);
@@ -198,44 +244,84 @@ export const useLucidManager = (activeProjectId: string) => {
 
   const addCard = (content = "", x?: number, y?: number) => {
     const padding = 100;
-    const randomX = x ?? (padding + Math.random() * (window.innerWidth - padding * 2 - 220));
-    const randomY = y ?? (padding + Math.random() * (window.innerHeight - padding * 2 - 150));
+    const randomX = x ?? (padding + Math.random() * (window.innerWidth - padding * 2 - 240));
+    const randomY = y ?? (padding + Math.random() * (window.innerHeight - padding * 2 - 160));
 
-    const newCard: LucidCard = {
-      id: crypto.randomUUID(),
-      projectId: activeProjectId,
-      content,
-      tasks: [],
-      x: randomX,
-      y: randomY,
-      createdAt: Date.now()
-    };
-    setCards(prev => [...prev, newCard]);
+    if (actions?.addThread) {
+      actions.addThread(content, randomX, randomY);
+    } else {
+      const newCard: LucidCard = {
+        id: crypto.randomUUID(),
+        projectId: activeProjectId,
+        content,
+        tasks: [],
+        x: randomX,
+        y: randomY,
+        createdAt: Date.now()
+      };
+      setCards(prev => [...prev, newCard]);
+    }
   };
 
   const updateCardContent = (id: string, content: string) => {
-    setCards(prev => prev.map(c => c.id === id ? { ...c, content } : c));
+    if (actions?.updateThreadTitle) {
+      actions.updateThreadTitle(id, content);
+    } else {
+      setCards(prev => prev.map(c => c.id === id ? { ...c, content } : c));
+    }
   };
 
   const deleteCard = (id: string) => {
-    setCards(prev => prev.filter(c => c.id !== id));
-    setConnections(prev => prev.filter(conn => conn.from !== id && conn.to !== id));
+    if (actions?.deleteThread) {
+      actions.deleteThread(id);
+    } else {
+      setCards(prev => prev.filter(c => c.id !== id));
+      setConnections(prev => prev.filter(conn => conn.from !== id && conn.to !== id));
+    }
   };
 
   const unlinkCard = (id: string) => {
-    setConnections(prev => prev.filter(conn => conn.from !== id && conn.to !== id));
+    if (actions?.unlinkThread) {
+      actions.unlinkThread(id);
+    } else {
+      setConnections(prev => prev.filter(conn => conn.from !== id && conn.to !== id));
+    }
   };
 
   const removeConnection = (id: string) => {
-    setConnections(prev => prev.filter(c => c.id !== id));
+    if (actions?.removeConnection) {
+      actions.removeConnection(id);
+    } else {
+      setConnections(prev => prev.filter(c => c.id !== id));
+    }
   };
 
   const updateCardTasks = (cardId: string, updatedTasks: Task[]) => {
-    setCards(prev => prev.map(c => c.id === cardId ? { ...c, tasks: updatedTasks } : c));
+    if (actions?.updateThreadTasks) {
+      actions.updateThreadTasks(cardId, updatedTasks);
+    } else {
+      setCards(prev => prev.map(c => c.id === cardId ? { ...c, tasks: updatedTasks } : c));
+    }
   };
 
-  const updateCardWidth = (cardId: string, width?: number) => {
-    setCards(prev => prev.map(c => c.id === cardId ? { ...c, width } : c));
+  const updateCardDimensions = (id: string, width?: number, height?: number, x?: number, y?: number) => {
+    if (actions?.updateThreadDimensions) {
+      actions.updateThreadDimensions(id, width, height, x, y);
+    } else {
+      setCards(prev =>
+        prev.map(c =>
+          c.id === id
+            ? {
+                ...c,
+                width,
+                height,
+                ...(x !== undefined ? { x } : {}),
+                ...(y !== undefined ? { y } : {}),
+              }
+            : c
+        )
+      );
+    }
   };
 
   const setCommitment = (goal: string) => {
@@ -273,7 +359,7 @@ export const useLucidManager = (activeProjectId: string) => {
     createConnection,
     removeConnection,
     updateCardTasks,
-    updateCardWidth,
+    updateCardDimensions,
     setCommitment,
     clearCommitment,
     cardRefs,

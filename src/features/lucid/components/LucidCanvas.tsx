@@ -3,13 +3,24 @@
 import React, { useState } from 'react';
 import { LucidCardItem } from './LucidCardItem';
 import { useLucidManager } from '../hooks/useLucidManager';
-import { Task } from "@shared/types";
+import { Task, Thread, ThreadConnection } from "@shared/types";
 import { TaskItemProps } from "@features/tasks";
 
 interface LucidCanvasProps {
   activeProjectId: string;
   showCompleted: boolean;
   taskItemProps: Omit<TaskItemProps, "task" | "threadId" | "level">;
+  threads?: Record<string, Thread>;
+  connections?: ThreadConnection[];
+  onAddThread?: (title?: string, x?: number, y?: number) => void;
+  onUpdateThreadPosition?: (id: string, x: number, y: number) => void;
+  onUpdateThreadDimensions?: (id: string, width?: number, height?: number, x?: number, y?: number) => void;
+  onUpdateThreadTitle?: (id: string, title: string) => void;
+  onUpdateThreadTasks?: (id: string, tasks: Task[]) => void;
+  onDeleteThread?: (id: string) => void;
+  onUnlinkThread?: (id: string) => void;
+  onCreateConnection?: (fromId: string, toId: string) => void;
+  onRemoveConnection?: (id: string) => void;
 }
 
 const updateTaskInTree = (tasks: Task[], taskId: string, updater: (t: Task) => Task): Task[] => {
@@ -28,6 +39,17 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
   activeProjectId,
   showCompleted,
   taskItemProps,
+  threads,
+  connections,
+  onAddThread,
+  onUpdateThreadPosition,
+  onUpdateThreadDimensions,
+  onUpdateThreadTitle,
+  onUpdateThreadTasks,
+  onDeleteThread,
+  onUnlinkThread,
+  onCreateConnection,
+  onRemoveConnection,
 }) => {
   const {
     folderCards,
@@ -45,10 +67,20 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
     createConnection,
     removeConnection,
     updateCardTasks,
-    updateCardWidth,
+    updateCardDimensions,
     cardRefs,
     connectionRefs,
-  } = useLucidManager(activeProjectId);
+  } = useLucidManager(activeProjectId, threads, connections, {
+    addThread: onAddThread,
+    updateThreadPosition: onUpdateThreadPosition,
+    updateThreadDimensions: onUpdateThreadDimensions,
+    updateThreadTitle: onUpdateThreadTitle,
+    updateThreadTasks: onUpdateThreadTasks,
+    deleteThread: onDeleteThread,
+    unlinkThread: onUnlinkThread,
+    createConnection: onCreateConnection,
+    removeConnection: onRemoveConnection,
+  });
 
   const canvasRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -224,7 +256,7 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
               onUnlink={unlinkCard}
               onSetLinkingFrom={setLinkingFromId}
               onUpdateTasks={updateCardTasks}
-              onUpdateWidth={updateCardWidth}
+              onUpdateDimensions={updateCardDimensions}
               taskItemProps={lucidTaskItemProps}
             />
           ))}

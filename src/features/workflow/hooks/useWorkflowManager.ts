@@ -61,6 +61,7 @@ import {
   ThreadStatus,
   SortConfig,
   SortDirection,
+  ThreadConnection,
 } from "@shared/types";
 
 import {
@@ -96,6 +97,11 @@ const useWorkflowManager = () => {
     "nested-workflow-threads",
 
     {}
+  );
+
+  const [connections, setConnections] = usePersistentState<ThreadConnection[]>(
+    "nested-workflow-connections",
+    []
   );
 
   const [threadOrder, setThreadOrder] = usePersistentState<string[]>(
@@ -275,6 +281,51 @@ const useWorkflowManager = () => {
 
         return migratedThreads;
       });
+    }
+
+    // 4. Migration from separate Lucid cards to unified threads
+    try {
+      if (typeof window !== "undefined") {
+        const savedLucid = localStorage.getItem("lucid_web_v12");
+        if (savedLucid) {
+          const parsed = JSON.parse(savedLucid);
+          if (parsed.cards && Array.isArray(parsed.cards) && parsed.cards.length > 0) {
+            setThreads((prev) => {
+              let changed = false;
+              const updated = { ...prev };
+              parsed.cards.forEach((card: any) => {
+                if (!updated[card.id]) {
+                  changed = true;
+                  updated[card.id] = {
+                    id: card.id,
+                    projectId: card.projectId || selectedProjectId || "proj-inbox",
+                    title: card.content || "Thought...",
+                    status: "active",
+                    lastWorked: new Date().toISOString().split("T")[0],
+                    tasks: card.tasks || [],
+                    sessions: [],
+                    createdAt: card.createdAt || Date.now(),
+                    x: card.x,
+                    y: card.y,
+                    width: card.width,
+                    height: card.height,
+                  };
+                }
+              });
+              return changed ? updated : prev;
+            });
+          }
+          if (parsed.connections && Array.isArray(parsed.connections) && parsed.connections.length > 0) {
+            setConnections((prev) => {
+              const existingIds = new Set(prev.map((c) => c.id));
+              const toAdd = parsed.connections.filter((c: any) => !existingIds.has(c.id));
+              return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
+            });
+          }
+        }
+      }
+    } catch {
+      // ignore
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -469,48 +520,93 @@ const useWorkflowManager = () => {
 
   // ==========================================================================
 
-  const addThread = () => {
-    // CONSTRAINT: A thread must have a title and be associated with a project.
+  const addThread = (title?: string, x?: number, y?: number) => {
+    const rawTitle = title !== undefined ? title : newThreadTitle;
+    const targetTitle = rawTitle.trim();
+    const targetProjectId = selectedProjectId || (Object.keys(projects)[0] || "proj-inbox");
 
-    if (!newThreadTitle.trim() || !selectedProjectId) {
-      alert("Please select a project before adding a thread.");
-
+    if (!targetTitle && title === undefined) {
+      alert("Please enter a title or thought for the card.");
       return;
     }
 
     const newThreadId = `thread-${Date.now()}`;
+    const currentCount = Object.keys(threads).length;
+    const defaultX = x ?? (100 + (currentCount % 3) * 360);
+    const defaultY = y ?? (100 + Math.floor(currentCount / 3) * 260);
 
     const newThread: Thread = {
       id: newThreadId,
-
-      projectId: selectedProjectId,
-
-      title: newThreadTitle,
-
+      projectId: targetProjectId,
+      title: targetTitle || "",
       status: "active",
-
       lastWorked: new Date().toISOString().split("T")[0],
-
       tasks: [],
-
       sessions: [],
       createdAt: Date.now(),
+      x: defaultX,
+      y: defaultY,
     };
 
     setThreads((prev) => ({ ...prev, [newThreadId]: newThread }));
-
-    // STRATEGY: New threads are prepended to the order to appear at the top of the list by default.
     setThreadOrder((prev) => [newThreadId, ...prev]);
-
     setNewThreadTitle("");
-
     setIsAddingThread(false);
-
-    // STRATEGY: Automatically expand the new thread and select it for immediate user interaction.
-
     setExpandedThreads((prev) => new Set([...prev, newThreadId]));
-
     setSelectedThreadId(newThreadId);
+    return newThreadId;
+  };
+
+  const updateThreadPosition = (id: string, x: number, y: number) => {
+    setThreads((prev) => {
+      if (!prev[id]) return prev;
+      return { ...prev, [id]: { ...prev[id], x, y } };
+    });
+  };
+
+  const updateThreadDimensions = (
+    id: string,
+    width?: number,
+    height?: number,
+    x?: number,
+    y?: number
+  ) => {
+    setThreads((prev) => {
+      if (!prev[id]) return prev;
+      return {
+        ...prev,
+        [id]: {
+          ...prev[id],
+          width,
+          height,
+          ...(x !== undefined ? { x } : {}),
+          ...(y !== undefined ? { y } : {}),
+        },
+      };
+    });
+  };
+
+  const updateThreadTasks = (threadId: string, tasks: Task[]) => {
+    setThreads((prev) => {
+      if (!prev[threadId]) return prev;
+      return { ...prev, [threadId]: { ...prev[threadId], tasks } };
+    });
+  };
+
+  const createConnection = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    setConnections((prev) => [
+      ...prev.filter((c) => !(c.from === fromId && c.to === toId)),
+      { id: crypto.randomUUID(), from: fromId, to: toId },
+    ]);
+  };
+
+  const removeConnection = (connectionId: string) => {
+    setConnections((prev) => prev.filter((c) => c.id !== connectionId));
+  };
+
+  const unlinkThread = (threadId: string) => {
+    setConnections((prev) => prev.filter((c) => c.from !== threadId && c.to !== threadId));
   };
 
   const handleSelectThread = (threadId: string) => {
@@ -552,16 +648,15 @@ const useWorkflowManager = () => {
   };
 
   const deleteThread = (threadId: string) => {
-    // STRATEGY: Use a confirmation dialog before performing a destructive action.
-
-    if (window.confirm("Are you sure you want to delete this thread? This action cannot be undone.")) {
-      const newThreads = { ...threads };
-
-      delete newThreads[threadId];
-
-      setThreads(newThreads);
+    if (window.confirm("Are you sure you want to delete this card? This action cannot be undone.")) {
+      setThreads((prev) => {
+        const newThreads = { ...prev };
+        delete newThreads[threadId];
+        return newThreads;
+      });
 
       setThreadOrder((prev) => prev.filter((id) => id !== threadId));
+      setConnections((prev) => prev.filter((c) => c.from !== threadId && c.to !== threadId));
 
       if (selectedThreadId === threadId) {
         setSelectedThreadId(null);
@@ -1197,43 +1292,24 @@ const useWorkflowManager = () => {
 
     
 
-        // Threads
-
-    
-
+        // Threads & Cards
         addThread,
-
-    
-
         handleSelectThread,
-
-    
-
         updateThreadTitle,
-
-    
-
         updateThreadStatus,
-
-    
-
         deleteThread,
-
-    
-
         toggleThread,
-
-    
-
         setThreads,
-
-    
-
         setThreadOrder,
-
-    
-
         setExpandedThreads,
+        updateThreadPosition,
+        updateThreadDimensions,
+        updateThreadTasks,
+        connections,
+        setConnections,
+        createConnection,
+        removeConnection,
+        unlinkThread,
 
     
 

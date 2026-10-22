@@ -63,6 +63,16 @@ export interface Thread {
   sessions: Session[];
   sortConfig?: SortConfig; // Optional sort config for root tasks
   createdAt: number; // Timestamp for creation-based sorting
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}
+
+export interface ThreadConnection {
+  id: string;
+  from: string;
+  to: string;
 }
 
 export type ThreadsState = Record<string, Thread>;

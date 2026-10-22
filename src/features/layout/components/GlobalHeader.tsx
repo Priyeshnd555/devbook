@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { LayoutDashboard, Lightbulb, Compass } from "lucide-react";
+import { LayoutDashboard, Lightbulb, Compass, List, LayoutGrid } from "lucide-react";
 import { ProjectNavigator } from "@features/projects";
 import HeaderActions from "./HeaderActions";
 import { Project } from "@shared/types";
@@ -18,6 +18,8 @@ interface GlobalHeaderProps {
     showCompleted: boolean;
     onToggleShowCompleted: (value: boolean) => void;
     onOpenSettings: () => void;
+    viewMode?: 'list' | 'canvas';
+    onViewModeChange?: (mode: 'list' | 'canvas') => void;
     primaryAction?: React.ReactNode;
     secondaryActions?: React.ReactNode;
     taskStats?: {
@@ -37,6 +39,8 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({
     showCompleted,
     onToggleShowCompleted,
     onOpenSettings,
+    viewMode,
+    onViewModeChange,
     primaryAction,
     secondaryActions,
     taskStats,
@@ -82,28 +86,66 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                                     <LayoutDashboard className="w-3.5 h-3.5" />
                                     <span className="hidden lg:inline">Roadmap</span>
                                 </Link>
-                                <Link
-                                    href="/"
-                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${activeRoute === 'explorer'
+                                <button
+                                    type="button"
+                                    onClick={() => onViewModeChange ? onViewModeChange('list') : undefined}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                        activeRoute === 'explorer' || (viewMode === 'list' && activeRoute !== 'weekly')
                                         ? "bg-surface text-primary shadow-sm border border-border/50"
                                         : "text-text-secondary hover:text-text-primary hover:bg-surface/50"
                                         }`}
                                 >
-                                    <Compass className="w-3.5 h-3.5" />
-                                    <span className="hidden lg:inline">Explorer</span>
-                                </Link>
-                                <Link
-                                    href="/lucid"
-                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${activeRoute === 'lucid'
+                                    <Link href="/" onClick={(e) => { if (onViewModeChange) { e.preventDefault(); onViewModeChange('list'); } }} className="flex items-center gap-2">
+                                        <Compass className="w-3.5 h-3.5" />
+                                        <span className="hidden lg:inline">Explorer</span>
+                                    </Link>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => onViewModeChange ? onViewModeChange('canvas') : undefined}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                                        activeRoute === 'lucid' || (viewMode === 'canvas' && activeRoute !== 'weekly')
                                         ? "bg-surface text-primary shadow-sm border border-border/50"
                                         : "text-text-secondary hover:text-text-primary hover:bg-surface/50"
                                         }`}
                                 >
-                                    <Lightbulb className="w-3.5 h-3.5" />
-                                    <span className="hidden lg:inline">Lucid</span>
-                                </Link>
-
+                                    <Link href="/lucid" onClick={(e) => { if (onViewModeChange) { e.preventDefault(); onViewModeChange('canvas'); } }} className="flex items-center gap-2">
+                                        <Lightbulb className="w-3.5 h-3.5" />
+                                        <span className="hidden lg:inline">Lucid</span>
+                                    </Link>
+                                </button>
                             </nav>
+
+                            {onViewModeChange && (
+                                <div className="flex items-center p-0.5 bg-background border border-border rounded-lg shadow-2xs">
+                                    <button
+                                        type="button"
+                                        onClick={() => onViewModeChange('list')}
+                                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                                            viewMode === 'list'
+                                                ? "bg-surface text-primary font-bold shadow-xs border border-border/40"
+                                                : "text-text-secondary hover:text-text-primary"
+                                        }`}
+                                        title="List format"
+                                    >
+                                        <List className="w-3.5 h-3.5" />
+                                        <span className="hidden md:inline">List</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => onViewModeChange('canvas')}
+                                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                                            viewMode === 'canvas'
+                                                ? "bg-surface text-primary font-bold shadow-xs border border-border/40"
+                                                : "text-text-secondary hover:text-text-primary"
+                                        }`}
+                                        title="All cards at once (Canvas)"
+                                    >
+                                        <LayoutGrid className="w-3.5 h-3.5" />
+                                        <span className="hidden md:inline">All Cards</span>
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 

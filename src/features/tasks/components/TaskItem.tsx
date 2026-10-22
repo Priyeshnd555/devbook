@@ -214,7 +214,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
             {task.done ? (
               <CheckCircle2 className="w-5 h-5 text-primary" />
             ) : (
-              <Circle className="w-5 h-5 text-text-secondary/40 hover:text-primary transition-colors" />
+              <Circle className="w-5 h-5 text-text-secondary/70 hover:text-primary transition-colors" />
             )}
             <AnimatePresence>
               {justCompleted && <CompletionAnimation />}
@@ -265,7 +265,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
             )}
           </div>
 
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity shrink-0">
             <button
               onClick={handleCyclePriority}
               className={`p-1.5 rounded transition-colors ${priorityStyles[task.priority || 0]} hover:bg-primary-light`}
@@ -279,7 +279,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
             {!task.note && !isEditing && (
               <button
                 onClick={() => setEditingNote(task.id)}
-                className="p-1.5 text-text-secondary/60 hover:text-primary hover:bg-primary-light rounded transition-colors"
+                className="p-1.5 text-text-secondary/80 hover:text-primary hover:bg-primary-light rounded transition-colors"
                 title="Add note"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
@@ -290,7 +290,7 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
                 setAddingChildTo(task.id);
                 setNewChildText("");
               }}
-              className="p-1.5 text-text-secondary/60 hover:text-primary hover:bg-primary-light rounded transition-colors"
+              className="p-1.5 text-text-secondary/80 hover:text-primary hover:bg-primary-light rounded transition-colors"
               title="Add subtask"
             >
               <Plus className="w-3.5 h-3.5" />

@@ -217,38 +217,45 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 group mb-3">
-              <span className="shrink-0 w-6 text-center text-xs font-mono text-text-secondary/70" title={`Thread ${threadNumber}`}>
+              <span className="shrink-0 w-6 text-center text-xs font-mono text-text-secondary/80 font-bold" title={`Thread ${threadNumber}`}>
                 {threadNumber}.
               </span>
-              <button onClick={(e) => { e.stopPropagation(); toggleThread(thread.id); }} className="text-text-secondary hover:text-primary transition-colors shrink-0">
+              <button onClick={(e) => { e.stopPropagation(); toggleThread(thread.id); }} className="text-text-secondary/80 hover:text-primary transition-colors shrink-0">
                 {isThreadExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
               </button>
               {editingThreadId === thread.id ? (
-                <input
-                  type="text"
+                <textarea
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                  }}
                   onBlur={handleUpdate}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleUpdate();
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleUpdate();
+                    }
                     if (e.key === 'Escape') handleCancelEdit();
                   }}
-                  className="text-base font-semibold text-text-primary flex-1 px-2 py-1 border-b-2 border-primary focus:outline-none bg-transparent"
+                  rows={1}
+                  className="text-base font-semibold text-text-primary flex-1 p-0 border-none outline-none focus:ring-0 bg-transparent resize-none leading-snug cursor-text"
                   autoFocus
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
-                <h3 className="text-base font-semibold text-text-primary hover:text-primary transition-colors" onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }}>{thread.title}</h3>
+                <h3 className="text-base font-semibold text-text-primary hover:text-primary transition-colors cursor-text" onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }}>{thread.title}</h3>
               )}
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
-                <button onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }} className="p-1 text-text-secondary hover:text-primary transition-colors" title="Edit title"><Pencil className="w-3.5 h-3.5" /></button>
-                <button onClick={(e) => { e.stopPropagation(); onDelete(thread.id); }} className="p-1 text-text-secondary hover:text-danger transition-colors" title="Delete thread"><Trash2 className="w-3.5 h-3.5" /></button>
+              <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
+                <button onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }} className="p-1 text-text-secondary/80 hover:text-primary transition-colors" title="Edit title"><Pencil className="w-3.5 h-3.5" /></button>
+                <button onClick={(e) => { e.stopPropagation(); onDelete(thread.id); }} className="p-1 text-text-secondary/80 hover:text-danger transition-colors" title="Delete thread"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             </div>
 
             <div className="flex items-center gap-4 text-xs text-text-secondary ml-12">
               <div className="flex items-center gap-1.5" title={`Last worked on: ${formatFullDate(thread.lastWorked)}`}>
-                <Clock className="w-3.5 h-3.5 text-text-secondary/70 shrink-0" />
+                <Clock className="w-3.5 h-3.5 text-text-secondary/80 shrink-0" />
                 <span className="truncate">{formatRelativeDate(thread.lastWorked)}</span>
               </div>
               <div className="flex items-center gap-2">

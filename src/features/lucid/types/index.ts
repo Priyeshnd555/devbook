@@ -8,6 +8,7 @@ export interface LucidCard {
   x: number;
   y: number;
   width?: number;
+  height?: number;
   createdAt: number;
 }
 
