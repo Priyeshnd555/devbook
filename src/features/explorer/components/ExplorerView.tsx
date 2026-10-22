@@ -142,6 +142,8 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({ defaultView = "list"
           <LucidCanvas
             activeProjectId={selectedProjectId || "proj-inbox"}
             showCompleted={showCompleted}
+            localShowCompleted={localShowCompleted}
+            onToggleLocalShowCompleted={toggleThreadShowCompleted}
             taskItemProps={taskItemProps}
             threads={threads}
             connections={connections}
@@ -149,6 +151,7 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({ defaultView = "list"
             onUpdateThreadPosition={updateThreadPosition}
             onUpdateThreadDimensions={updateThreadDimensions}
             onUpdateThreadTitle={updateThreadTitle}
+            onUpdateThreadStatus={updateThreadStatus}
             onUpdateThreadTasks={updateThreadTasks}
             onDeleteThread={deleteThread}
             onUnlinkThread={unlinkThread}

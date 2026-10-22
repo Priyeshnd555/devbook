@@ -223,17 +223,30 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
 
           <div className="flex-1 min-w-0">
             {isEditingTask ? (
-              <input
-                type="text"
+              <textarea
                 value={editedTaskText}
-                onChange={(e) => setEditedTaskText(e.target.value)}
+                onChange={(e) => {
+                  setEditedTaskText(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = e.target.scrollHeight + "px";
+                }}
                 onBlur={handleSaveTaskText}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveTaskText();
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSaveTaskText();
+                  }
                   if (e.key === "Escape") handleCancelEdit();
                 }}
-                className="w-full px-2 py-1 border border-primary/40 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-surface text-text-primary"
+                rows={1}
+                className="w-full bg-transparent border-none outline-none ring-0 focus:ring-0 focus:outline-none p-0 text-sm leading-relaxed text-text-primary font-sans resize-none cursor-text block"
                 autoFocus
+                onFocus={(e) => {
+                  const len = e.target.value.length;
+                  e.target.setSelectionRange(len, len);
+                  e.target.style.height = "auto";
+                  e.target.style.height = e.target.scrollHeight + "px";
+                }}
               />
             ) : (
               <span
@@ -322,8 +335,8 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
               type="text"
               value={newChildText}
               onChange={(e) => setNewChildText(e.target.value)}
-              placeholder="New subtask..."
-              className="flex-1 py-1 px-2.5 bg-surface text-sm border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-text-primary placeholder:text-text-secondary/50 shadow-xs"
+              placeholder="Write subtask..."
+              className="flex-1 py-0.5 px-0 bg-transparent text-sm border-none outline-none ring-0 focus:ring-0 focus:outline-none text-text-primary placeholder:text-text-secondary/40 font-sans"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") {

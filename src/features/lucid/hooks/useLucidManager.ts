@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Task, Thread, ThreadConnection } from "@shared/types";
+import { Task, Thread, ThreadConnection, ThreadStatus } from "@shared/types";
 import { LucidCard, LucidConnection, LucidCommitments, DragData } from "../types";
 
 const STORAGE_KEY = 'lucid_web_v12';
@@ -11,6 +11,7 @@ export interface LucidManagerActions {
   updateThreadPosition?: (id: string, x: number, y: number) => void;
   updateThreadDimensions?: (id: string, width?: number, height?: number, x?: number, y?: number) => void;
   updateThreadTitle?: (id: string, title: string) => void;
+  updateThreadStatus?: (id: string, status: ThreadStatus) => void;
   updateThreadTasks?: (id: string, tasks: Task[]) => void;
   deleteThread?: (id: string) => void;
   unlinkThread?: (id: string) => void;
@@ -67,6 +68,10 @@ export const useLucidManager = (
   });
 
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
+  const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  const [cardZIndices, setCardZIndices] = useState<Record<string, number>>({});
+  const topZRef = useRef(100);
+
   const [linkingFromId, setLinkingFromId] = useState<string | null>(null);
   const [proximityTargetId, setProximityTargetId] = useState<string | null>(null);
 
@@ -80,6 +85,13 @@ export const useLucidManager = (
   const activeConnectionsRef = useRef<LucidConnection[]>([]);
   const lastProximityCheckRef = useRef<number>(0);
 
+  const bringCardToFront = useCallback((cardId: string) => {
+    topZRef.current += 1;
+    const newZ = topZRef.current;
+    setCardZIndices(prev => ({ ...prev, [cardId]: newZ }));
+    setActiveCardId(cardId);
+  }, []);
+
   useEffect(() => {
     if (!externalThreads) {
       const timeout = setTimeout(() => {
@@ -91,26 +103,52 @@ export const useLucidManager = (
     }
   }, [cards, connections, commitments, externalThreads]);
 
-  // Derived folder cards: If externalThreads passed, derive from unified threads!
+  // Derived folder cards with collision detection to prevent stacking
   const folderCards = useMemo<LucidCard[]>(() => {
     if (externalThreads) {
       const projectThreads = Object.values(externalThreads).filter(
         (t) => (t.projectId || 'default') === (activeProjectId || 'default')
       );
-      return projectThreads.map((t, idx) => ({
-        id: t.id,
-        projectId: t.projectId,
-        content: t.title,
-        tasks: t.tasks || [],
-        x: t.x ?? (80 + (idx % 3) * 360),
-        y: t.y ?? (80 + Math.floor(idx / 3) * 260),
-        width: t.width,
-        height: t.height,
-        createdAt: t.createdAt,
-      }));
+
+      const placed: { x: number; y: number }[] = [];
+      return projectThreads.map((t, idx) => {
+        let posX = t.x;
+        let posY = t.y;
+
+        // Check for collision or missing coordinates: if two cards overlap within 220px x 160px
+        const collides = posX !== undefined && posY !== undefined && placed.some(
+          p => Math.abs(p.x - posX!) < 220 && Math.abs(p.y - posY!) < 160
+        );
+
+        if (posX === undefined || posY === undefined || collides) {
+          const col = idx % 3;
+          const row = Math.floor(idx / 3);
+          posX = 80 + col * 420;
+          posY = 80 + row * 340;
+        }
+
+        placed.push({ x: posX, y: posY });
+
+        return {
+          id: t.id,
+          projectId: t.projectId,
+          content: t.title,
+          tasks: t.tasks || [],
+          status: t.status || 'active',
+          lastWorked: t.lastWorked,
+          threadNumber: idx + 1,
+          sessions: t.sessions || [],
+          x: posX,
+          y: posY,
+          width: t.width,
+          height: t.height,
+          createdAt: t.createdAt,
+          zIndex: cardZIndices[t.id] || 10,
+        };
+      });
     }
     return cards.filter((c) => (c.projectId || 'default') === activeProjectId);
-  }, [externalThreads, activeProjectId, cards]);
+  }, [externalThreads, activeProjectId, cards, cardZIndices]);
 
   const activeConnections = externalConnections || connections;
   const folderConnections = useMemo<LucidConnection[]>(() => {
@@ -118,10 +156,17 @@ export const useLucidManager = (
     return activeConnections.filter(conn => cardIds.has(conn.from) && cardIds.has(conn.to));
   }, [activeConnections, folderCards]);
 
-  const activeCommitment = useMemo(() => 
-    folderCards.find(c => c.id === commitments[activeProjectId]), 
-    [folderCards, commitments, activeProjectId]
-  );
+  const autoArrangeCards = useCallback(() => {
+    folderCards.forEach((c, idx) => {
+      const col = idx % 3;
+      const row = Math.floor(idx / 3);
+      const newX = 80 + col * 420;
+      const newY = 80 + row * 340;
+      if (actions?.updateThreadPosition) {
+        actions.updateThreadPosition(c.id, newX, newY);
+      }
+    });
+  }, [folderCards, actions]);
 
   const animate = () => {
     const dragId = dragDataRef.current.id;
@@ -154,6 +199,8 @@ export const useLucidManager = (
   };
 
   const handleMouseDown = (e: React.MouseEvent | MouseEvent, card: LucidCard) => {
+    bringCardToFront(card.id);
+
     if (
       (e.target as HTMLElement).closest('button') || 
       (e.target as HTMLElement).closest('.resize-handle') ||
@@ -296,6 +343,14 @@ export const useLucidManager = (
     }
   };
 
+  const updateCardStatus = (id: string, status: ThreadStatus) => {
+    if (actions?.updateThreadStatus) {
+      actions.updateThreadStatus(id, status);
+    } else {
+      setCards(prev => prev.map(c => c.id === id ? { ...c, status } : c));
+    }
+  };
+
   const updateCardTasks = (cardId: string, updatedTasks: Task[]) => {
     if (actions?.updateThreadTasks) {
       actions.updateThreadTasks(cardId, updatedTasks);
@@ -324,29 +379,14 @@ export const useLucidManager = (
     }
   };
 
-  const setCommitment = (goal: string) => {
-    const newId = crypto.randomUUID();
-    const padding = 100;
-    const randomX = padding + Math.random() * (window.innerWidth - padding * 2 - 240);
-    const randomY = padding + Math.random() * (window.innerHeight - padding * 2 - 150);
-
-    setCards(prev => [...prev, { id: newId, projectId: activeProjectId, content: goal, tasks: [], x: randomX, y: randomY, createdAt: Date.now() }]);
-    setCommitments(prev => ({ ...prev, [activeProjectId]: newId }));
-  };
-
-  const clearCommitment = () => {
-    setCommitments(prev => {
-      const next = { ...prev };
-      delete next[activeProjectId];
-      return next;
-    });
-  };
-
   return {
     folderCards,
     folderConnections,
-    activeCommitment,
     draggedCardId,
+    activeCardId,
+    setActiveCardId,
+    cardZIndices,
+    bringCardToFront,
     linkingFromId,
     proximityTargetId,
     setLinkingFromId,
@@ -359,9 +399,9 @@ export const useLucidManager = (
     createConnection,
     removeConnection,
     updateCardTasks,
+    updateCardStatus,
     updateCardDimensions,
-    setCommitment,
-    clearCommitment,
+    autoArrangeCards,
     cardRefs,
     connectionRefs,
   };

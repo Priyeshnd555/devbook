@@ -532,8 +532,8 @@ const useWorkflowManager = () => {
 
     const newThreadId = `thread-${Date.now()}`;
     const currentCount = Object.keys(threads).length;
-    const defaultX = x ?? (100 + (currentCount % 3) * 360);
-    const defaultY = y ?? (100 + Math.floor(currentCount / 3) * 260);
+    const defaultX = x ?? (80 + (currentCount % 3) * 440);
+    const defaultY = y ?? (80 + Math.floor(currentCount / 3) * 360);
 
     const newThread: Thread = {
       id: newThreadId,

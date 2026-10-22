@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useState } from 'react';
-import { LucidCardItem } from './LucidCardItem';
-import { useLucidManager } from '../hooks/useLucidManager';
-import { Task, Thread, ThreadConnection } from "@shared/types";
+import React, { useState } from "react";
+import { LayoutGrid, Plus } from "lucide-react";
+import { LucidCardItem } from "./LucidCardItem";
+import { useLucidManager } from "../hooks/useLucidManager";
+import { Task, Thread, ThreadConnection, ThreadStatus } from "@shared/types";
 import { TaskItemProps } from "@features/tasks";
 
 interface LucidCanvasProps {
   activeProjectId: string;
   showCompleted: boolean;
+  localShowCompleted?: Record<string, boolean>;
+  onToggleLocalShowCompleted?: (id: string) => void;
   taskItemProps: Omit<TaskItemProps, "task" | "threadId" | "level">;
   threads?: Record<string, Thread>;
   connections?: ThreadConnection[];
@@ -16,6 +19,7 @@ interface LucidCanvasProps {
   onUpdateThreadPosition?: (id: string, x: number, y: number) => void;
   onUpdateThreadDimensions?: (id: string, width?: number, height?: number, x?: number, y?: number) => void;
   onUpdateThreadTitle?: (id: string, title: string) => void;
+  onUpdateThreadStatus?: (id: string, status: ThreadStatus) => void;
   onUpdateThreadTasks?: (id: string, tasks: Task[]) => void;
   onDeleteThread?: (id: string) => void;
   onUnlinkThread?: (id: string) => void;
@@ -24,7 +28,7 @@ interface LucidCanvasProps {
 }
 
 const updateTaskInTree = (tasks: Task[], taskId: string, updater: (t: Task) => Task): Task[] => {
-  return tasks.map(task => {
+  return tasks.map((task) => {
     if (task.id === taskId) {
       return updater(task);
     }
@@ -38,6 +42,8 @@ const updateTaskInTree = (tasks: Task[], taskId: string, updater: (t: Task) => T
 export const LucidCanvas: React.FC<LucidCanvasProps> = ({
   activeProjectId,
   showCompleted,
+  localShowCompleted,
+  onToggleLocalShowCompleted,
   taskItemProps,
   threads,
   connections,
@@ -45,6 +51,7 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
   onUpdateThreadPosition,
   onUpdateThreadDimensions,
   onUpdateThreadTitle,
+  onUpdateThreadStatus,
   onUpdateThreadTasks,
   onDeleteThread,
   onUnlinkThread,
@@ -55,6 +62,8 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
     folderCards,
     folderConnections,
     draggedCardId,
+    activeCardId,
+    bringCardToFront,
     linkingFromId,
     proximityTargetId,
     setLinkingFromId,
@@ -67,7 +76,9 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
     createConnection,
     removeConnection,
     updateCardTasks,
+    updateCardStatus,
     updateCardDimensions,
+    autoArrangeCards,
     cardRefs,
     connectionRefs,
   } = useLucidManager(activeProjectId, threads, connections, {
@@ -75,6 +86,7 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
     updateThreadPosition: onUpdateThreadPosition,
     updateThreadDimensions: onUpdateThreadDimensions,
     updateThreadTitle: onUpdateThreadTitle,
+    updateThreadStatus: onUpdateThreadStatus,
     updateThreadTasks: onUpdateThreadTasks,
     deleteThread: onDeleteThread,
     unlinkThread: onUnlinkThread,
@@ -86,8 +98,8 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
 
   React.useEffect(() => {
     const handleAddCardEvent = () => addCard();
-    window.addEventListener('lucid:addCard', handleAddCardEvent);
-    return () => window.removeEventListener('lucid:addCard', handleAddCardEvent);
+    window.addEventListener("lucid:addCard", handleAddCardEvent);
+    return () => window.removeEventListener("lucid:addCard", handleAddCardEvent);
   }, [addCard]);
 
   // --- Local Task Logic Mapping ---
@@ -112,7 +124,7 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
     setEditingTaskId,
     setEditedTaskText,
     toggleTask: (taskId: string) => {
-      setExpandedTasks(prev => {
+      setExpandedTasks((prev) => {
         const next = new Set(prev);
         if (next.has(taskId)) next.delete(taskId);
         else next.add(taskId);
@@ -120,17 +132,17 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
       });
     },
     toggleTaskDone: (cardId: string, taskId: string) => {
-      const card = folderCards.find(c => c.id === cardId);
+      const card = folderCards.find((c) => c.id === cardId);
       if (!card) return;
-      const updated = updateTaskInTree(card.tasks, taskId, (t: Task) => ({ 
-        ...t, 
-        done: !t.done, 
-        completedAt: !t.done ? Date.now() : undefined 
+      const updated = updateTaskInTree(card.tasks, taskId, (t: Task) => ({
+        ...t,
+        done: !t.done,
+        completedAt: !t.done ? Date.now() : undefined,
       }));
       updateCardTasks(cardId, updated);
     },
     saveNote: (cardId: string, taskId: string, note: string) => {
-      const card = folderCards.find(c => c.id === cardId);
+      const card = folderCards.find((c) => c.id === cardId);
       if (!card) return;
       const updated = updateTaskInTree(card.tasks, taskId, (t: Task) => ({ ...t, note }));
       updateCardTasks(cardId, updated);
@@ -138,7 +150,7 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
     },
     addChild: (cardId: string, parentId: string) => {
       if (!newChildText.trim()) return;
-      const card = folderCards.find(c => c.id === cardId);
+      const card = folderCards.find((c) => c.id === cardId);
       if (!card) return;
       const newTask: Task = {
         id: crypto.randomUUID(),
@@ -147,26 +159,26 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
         note: "",
         children: [],
         priority: 0,
-        createdAt: Date.now()
+        createdAt: Date.now(),
       };
-      const updated = updateTaskInTree(card.tasks, parentId, (t: Task) => ({ 
-        ...t, 
-        children: [...t.children, newTask] 
+      const updated = updateTaskInTree(card.tasks, parentId, (t: Task) => ({
+        ...t,
+        children: [...t.children, newTask],
       }));
       updateCardTasks(cardId, updated);
       setAddingChildTo(null);
       setNewChildText("");
-      setExpandedTasks(prev => new Set(prev).add(parentId));
+      setExpandedTasks((prev) => new Set(prev).add(parentId));
     },
     updateTaskText: (cardId: string, taskId: string, text: string) => {
-      const card = folderCards.find(c => c.id === cardId);
+      const card = folderCards.find((c) => c.id === cardId);
       if (!card) return;
       const updated = updateTaskInTree(card.tasks, taskId, (t: Task) => ({ ...t, text }));
       updateCardTasks(cardId, updated);
       setEditingTaskId(null);
     },
     setTaskPriority: (cardId: string, taskId: string, priority: number) => {
-      const card = folderCards.find(c => c.id === cardId);
+      const card = folderCards.find((c) => c.id === cardId);
       if (!card) return;
       const updated = updateTaskInTree(card.tasks, taskId, (t: Task) => ({ ...t, priority }));
       updateCardTasks(cardId, updated);
@@ -176,7 +188,7 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
   return (
     <main
       ref={canvasRef}
-      className="flex-1 relative overflow-hidden bg-background cursor-crosshair selection:bg-primary/20"
+      className="flex-1 relative overflow-hidden bg-background cursor-crosshair selection:bg-primary/20 h-full w-full"
       onMouseUp={handleGlobalMouseUp}
       onMouseLeave={handleGlobalMouseUp}
       onDoubleClick={(e) => {
@@ -186,20 +198,45 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
         }
       }}
     >
+      {/* Floating Canvas Controls Overlay */}
+      <div className="absolute top-4 right-4 z-40 flex items-center gap-2 bg-surface/90 backdrop-blur-md border border-border/80 shadow-md rounded-xl p-1.5 transition-all">
+        <button
+          onClick={() => autoArrangeCards()}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-primary hover:bg-background rounded-lg transition-colors cursor-pointer"
+          title="Auto arrange cards to prevent overlap"
+        >
+          <LayoutGrid className="w-3.5 h-3.5" />
+          <span>Auto Arrange</span>
+        </button>
+        <div className="h-4 w-px bg-border/60" />
+        <button
+          onClick={() => addCard()}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-primary text-white hover:bg-primary-hover rounded-lg shadow-xs transition-colors cursor-pointer"
+          title="Add a new card"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>Add Card</span>
+        </button>
+      </div>
+
       <div className="absolute inset-0 z-0">
         <svg className="absolute inset-0 pointer-events-none z-0 w-full h-full overflow-visible">
           <defs>
             <marker id="arrowhead" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto">
-              <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" className="text-slate-700 dark:text-slate-300" />
+              <polygon
+                points="0 0, 9 3.5, 0 7"
+                fill="currentColor"
+                className="text-slate-700 dark:text-slate-300"
+              />
             </marker>
           </defs>
-          {folderConnections.map(conn => {
-            const from = folderCards.find(c => c.id === conn.from);
-            const to = folderCards.find(c => c.id === conn.to);
+          {folderConnections.map((conn) => {
+            const from = folderCards.find((c) => c.id === conn.from);
+            const to = folderCards.find((c) => c.id === conn.to);
             if (!from || !to) return null;
 
-            const fromWidth = from.width || 240;
-            const toWidth = to.width || 240;
+            const fromWidth = from.width || 300;
+            const toWidth = to.width || 300;
             const fromX = from.x + fromWidth / 2;
             const toX = to.x + toWidth / 2;
             const midX = (fromX + toX) / 2;
@@ -208,26 +245,32 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
             return (
               <g key={conn.id} className="group pointer-events-auto">
                 <line
-                  ref={el => { connectionRefs.current[conn.id] = el }}
-                  x1={fromX} y1={from.y + 30} x2={toX} y2={to.y + 30}
-                  stroke="currentColor" strokeWidth="2"
+                  ref={(el) => {
+                    connectionRefs.current[conn.id] = el;
+                  }}
+                  x1={fromX}
+                  y1={from.y + 30}
+                  x2={toX}
+                  y2={to.y + 30}
+                  stroke="currentColor"
+                  strokeWidth="2"
                   markerEnd="url(#arrowhead)"
                   className="text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors"
                 />
-                <circle 
-                  cx={midX} 
-                  cy={midY} 
-                  r="12" 
-                  fill="var(--color-surface)" 
-                  stroke="currentColor" 
+                <circle
+                  cx={midX}
+                  cy={midY}
+                  r="12"
+                  fill="var(--color-surface)"
+                  stroke="currentColor"
                   strokeWidth="1.5"
-                  className="text-slate-700 dark:text-slate-300 opacity-0 group-hover:opacity-100 cursor-pointer shadow-md transition-all hover:text-danger hover:scale-110" 
-                  onClick={() => removeConnection(conn.id)} 
+                  className="text-slate-700 dark:text-slate-300 opacity-0 group-hover:opacity-100 cursor-pointer shadow-md transition-all hover:text-danger hover:scale-110"
+                  onClick={() => removeConnection(conn.id)}
                 />
-                <text 
-                  x={midX} 
-                  y={midY + 4} 
-                  textAnchor="middle" 
+                <text
+                  x={midX}
+                  y={midY + 4}
+                  textAnchor="middle"
                   className="pointer-events-none opacity-0 group-hover:opacity-100 fill-slate-700 dark:fill-slate-300 font-bold text-xs"
                 >
                   ×
@@ -238,20 +281,34 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
         </svg>
 
         <div className="w-full h-full relative">
-          {folderCards.map(card => (
+          {folderCards.map((card) => (
             <LucidCardItem
               key={card.id}
               card={card}
-              cardRef={el => { cardRefs.current[card.id] = el }}
+              cardRef={(el) => {
+                cardRefs.current[card.id] = el;
+              }}
               isDragged={draggedCardId === card.id}
+              isActive={activeCardId === card.id}
               isSource={linkingFromId === card.id}
               isTarget={proximityTargetId === card.id}
-              connCount={folderConnections.filter(cn => cn.from === card.id || cn.to === card.id).length}
+              connCount={
+                folderConnections.filter((cn) => cn.from === card.id || cn.to === card.id).length
+              }
               linkingFromId={linkingFromId}
               showCompleted={showCompleted}
+              localShowCompleted={localShowCompleted?.[card.id] ?? false}
+              onToggleLocalShowCompleted={() => onToggleLocalShowCompleted?.(card.id)}
               onMouseDown={handleMouseDown}
-              onCardClick={() => linkingFromId && linkingFromId !== card.id && (createConnection(linkingFromId, card.id), setLinkingFromId(null))}
+              onCardClick={() => {
+                bringCardToFront(card.id);
+                if (linkingFromId && linkingFromId !== card.id) {
+                  createConnection(linkingFromId, card.id);
+                  setLinkingFromId(null);
+                }
+              }}
               onUpdateContent={updateCardContent}
+              onUpdateStatus={updateCardStatus}
               onDelete={deleteCard}
               onUnlink={unlinkCard}
               onSetLinkingFrom={setLinkingFromId}

@@ -365,9 +365,9 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
       {/* STRATEGY: The entire task list section is conditionally rendered based on whether the thread is expanded. */}
       {isThreadExpanded && (
         <div className="p-4">
-          <div className="group flex items-center gap-3 px-3 py-1.5 mb-3 opacity-70 hover:opacity-100 focus-within:opacity-100 transition-opacity bg-background/50 rounded-md border border-border/40 focus-within:border-primary/40 focus-within:bg-background">
+          <div className="group flex items-center gap-3 px-3 py-1.5 mb-2 opacity-65 hover:opacity-100 focus-within:opacity-100 transition-opacity">
             <div className="w-4 shrink-0"></div>
-            <Plus className="w-4 h-4 text-text-secondary/60 group-focus-within:text-primary transition-colors" />
+            <Plus className="w-4 h-4 text-text-secondary/70 group-focus-within:text-primary transition-colors shrink-0" />
             <input
               type="text"
               value={isAddingThisRootTask ? taskItemProps.newChildText : ''}
@@ -382,12 +382,12 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                 taskItemProps.setNewChildText('');
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
+                if (e.key === "Enter" && taskItemProps.newChildText.trim()) {
                   handleAddTask();
                 }
               }}
-              placeholder="New task..."
-              className="flex-1 py-1 bg-transparent text-sm border-none focus:outline-none focus:ring-0 placeholder:text-text-secondary/50 text-text-primary"
+              placeholder="Add task..."
+              className="flex-1 py-1 bg-transparent text-sm border-none outline-none ring-0 focus:ring-0 focus:outline-none placeholder:text-text-secondary/40 text-text-primary font-sans"
             />
           </div>
 

@@ -1,4 +1,4 @@
-import { Task } from "@shared/types";
+import { Task, ThreadStatus, Session } from "@shared/types";
 
 export interface LucidCard {
   id: string;
@@ -10,6 +10,11 @@ export interface LucidCard {
   width?: number;
   height?: number;
   createdAt: number;
+  status?: ThreadStatus;
+  lastWorked?: string;
+  threadNumber?: number;
+  sessions?: Session[];
+  zIndex?: number;
 }
 
 export interface LucidConnection {
