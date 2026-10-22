@@ -167,8 +167,8 @@ export const useLucidManager = (
     folderCards.forEach((c, idx) => {
       const col = idx % numCols;
       const el = cardRefs.current[c.id];
-      const w = c.width || el?.offsetWidth || 340;
-      if (w > colWidths[col]) colWidths[col] = Math.min(w, 520);
+      const w = el?.offsetWidth || c.width || 340;
+      if (w > colWidths[col]) colWidths[col] = Math.min(w, 560);
     });
 
     const colX: number[] = [80];
@@ -190,8 +190,8 @@ export const useLucidManager = (
       }
 
       const el = cardRefs.current[c.id];
-      const cardW = c.width || el?.offsetWidth || 340;
-      const cardH = c.height || el?.offsetHeight || 220;
+      const cardW = el?.offsetWidth || c.width || 340;
+      const cardH = el?.offsetHeight || c.height || 220;
 
       const newX = colX[bestCol];
       const newY = colY[bestCol];
@@ -232,6 +232,62 @@ export const useLucidManager = (
       }
     });
   }, [folderCards, actions, activeConnections]);
+
+  // Dynamic auto-align: prevent vertical collisions when cards expand in height
+  useEffect(() => {
+    if (typeof ResizeObserver === 'undefined') return;
+
+    let debounceTimer: NodeJS.Timeout | null = null;
+
+    const observer = new ResizeObserver(() => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        const currentCards = [...folderCards];
+
+        for (const card of currentCards) {
+          const el = cardRefs.current[card.id];
+          if (!el) continue;
+          const cardH = el.offsetHeight;
+          const cardW = el.offsetWidth;
+          const cardBottom = card.y + cardH + 40;
+
+          // Find cards below in same column that collide
+          const overlappingBelow = currentCards.filter(
+            (other) =>
+              other.id !== card.id &&
+              Math.abs(other.x - card.x) < Math.max(cardW, 300) * 0.85 &&
+              other.y >= card.y &&
+              other.y < cardBottom
+          );
+
+          if (overlappingBelow.length > 0) {
+            overlappingBelow.forEach((other) => {
+              const newY = cardBottom;
+              const otherEl = cardRefs.current[other.id];
+              if (otherEl) {
+                otherEl.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+                otherEl.style.transform = `translate3d(${other.x}px, ${newY}px, 0)`;
+                setTimeout(() => {
+                  if (otherEl) otherEl.style.transition = '';
+                }, 350);
+              }
+              other.y = newY;
+              actions?.updateThreadPosition?.(other.id, other.x, newY);
+            });
+          }
+        }
+      }, 120);
+    });
+
+    Object.values(cardRefs.current).forEach((el) => {
+      if (el) observer.observe(el);
+    });
+
+    return () => {
+      observer.disconnect();
+      if (debounceTimer) clearTimeout(debounceTimer);
+    };
+  }, [folderCards, actions]);
 
   const animate = () => {
     const dragId = dragDataRef.current.id;

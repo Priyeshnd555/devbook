@@ -88,12 +88,6 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                                 </Link>
                                 <Link
                                     href="/"
-                                    onClick={(e) => {
-                                        if (activeRoute !== 'weekly' && onViewModeChange && viewMode !== 'list') {
-                                            e.preventDefault();
-                                            onViewModeChange('list');
-                                        }
-                                    }}
                                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${activeRoute !== 'weekly'
                                         ? "bg-surface text-primary shadow-sm border border-border/50"
                                         : "text-text-secondary hover:text-text-primary hover:bg-surface/50"
@@ -103,38 +97,6 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                                     <span>Tasks</span>
                                 </Link>
                             </nav>
-
-                            {/* View Switcher: List or All Cards */}
-                            {activeRoute !== 'weekly' && onViewModeChange && (
-                                <div className="flex items-center p-0.5 bg-background border border-border rounded-lg shadow-2xs">
-                                    <button
-                                        type="button"
-                                        onClick={() => onViewModeChange('list')}
-                                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
-                                            viewMode === 'list'
-                                                ? "bg-surface text-primary font-bold shadow-xs border border-border/40"
-                                                : "text-text-secondary hover:text-text-primary"
-                                        }`}
-                                        title="List view"
-                                    >
-                                        <List className="w-3.5 h-3.5" />
-                                        <span className="hidden sm:inline">List</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => onViewModeChange('canvas')}
-                                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
-                                            viewMode === 'canvas'
-                                                ? "bg-surface text-primary font-bold shadow-xs border border-border/40"
-                                                : "text-text-secondary hover:text-text-primary"
-                                        }`}
-                                        title="All tasks at once (Canvas view)"
-                                    >
-                                        <LayoutGrid className="w-3.5 h-3.5" />
-                                        <span className="hidden sm:inline">All Tasks</span>
-                                    </button>
-                                </div>
-                            )}
                         </div>
                     </div>
 

@@ -163,7 +163,6 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
       if (!card) return;
       const updated = updateTaskInTree(card.tasks, taskId, (t: Task) => ({ ...t, note }));
       updateCardTasks(cardId, updated);
-      setEditingNote(null);
     },
     addChild: (cardId: string, parentId: string) => {
       if (!newChildText.trim()) return;

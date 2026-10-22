@@ -119,6 +119,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, editable = tru
     extensions: [StarterKit],
     content: content,
     editable: editable,
+    autofocus: editable ? "end" : false,
     onUpdate: ({ editor }) => {
       onUpdate(editor.getHTML());
     },
@@ -129,7 +130,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, editable = tru
     editorProps: {
       attributes: {
         class:
-          "w-full px-0 py-0 text-sm resize-none focus:outline-none bg-transparent text-text-primary leading-6 min-h-[auto] prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_p]:my-1 [&_li]:my-0 [&_a]:text-primary [&_a]:underline [&_a]:hover:text-primary-hover [&_pre]:bg-surface [&_pre]:p-4 [&_pre]:rounded-lg [&_pre]:border [&_pre]:border-border [&_pre]:my-2 [&_code]:font-mono [&_code]:text-xs [&_code]:bg-surface/50 [&_code]:px-1 [&_code]:rounded [&_pre_code]:bg-transparent [&_pre_code]:p-0",
+          "w-full px-0 py-0 text-sm resize-none focus:outline-none bg-transparent text-text-primary leading-6 min-h-[36px] prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_p]:my-1 [&_li]:my-0 [&_a]:text-primary [&_a]:underline [&_a]:hover:text-primary-hover [&_pre]:bg-surface [&_pre]:p-4 [&_pre]:rounded-lg [&_pre]:border [&_pre]:border-border [&_pre]:my-2 [&_code]:font-mono [&_code]:text-xs [&_code]:bg-surface/50 [&_code]:px-1 [&_code]:rounded [&_pre_code]:bg-transparent [&_pre_code]:p-0",
       },
     },
   });

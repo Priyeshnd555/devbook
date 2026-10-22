@@ -35,7 +35,7 @@
  */
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import RichTextEditor from "./RichTextEditor";
 
 interface NoteEditorProps {
@@ -56,65 +56,77 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   setEditingNote,
 }) => {
   const [editedNoteText, setEditedNoteText] = useState(initialContent);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedRef = useRef<string>(initialContent);
 
-  // This effect ensures that if the initialContent prop changes while the editor is mounted,
-  // the editedNoteText state is updated. This is crucial for controlled components.
-  // The linter might still complain, but this is a necessary synchronization.
+  // Synchronize when initialContent updates externally
   useEffect(() => {
     setEditedNoteText(initialContent);
-    setEditedNoteText(initialContent);
+    lastSavedRef.current = initialContent;
   }, [initialContent]);
 
-  // When switching to edit mode, ensure local state is fresh (though simple sync handles most)
-  // When switching OUT of edit mode, we might want to reset to initialContent if cancelled?
-  // Current logic: Cancel just hides buttons. RichTextEditor stays ensuring seamlessness.
-  // If we cancel, we should probably reset text.
+  // Clean up any pending auto-save timer on unmount
   useEffect(() => {
-    if (!isEditing) {
-      setEditedNoteText(initialContent);
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Debounced auto-save callback to prevent multiple re-renders while typing
+  const handleUpdate = useCallback(
+    (newText: string) => {
+      setEditedNoteText(newText);
+
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      saveTimeoutRef.current = setTimeout(() => {
+        if (newText !== lastSavedRef.current) {
+          lastSavedRef.current = newText;
+          saveNote(threadId, taskId, newText);
+        }
+      }, 500);
+    },
+    [saveNote, threadId, taskId]
+  );
+
+  // Immediate save on blur and finish editing mode
+  const handleBlur = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
     }
-  }, [isEditing, initialContent]);
+
+    if (editedNoteText !== lastSavedRef.current) {
+      lastSavedRef.current = editedNoteText;
+      saveNote(threadId, taskId, editedNoteText);
+    }
+
+    setEditingNote(null);
+  }, [editedNoteText, saveNote, threadId, taskId, setEditingNote]);
 
   return (
-    // Match Read View Styles: mt-1 ml-0.5 bg-primary/5 rounded-md px-2 py-1 -mx-2
-    // Added onClick to trigger edit mode when in read mode
     <div
-      className={`mt-2 ml-0.5 px-3 py-2 border rounded-md transition-all ${!isEditing ? 'border-primary/20 bg-primary-light/40 hover:bg-primary-light/60 cursor-text' : 'border-primary/30 bg-surface shadow-xs'}`}
+      className={`mt-1.5 px-3 py-2 border rounded-lg transition-all min-h-[46px] w-full ${
+        !isEditing
+          ? "border-border/60 bg-background/50 hover:bg-background hover:border-border cursor-text"
+          : "border-primary/40 bg-surface shadow-xs ring-1 ring-primary/20"
+      }`}
       onClick={() => {
         if (!isEditing) {
-          setEditingNote(taskId); // Parent handles this state update
+          setEditingNote(taskId);
         }
       }}
     >
-      <div className="">
-        <RichTextEditor
-          content={editedNoteText}
-          editable={isEditing}
-          onUpdate={setEditedNoteText}
-        />
-      </div>
-      {isEditing && (
-        <div
-          className="flex gap-2 animate-in fade-in duration-200 mt-2.5"
-          onClick={(e) => e.stopPropagation()} // Prevent bubbling
-        >
-          <button
-            onClick={() => saveNote(threadId, taskId, editedNoteText)}
-            className="px-3.5 py-1.5 bg-primary text-white text-xs rounded-md hover:bg-primary-hover transition-colors font-medium shadow-sm"
-          >
-            Save
-          </button>
-          <button
-            onClick={() => {
-              setEditingNote(null);
-              setEditedNoteText(initialContent); // Reset on cancel
-            }}
-            className="px-3.5 py-1.5 bg-surface text-text-secondary text-xs rounded-md border border-border hover:bg-background transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
+      <RichTextEditor
+        content={editedNoteText}
+        editable={isEditing}
+        onUpdate={handleUpdate}
+        onBlur={handleBlur}
+      />
     </div>
   );
 };

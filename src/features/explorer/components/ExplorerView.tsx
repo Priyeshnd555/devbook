@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, ArrowUp, ArrowDown, LayoutGrid } from "lucide-react";
+import { Plus, ArrowUp, ArrowDown, LayoutGrid, List } from "lucide-react";
 import { ThreadCard } from "@features/notes";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProjectSidebar } from "@features/projects";
@@ -94,35 +94,6 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({ defaultView = "list"
           onToggleShowCompleted={setShowCompleted}
           onOpenSettings={() => setSettingsModalOpen(true)}
           taskStats={{ completed: globalCompletedTasks, total: globalTotalTasks }}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          secondaryActions={
-            viewMode === "list" ? (
-              <button
-                onClick={() => setThreadsSortDirection(threadsSortDirection === "asc" ? "desc" : "asc")}
-                className="group flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors focus:outline-none text-text-secondary hover:text-text-primary hover:bg-background cursor-pointer"
-                aria-label={`Threads sorted by ${threadsSortDirection === "asc" ? "oldest first" : "newest first"}. Click to toggle.`}
-              >
-                {threadsSortDirection === "asc" ? (
-                  <ArrowUp className="h-3.5 w-3.5" />
-                ) : (
-                  <ArrowDown className="h-3.5 w-3.5" />
-                )}
-                <span className="text-[10px] uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                  {threadsSortDirection === "asc" ? "Oldest first" : "Newest first"}
-                </span>
-              </button>
-            ) : (
-              <button
-                onClick={() => window.dispatchEvent(new CustomEvent('lucid:autoArrange'))}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-text-secondary hover:text-primary hover:bg-background border border-border/60 shadow-2xs transition-all cursor-pointer"
-                title="Auto arrange tasks to prevent overlap"
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span>Auto Arrange</span>
-              </button>
-            )
-          }
           primaryAction={
             viewMode === "list" ? (
               <button
@@ -147,31 +118,92 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({ defaultView = "list"
           }
         />
 
-        {viewMode === "canvas" ? (
-          <LucidCanvas
-            activeProjectId={selectedProjectId || "proj-inbox"}
-            showCompleted={showCompleted}
-            localShowCompleted={localShowCompleted}
-            onToggleLocalShowCompleted={toggleThreadShowCompleted}
-            taskItemProps={taskItemProps}
-            threads={threads}
-            connections={connections}
-            expandedThreads={expandedThreads}
-            onToggleThread={toggleThread}
-            onAddThread={addThread}
-            onUpdateThreadPosition={updateThreadPosition}
-            onUpdateThreadDimensions={updateThreadDimensions}
-            onUpdateThreadTitle={updateThreadTitle}
-            onUpdateThreadStatus={updateThreadStatus}
-            onUpdateThreadTasks={updateThreadTasks}
-            onDeleteThread={deleteThread}
-            onUnlinkThread={unlinkThread}
-            onCreateConnection={createConnection}
-            onRemoveConnection={removeConnection}
-          />
-        ) : (
+        {/* Content Area with Sub-controls in Right Top Corner Below Header */}
+        <div className="flex-1 min-h-0 relative flex flex-col">
+          {/* Right Top Corner Controls */}
+          <div className="absolute top-3 right-6 z-30 flex items-center gap-2 pointer-events-auto">
+            {viewMode === "canvas" ? (
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('lucid:autoArrange'))}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-text-secondary hover:text-primary hover:bg-surface bg-surface/90 border border-border/80 shadow-xs backdrop-blur-md transition-all cursor-pointer"
+                title="Auto arrange cards to prevent overlap"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Auto Arrange</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setThreadsSortDirection(threadsSortDirection === "asc" ? "desc" : "asc")}
+                className="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface bg-surface/90 border border-border/80 shadow-xs backdrop-blur-md transition-all cursor-pointer"
+                aria-label={`Threads sorted by ${threadsSortDirection === "asc" ? "oldest first" : "newest first"}`}
+              >
+                {threadsSortDirection === "asc" ? (
+                  <ArrowUp className="h-3.5 w-3.5" />
+                ) : (
+                  <ArrowDown className="h-3.5 w-3.5" />
+                )}
+                <span className="text-[11px] whitespace-nowrap">
+                  {threadsSortDirection === "asc" ? "Oldest first" : "Newest first"}
+                </span>
+              </button>
+            )}
+
+            {/* List and All Cards View Switcher */}
+            <div className="flex items-center p-0.5 bg-surface/95 border border-border/80 rounded-lg shadow-xs backdrop-blur-md">
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                  viewMode === 'list'
+                    ? "bg-primary text-white font-bold shadow-xs"
+                    : "text-text-secondary hover:text-text-primary hover:bg-background/50"
+                }`}
+                title="List view"
+              >
+                <List className="w-3.5 h-3.5" />
+                <span>List</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('canvas')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                  viewMode === 'canvas'
+                    ? "bg-primary text-white font-bold shadow-xs"
+                    : "text-text-secondary hover:text-text-primary hover:bg-background/50"
+                }`}
+                title="All cards at once (Canvas view)"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>All Cards</span>
+              </button>
+            </div>
+          </div>
+
+          {viewMode === "canvas" ? (
+            <LucidCanvas
+              activeProjectId={selectedProjectId || "proj-inbox"}
+              showCompleted={showCompleted}
+              localShowCompleted={localShowCompleted}
+              onToggleLocalShowCompleted={toggleThreadShowCompleted}
+              taskItemProps={taskItemProps}
+              threads={threads}
+              connections={connections}
+              expandedThreads={expandedThreads}
+              onToggleThread={toggleThread}
+              onAddThread={addThread}
+              onUpdateThreadPosition={updateThreadPosition}
+              onUpdateThreadDimensions={updateThreadDimensions}
+              onUpdateThreadTitle={updateThreadTitle}
+              onUpdateThreadStatus={updateThreadStatus}
+              onUpdateThreadTasks={updateThreadTasks}
+              onDeleteThread={deleteThread}
+              onUnlinkThread={unlinkThread}
+              onCreateConnection={createConnection}
+              onRemoveConnection={removeConnection}
+            />
+          ) : (
           <main
-            className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto px-8 py-6 w-full overflow-auto
+            className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto px-8 pt-14 pb-6 w-full overflow-auto
               [scrollbar-width:none]
               [&::-webkit-scrollbar]:hidden"
           >
@@ -340,6 +372,7 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({ defaultView = "list"
             </div>
           </main>
         )}
+        </div>
       </div>
       <SettingsModal
         isOpen={isSettingsModalOpen}

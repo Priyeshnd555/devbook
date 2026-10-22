@@ -184,7 +184,7 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
       ref={handleRef}
       onMouseDown={(e) => onMouseDown(e, card)}
       onClick={onCardClick}
-      className={`lucid-card absolute p-4 bg-surface border rounded-xl flex flex-col group min-w-[280px] max-w-[800px] w-fit
+      className={`lucid-card absolute p-4 bg-surface border rounded-xl flex flex-col group min-w-[300px] max-w-[800px] w-fit
         ${isActive ? "border-primary/80 shadow-md ring-1 ring-primary/30" : "border-border shadow-2xs hover:shadow-sm hover:border-border/80"}
         ${isDragged ? "shadow-2xl border-primary/50 cursor-grabbing" : ""}
         ${isSource || isTarget ? "ring-1 ring-primary border-primary z-40" : ""}
@@ -194,8 +194,11 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
         left: 0,
         top: 0,
         transform: `translate3d(${card.x}px, ${card.y}px, 0)`,
-        width: card.width ? `${card.width}px` : undefined,
-        height: isExpanded ? (card.height ? `${card.height}px` : undefined) : "auto",
+        width: card.width ? `${card.width}px` : "fit-content",
+        minWidth: "300px",
+        maxWidth: "800px",
+        height: isExpanded ? "fit-content" : "auto",
+        minHeight: isExpanded && card.height ? `${card.height}px` : undefined,
         zIndex,
         cursor: linkingFromId ? "crosshair" : isDragged ? "grabbing" : "grab",
         willChange: "transform",
@@ -461,7 +464,7 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
 
       {/* Task List Section or Compact Closed Summary */}
       {isExpanded ? (
-        <div className="pt-2 border-t border-border/20 flex-1 overflow-y-auto [scrollbar-width:thin]">
+        <div className="pt-2 border-t border-border/20">
           <div className="space-y-0.5">
             {visibleTasks.map((task) => (
               <TaskItem

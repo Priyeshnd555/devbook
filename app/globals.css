@@ -213,3 +213,13 @@ body {
   list-style-type: decimal;
   margin-left: 1.25rem;
 }
+
+.ProseMirror p.is-editor-empty:first-child::before,
+.ProseMirror p:empty::before {
+  content: "Add comments or details...";
+  float: left;
+  color: var(--color-text-secondary);
+  opacity: 0.5;
+  pointer-events: none;
+  height: 0;
+}

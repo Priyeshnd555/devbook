@@ -760,8 +760,6 @@ const useWorkflowManager = () => {
         },
       };
     });
-
-    setEditingNote(null);
   };
 
   const updateTaskText = (
