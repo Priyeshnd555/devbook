@@ -157,16 +157,81 @@ export const useLucidManager = (
   }, [activeConnections, folderCards]);
 
   const autoArrangeCards = useCallback(() => {
+    if (folderCards.length === 0) return;
+
+    // Determine number of columns based on card count
+    const numCols = folderCards.length <= 4 ? 2 : 3;
+
+    // Calculate maximum widths per column to avoid any horizontal overlap
+    const colWidths = new Array(numCols).fill(340);
     folderCards.forEach((c, idx) => {
-      const col = idx % 3;
-      const row = Math.floor(idx / 3);
-      const newX = 80 + col * 420;
-      const newY = 80 + row * 340;
+      const col = idx % numCols;
+      const el = cardRefs.current[c.id];
+      const w = c.width || el?.offsetWidth || 340;
+      if (w > colWidths[col]) colWidths[col] = Math.min(w, 520);
+    });
+
+    const colX: number[] = [80];
+    for (let i = 1; i < numCols; i++) {
+      colX[i] = colX[i - 1] + colWidths[i - 1] + 60; // 60px horizontal gutter
+    }
+
+    // Keep track of Y offset for each column for a balanced, non-overlapping layout
+    const colY = new Array(numCols).fill(80);
+    const newPositions: Record<string, { x: number; y: number; width: number }> = {};
+
+    folderCards.forEach((c) => {
+      // Pick the column with the minimum height
+      let bestCol = 0;
+      for (let col = 1; col < numCols; col++) {
+        if (colY[col] < colY[bestCol]) {
+          bestCol = col;
+        }
+      }
+
+      const el = cardRefs.current[c.id];
+      const cardW = c.width || el?.offsetWidth || 340;
+      const cardH = c.height || el?.offsetHeight || 220;
+
+      const newX = colX[bestCol];
+      const newY = colY[bestCol];
+      newPositions[c.id] = { x: newX, y: newY, width: cardW };
+
+      colY[bestCol] += cardH + 50; // 50px vertical gutter
+
+      // Animate DOM element transform smoothly
+      if (el) {
+        el.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+        el.style.transform = `translate3d(${newX}px, ${newY}px, 0)`;
+        setTimeout(() => {
+          if (el) el.style.transition = '';
+        }, 450);
+      }
+
       if (actions?.updateThreadPosition) {
         actions.updateThreadPosition(c.id, newX, newY);
       }
     });
-  }, [folderCards, actions]);
+
+    // Update connection lines so arrows stay connected cleanly
+    activeConnections.forEach((conn) => {
+      const line = connectionRefs.current[conn.id];
+      const fromPos = newPositions[conn.from];
+      const toPos = newPositions[conn.to];
+      if (line && fromPos && toPos) {
+        const fromMidX = fromPos.x + fromPos.width / 2;
+        const toMidX = toPos.x + toPos.width / 2;
+        line.style.transition = 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+        line.setAttribute('x1', fromMidX.toString());
+        line.setAttribute('y1', (fromPos.y + 30).toString());
+        line.setAttribute('x2', toMidX.toString());
+        line.setAttribute('y2', (toPos.y + 30).toString());
+        setTimeout(() => {
+          if (line) line.style.transition = '';
+        }, 450);
+      }
+    });
+  }, [folderCards, actions, activeConnections]);
 
   const animate = () => {
     const dragId = dragDataRef.current.id;

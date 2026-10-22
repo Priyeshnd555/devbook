@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { LayoutDashboard, Lightbulb, Compass, List, LayoutGrid } from "lucide-react";
+import { LayoutDashboard, Lightbulb, ListTodo, List, LayoutGrid } from "lucide-react";
 import { ProjectNavigator } from "@features/projects";
 import HeaderActions from "./HeaderActions";
 import { Project } from "@shared/types";
@@ -84,39 +84,28 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                                         }`}
                                 >
                                     <LayoutDashboard className="w-3.5 h-3.5" />
-                                    <span className="hidden lg:inline">Roadmap</span>
+                                    <span>Roadmap</span>
                                 </Link>
-                                <button
-                                    type="button"
-                                    onClick={() => onViewModeChange ? onViewModeChange('list') : undefined}
-                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                                        activeRoute === 'explorer' || (viewMode === 'list' && activeRoute !== 'weekly')
+                                <Link
+                                    href="/"
+                                    onClick={(e) => {
+                                        if (activeRoute !== 'weekly' && onViewModeChange && viewMode !== 'list') {
+                                            e.preventDefault();
+                                            onViewModeChange('list');
+                                        }
+                                    }}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${activeRoute !== 'weekly'
                                         ? "bg-surface text-primary shadow-sm border border-border/50"
                                         : "text-text-secondary hover:text-text-primary hover:bg-surface/50"
                                         }`}
                                 >
-                                    <Link href="/" onClick={(e) => { if (onViewModeChange) { e.preventDefault(); onViewModeChange('list'); } }} className="flex items-center gap-2">
-                                        <Compass className="w-3.5 h-3.5" />
-                                        <span className="hidden lg:inline">Explorer</span>
-                                    </Link>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => onViewModeChange ? onViewModeChange('canvas') : undefined}
-                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                                        activeRoute === 'lucid' || (viewMode === 'canvas' && activeRoute !== 'weekly')
-                                        ? "bg-surface text-primary shadow-sm border border-border/50"
-                                        : "text-text-secondary hover:text-text-primary hover:bg-surface/50"
-                                        }`}
-                                >
-                                    <Link href="/lucid" onClick={(e) => { if (onViewModeChange) { e.preventDefault(); onViewModeChange('canvas'); } }} className="flex items-center gap-2">
-                                        <Lightbulb className="w-3.5 h-3.5" />
-                                        <span className="hidden lg:inline">Lucid</span>
-                                    </Link>
-                                </button>
+                                    <ListTodo className="w-3.5 h-3.5" />
+                                    <span>Tasks</span>
+                                </Link>
                             </nav>
 
-                            {onViewModeChange && (
+                            {/* View Switcher: List or All Cards */}
+                            {activeRoute !== 'weekly' && onViewModeChange && (
                                 <div className="flex items-center p-0.5 bg-background border border-border rounded-lg shadow-2xs">
                                     <button
                                         type="button"
@@ -126,10 +115,10 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                                                 ? "bg-surface text-primary font-bold shadow-xs border border-border/40"
                                                 : "text-text-secondary hover:text-text-primary"
                                         }`}
-                                        title="List format"
+                                        title="List view"
                                     >
                                         <List className="w-3.5 h-3.5" />
-                                        <span className="hidden md:inline">List</span>
+                                        <span className="hidden sm:inline">List</span>
                                     </button>
                                     <button
                                         type="button"
@@ -139,10 +128,10 @@ const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                                                 ? "bg-surface text-primary font-bold shadow-xs border border-border/40"
                                                 : "text-text-secondary hover:text-text-primary"
                                         }`}
-                                        title="All cards at once (Canvas)"
+                                        title="All tasks at once (Canvas view)"
                                     >
                                         <LayoutGrid className="w-3.5 h-3.5" />
-                                        <span className="hidden md:inline">All Cards</span>
+                                        <span className="hidden sm:inline">All Tasks</span>
                                     </button>
                                 </div>
                             )}

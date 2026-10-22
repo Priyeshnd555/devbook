@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, ArrowUp, ArrowDown, LayoutGrid } from "lucide-react";
 import { ThreadCard } from "@features/notes";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProjectSidebar } from "@features/projects";
@@ -112,7 +112,16 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({ defaultView = "list"
                   {threadsSortDirection === "asc" ? "Oldest first" : "Newest first"}
                 </span>
               </button>
-            ) : undefined
+            ) : (
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('lucid:autoArrange'))}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-text-secondary hover:text-primary hover:bg-background border border-border/60 shadow-2xs transition-all cursor-pointer"
+                title="Auto arrange tasks to prevent overlap"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Auto Arrange</span>
+              </button>
+            )
           }
           primaryAction={
             viewMode === "list" ? (
@@ -120,19 +129,19 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({ defaultView = "list"
                 onClick={() => setIsAddingThread(true)}
                 className="flex items-center gap-2 bg-primary text-white px-3.5 py-1.5 rounded-md text-xs font-semibold hover:bg-primary-hover shadow-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                 disabled={!selectedProjectId}
-                title={!selectedProjectId ? "Select a project to add a thread" : "Add new card"}
+                title={!selectedProjectId ? "Select a project to add a task" : "Add new task"}
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>New Card</span>
+                <span>New Task</span>
               </button>
             ) : (
               <button
                 onClick={() => addThread("", 120 + Math.random() * 200, 120 + Math.random() * 150)}
                 className="flex items-center gap-2 bg-primary text-white px-3.5 py-1.5 rounded-md text-xs font-semibold hover:bg-primary-hover shadow-sm transition-colors cursor-pointer"
-                title="Add new card to canvas"
+                title="Add new task to canvas"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Add Card</span>
+                <span>Add Task</span>
               </button>
             )
           }
@@ -147,6 +156,8 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({ defaultView = "list"
             taskItemProps={taskItemProps}
             threads={threads}
             connections={connections}
+            expandedThreads={expandedThreads}
+            onToggleThread={toggleThread}
             onAddThread={addThread}
             onUpdateThreadPosition={updateThreadPosition}
             onUpdateThreadDimensions={updateThreadDimensions}
@@ -217,7 +228,7 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({ defaultView = "list"
                             disabled={!newThreadTitle.trim()}
                             className="px-3 py-1 bg-primary text-white font-medium rounded hover:bg-primary-hover disabled:opacity-40 transition-colors shadow-xs text-xs cursor-pointer"
                           >
-                            Add Card
+                            Add Task
                           </button>
                         </div>
                       </div>

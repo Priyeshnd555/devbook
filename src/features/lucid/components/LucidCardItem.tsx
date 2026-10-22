@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef } from "react";
-import { Trash2, Link as LinkIcon, Unlink, Plus, Clock, Eye, EyeOff } from "lucide-react";
+import { Trash2, Link as LinkIcon, Unlink, Plus, Clock, Eye, EyeOff, ChevronDown, ChevronRight } from "lucide-react";
 import { TaskItem, TaskItemProps } from "@features/tasks";
 import { Task, ThreadStatus, THREAD_STATE_TRANSITIONS } from "@shared/types";
 import {
@@ -18,6 +18,8 @@ interface LucidCardItemProps {
   card: LucidCard;
   isDragged: boolean;
   isActive: boolean;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
   isSource: boolean;
   isTarget: boolean;
   connCount: number;
@@ -42,6 +44,8 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
   card,
   isDragged,
   isActive,
+  isExpanded = true,
+  onToggleExpand,
   isSource,
   isTarget,
   connCount,
@@ -180,10 +184,10 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
       ref={handleRef}
       onMouseDown={(e) => onMouseDown(e, card)}
       onClick={onCardClick}
-      className={`absolute p-4 bg-surface border rounded-xl flex flex-col group min-w-[280px] max-w-[800px] w-fit
-        ${isActive ? "ring-2 ring-primary/80 border-primary shadow-2xl scale-[1.008]" : "border-border shadow-xs hover:shadow-md hover:border-border/90"}
+      className={`lucid-card absolute p-4 bg-surface border rounded-xl flex flex-col group min-w-[280px] max-w-[800px] w-fit
+        ${isActive ? "border-primary/80 shadow-md ring-1 ring-primary/30" : "border-border shadow-2xs hover:shadow-sm hover:border-border/80"}
         ${isDragged ? "shadow-2xl border-primary/50 cursor-grabbing" : ""}
-        ${isSource || isTarget ? "ring-2 ring-primary border-primary z-40" : ""}
+        ${isSource || isTarget ? "ring-1 ring-primary border-primary z-40" : ""}
         ${isDragged ? "" : "transition-all duration-200"}
       `}
       style={{
@@ -191,71 +195,104 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
         top: 0,
         transform: `translate3d(${card.x}px, ${card.y}px, 0)`,
         width: card.width ? `${card.width}px` : undefined,
-        height: card.height ? `${card.height}px` : undefined,
+        height: isExpanded ? (card.height ? `${card.height}px` : undefined) : "auto",
         zIndex,
         cursor: linkingFromId ? "crosshair" : isDragged ? "grabbing" : "grab",
         willChange: "transform",
       }}
     >
-      {/* 8-Directional Resize Handles */}
-      <div
-        className="resize-handle absolute top-0 left-3 right-3 h-2 cursor-ns-resize z-30 hover:bg-primary/20 transition-colors"
-        onMouseDown={(e) => handleResizeMouseDown(e, "n")}
-        onDoubleClick={handleResetDimensions}
-        title="Resize height (Double click to reset)"
-      />
-      <div
-        className="resize-handle absolute bottom-0 left-3 right-3 h-2 cursor-ns-resize z-30 hover:bg-primary/20 transition-colors"
-        onMouseDown={(e) => handleResizeMouseDown(e, "s")}
-        onDoubleClick={handleResetDimensions}
-        title="Resize height (Double click to reset)"
-      />
-      <div
-        className="resize-handle absolute left-0 top-3 bottom-3 w-2 cursor-ew-resize z-30 hover:bg-primary/20 transition-colors"
-        onMouseDown={(e) => handleResizeMouseDown(e, "w")}
-        onDoubleClick={handleResetDimensions}
-        title="Resize width (Double click to reset)"
-      />
-      <div
-        className="resize-handle absolute right-0 top-3 bottom-3 w-2 cursor-ew-resize z-30 hover:bg-primary/20 transition-colors"
-        onMouseDown={(e) => handleResizeMouseDown(e, "e")}
-        onDoubleClick={handleResetDimensions}
-        title="Resize width (Double click to reset)"
-      />
-      <div
-        className="resize-handle absolute -top-1 -left-1 w-3.5 h-3.5 cursor-nwse-resize z-30 rounded-tl-lg hover:bg-primary/40 transition-colors"
-        onMouseDown={(e) => handleResizeMouseDown(e, "nw")}
-        onDoubleClick={handleResetDimensions}
-        title="Resize (Double click to reset)"
-      />
-      <div
-        className="resize-handle absolute -top-1 -right-1 w-3.5 h-3.5 cursor-nesw-resize z-30 rounded-tr-lg hover:bg-primary/40 transition-colors"
-        onMouseDown={(e) => handleResizeMouseDown(e, "ne")}
-        onDoubleClick={handleResetDimensions}
-        title="Resize (Double click to reset)"
-      />
-      <div
-        className="resize-handle absolute -bottom-1 -left-1 w-3.5 h-3.5 cursor-nesw-resize z-30 rounded-bl-lg hover:bg-primary/40 transition-colors"
-        onMouseDown={(e) => handleResizeMouseDown(e, "sw")}
-        onDoubleClick={handleResetDimensions}
-        title="Resize (Double click to reset)"
-      />
-      <div
-        className="resize-handle absolute -bottom-1 -right-1 w-4 h-4 cursor-nwse-resize z-30 rounded-br-lg hover:bg-primary/40 transition-colors flex items-center justify-center"
-        onMouseDown={(e) => handleResizeMouseDown(e, "se")}
-        onDoubleClick={handleResetDimensions}
-        title="Resize (Double click to reset)"
-      >
-        <div className="w-1.5 h-1.5 rounded-full bg-border group-hover:bg-primary/80 transition-colors pointer-events-none" />
-      </div>
+      {/* Resize Handles - full 8 directions when expanded, left/right only when collapsed */}
+      {isExpanded ? (
+        <>
+          <div
+            className="resize-handle absolute top-0 left-3 right-3 h-2 cursor-ns-resize z-30 hover:bg-primary/20 transition-colors"
+            onMouseDown={(e) => handleResizeMouseDown(e, "n")}
+            onDoubleClick={handleResetDimensions}
+            title="Resize height (Double click to reset)"
+          />
+          <div
+            className="resize-handle absolute bottom-0 left-3 right-3 h-2 cursor-ns-resize z-30 hover:bg-primary/20 transition-colors"
+            onMouseDown={(e) => handleResizeMouseDown(e, "s")}
+            onDoubleClick={handleResetDimensions}
+            title="Resize height (Double click to reset)"
+          />
+          <div
+            className="resize-handle absolute left-0 top-3 bottom-3 w-2 cursor-ew-resize z-30 hover:bg-primary/20 transition-colors"
+            onMouseDown={(e) => handleResizeMouseDown(e, "w")}
+            onDoubleClick={handleResetDimensions}
+            title="Resize width (Double click to reset)"
+          />
+          <div
+            className="resize-handle absolute right-0 top-3 bottom-3 w-2 cursor-ew-resize z-30 hover:bg-primary/20 transition-colors"
+            onMouseDown={(e) => handleResizeMouseDown(e, "e")}
+            onDoubleClick={handleResetDimensions}
+            title="Resize width (Double click to reset)"
+          />
+          <div
+            className="resize-handle absolute -top-1 -left-1 w-3.5 h-3.5 cursor-nwse-resize z-30 rounded-tl-lg hover:bg-primary/40 transition-colors"
+            onMouseDown={(e) => handleResizeMouseDown(e, "nw")}
+            onDoubleClick={handleResetDimensions}
+            title="Resize (Double click to reset)"
+          />
+          <div
+            className="resize-handle absolute -top-1 -right-1 w-3.5 h-3.5 cursor-nesw-resize z-30 rounded-tr-lg hover:bg-primary/40 transition-colors"
+            onMouseDown={(e) => handleResizeMouseDown(e, "ne")}
+            onDoubleClick={handleResetDimensions}
+            title="Resize (Double click to reset)"
+          />
+          <div
+            className="resize-handle absolute -bottom-1 -left-1 w-3.5 h-3.5 cursor-nesw-resize z-30 rounded-bl-lg hover:bg-primary/40 transition-colors"
+            onMouseDown={(e) => handleResizeMouseDown(e, "sw")}
+            onDoubleClick={handleResetDimensions}
+            title="Resize (Double click to reset)"
+          />
+          <div
+            className="resize-handle absolute -bottom-1 -right-1 w-4 h-4 cursor-nwse-resize z-30 rounded-br-lg hover:bg-primary/40 transition-colors flex items-center justify-center"
+            onMouseDown={(e) => handleResizeMouseDown(e, "se")}
+            onDoubleClick={handleResetDimensions}
+            title="Resize (Double click to reset)"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-border group-hover:bg-primary/80 transition-colors pointer-events-none" />
+          </div>
+        </>
+      ) : (
+        <>
+          <div
+            className="resize-handle absolute left-0 top-2 bottom-2 w-2 cursor-ew-resize z-30 hover:bg-primary/20 transition-colors"
+            onMouseDown={(e) => handleResizeMouseDown(e, "w")}
+            onDoubleClick={handleResetDimensions}
+            title="Resize width (Double click to reset)"
+          />
+          <div
+            className="resize-handle absolute right-0 top-2 bottom-2 w-2 cursor-ew-resize z-30 hover:bg-primary/20 transition-colors"
+            onMouseDown={(e) => handleResizeMouseDown(e, "e")}
+            onDoubleClick={handleResetDimensions}
+            title="Resize width (Double click to reset)"
+          />
+        </>
+      )}
 
-      {/* Top Header Row: Thread Number, Status Dropdown, and Action Buttons */}
+      {/* Top Header Row: Chevron Toggle, Thread Number, Status Dropdown, and Action Buttons */}
       <div className="flex justify-between items-center mb-2 pb-2 border-b border-border/30">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          {onToggleExpand && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleExpand();
+              }}
+              className="p-0.5 rounded text-text-secondary/70 hover:text-primary hover:bg-background/80 transition-colors cursor-pointer"
+              title={isExpanded ? "Close task card" : "Open task card"}
+              aria-label={isExpanded ? "Close task card" : "Open task card"}
+            >
+              {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+            </button>
+          )}
+
           {card.threadNumber !== undefined && (
             <span
               className="px-1.5 py-0.5 text-[11px] font-mono font-bold text-text-secondary/80 bg-background/80 rounded border border-border/40 select-none"
-              title={`Card #${card.threadNumber}`}
+              title={`Task #${card.threadNumber}`}
             >
               #{card.threadNumber}
             </span>
@@ -270,7 +307,7 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
               }}
               onBlur={() => setTimeout(() => setIsStatusMenuOpen(false), 200)}
               className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium capitalize ${statusStyle.bg} shrink-0 cursor-pointer hover:opacity-90 transition-opacity`}
-              title="Change card status"
+              title="Change task status"
             >
               <div className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
               <span className={`text-[11px] font-medium ${statusStyle.text}`}>
@@ -305,6 +342,19 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
             </span>
           )}
           <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+            {onToggleExpand && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleExpand();
+                }}
+                className="text-text-secondary/70 hover:text-primary transition-colors p-1 rounded hover:bg-background cursor-pointer"
+                title={isExpanded ? "Close task card" : "Open task card"}
+                aria-label={isExpanded ? "Close task card" : "Open task card"}
+              >
+                {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+              </button>
+            )}
             {connCount > 0 && (
               <button
                 onClick={(e) => {
@@ -312,7 +362,7 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
                   onUnlink(card.id);
                 }}
                 className="text-text-secondary/70 hover:text-danger transition-colors p-1 rounded hover:bg-background cursor-pointer"
-                title="Unlink Card"
+                title="Unlink Task"
               >
                 <Unlink size={13} />
               </button>
@@ -323,7 +373,7 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
                 onSetLinkingFrom(card.id);
               }}
               className="text-text-secondary/70 hover:text-primary transition-colors p-1 rounded hover:bg-background cursor-pointer"
-              title="Link to another card"
+              title="Link to another task"
             >
               <LinkIcon size={13} />
             </button>
@@ -333,7 +383,7 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
                 onDelete(card.id);
               }}
               className="text-text-secondary/70 hover:text-danger transition-colors p-1 rounded hover:bg-background cursor-pointer"
-              title="Delete Card"
+              title="Delete Task"
             >
               <Trash2 size={13} />
             </button>
@@ -405,50 +455,70 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
             e.target.style.height = e.target.scrollHeight + "px";
           }}
           rows={1}
-          placeholder="Card title..."
+          placeholder="Task title..."
         />
       </div>
 
-      {/* Task List Section */}
-      <div className="pt-2 border-t border-border/20 flex-1 overflow-y-auto [scrollbar-width:thin]">
-        <div className="space-y-0.5">
-          {visibleTasks.map((task) => (
-            <TaskItem
-              key={`${card.id}-${task.id}`}
-              {...taskItemProps}
-              task={task}
-              threadId={card.id}
-              showCompleted={finalShowCompleted}
-            />
-          ))}
-        </div>
+      {/* Task List Section or Compact Closed Summary */}
+      {isExpanded ? (
+        <div className="pt-2 border-t border-border/20 flex-1 overflow-y-auto [scrollbar-width:thin]">
+          <div className="space-y-0.5">
+            {visibleTasks.map((task) => (
+              <TaskItem
+                key={`${card.id}-${task.id}`}
+                {...taskItemProps}
+                task={task}
+                threadId={card.id}
+                showCompleted={finalShowCompleted}
+              />
+            ))}
+          </div>
 
-        {/* Notepad-style Add Task line */}
-        <div className="mt-2 flex items-center gap-2 group/add px-1 opacity-70 hover:opacity-100 focus-within:opacity-100 transition-opacity">
-          <Plus className="w-3.5 h-3.5 text-text-secondary/70 group-hover/add:text-primary transition-colors flex-shrink-0" />
-          <input
-            type="text"
-            placeholder="Add task..."
-            className="flex-1 min-w-[120px] bg-transparent border-none outline-none ring-0 focus:ring-0 focus:outline-none text-xs text-text-primary placeholder:text-text-secondary/40 font-sans"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && e.currentTarget.value.trim()) {
-                const newTask: Task = {
-                  id: crypto.randomUUID(),
-                  text: e.currentTarget.value.trim(),
-                  done: false,
-                  note: "",
-                  children: [],
-                  priority: 0,
-                  createdAt: Date.now(),
-                  sortConfig: { direction: "desc" },
-                };
-                onUpdateTasks(card.id, [...card.tasks, newTask]);
-                e.currentTarget.value = "";
-              }
-            }}
-          />
+          {/* Notepad-style Add Task line */}
+          <div className="mt-2 flex items-center gap-2 group/add px-1 opacity-70 hover:opacity-100 focus-within:opacity-100 transition-opacity">
+            <Plus className="w-3.5 h-3.5 text-text-secondary/70 group-hover/add:text-primary transition-colors flex-shrink-0" />
+            <input
+              type="text"
+              placeholder="Add task..."
+              className="flex-1 min-w-[120px] bg-transparent border-none outline-none ring-0 focus:ring-0 focus:outline-none text-xs text-text-primary placeholder:text-text-secondary/40 font-sans"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && e.currentTarget.value.trim()) {
+                  const newTask: Task = {
+                    id: crypto.randomUUID(),
+                    text: e.currentTarget.value.trim(),
+                    done: false,
+                    note: "",
+                    children: [],
+                    priority: 0,
+                    createdAt: Date.now(),
+                    sortConfig: { direction: "desc" },
+                  };
+                  onUpdateTasks(card.id, [...card.tasks, newTask]);
+                  e.currentTarget.value = "";
+                }
+              }}
+            />
+          </div>
         </div>
-      </div>
+      ) : (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleExpand?.();
+          }}
+          className="mt-1 py-1 px-2.5 rounded-lg bg-background/50 hover:bg-background border border-border/40 flex items-center justify-between text-xs text-text-secondary cursor-pointer transition-all hover:border-primary/40 group/closed"
+          title="Click to open task list"
+        >
+          <span className="font-medium text-[11px] text-text-secondary">
+            {totalTasks} {totalTasks === 1 ? "task" : "tasks"}
+            {completedTasks > 0 && ` (${completedTasks} done)`}
+          </span>
+          <span className="text-primary font-medium text-[11px] flex items-center gap-1 group-hover/closed:translate-x-0.5 transition-transform">
+            <span>Open</span>
+            <ChevronRight size={12} />
+          </span>
+        </div>
+      )}
     </div>
   );
 };

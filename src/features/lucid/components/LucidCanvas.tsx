@@ -15,6 +15,8 @@ interface LucidCanvasProps {
   taskItemProps: Omit<TaskItemProps, "task" | "threadId" | "level">;
   threads?: Record<string, Thread>;
   connections?: ThreadConnection[];
+  expandedThreads?: Set<string>;
+  onToggleThread?: (id: string) => void;
   onAddThread?: (title?: string, x?: number, y?: number) => void;
   onUpdateThreadPosition?: (id: string, x: number, y: number) => void;
   onUpdateThreadDimensions?: (id: string, width?: number, height?: number, x?: number, y?: number) => void;
@@ -47,6 +49,8 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
   taskItemProps,
   threads,
   connections,
+  expandedThreads,
+  onToggleThread,
   onAddThread,
   onUpdateThreadPosition,
   onUpdateThreadDimensions,
@@ -63,6 +67,7 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
     folderConnections,
     draggedCardId,
     activeCardId,
+    setActiveCardId,
     bringCardToFront,
     linkingFromId,
     proximityTargetId,
@@ -98,9 +103,21 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
 
   React.useEffect(() => {
     const handleAddCardEvent = () => addCard();
+    const handleAutoArrangeEvent = () => autoArrangeCards();
     window.addEventListener("lucid:addCard", handleAddCardEvent);
-    return () => window.removeEventListener("lucid:addCard", handleAddCardEvent);
-  }, [addCard]);
+    window.addEventListener("lucid:autoArrange", handleAutoArrangeEvent);
+    return () => {
+      window.removeEventListener("lucid:addCard", handleAddCardEvent);
+      window.removeEventListener("lucid:autoArrange", handleAutoArrangeEvent);
+    };
+  }, [addCard, autoArrangeCards]);
+
+  const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    // If click didn't originate inside a card, clear active card focus
+    if (!(e.target as HTMLElement).closest(".lucid-card")) {
+      setActiveCardId(null);
+    }
+  };
 
   // --- Local Task Logic Mapping ---
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
@@ -185,42 +202,77 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
     },
   };
 
+  // Track cards collapsed in canvas view
+  const [collapsedCardIds, setCollapsedCardIds] = useState<Set<string>>(new Set());
+
+  const handleToggleCardExpand = (cardId: string) => {
+    setCollapsedCardIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(cardId)) {
+        next.delete(cardId);
+      } else {
+        next.add(cardId);
+      }
+      return next;
+    });
+    onToggleThread?.(cardId);
+  };
+
+  // Dynamic Canvas bounds to ensure all cards (even far down or right) can be scrolled to
+  const canvasBounds = React.useMemo(() => {
+    let maxX = 1800;
+    let maxY = 1200;
+    folderCards.forEach((c) => {
+      const cardWidth = c.width || 340;
+      const cardHeight = c.height || 360;
+      if (c.x + cardWidth + 500 > maxX) {
+        maxX = c.x + cardWidth + 500;
+      }
+      if (c.y + cardHeight + 600 > maxY) {
+        maxY = c.y + cardHeight + 600;
+      }
+    });
+    return { width: maxX, height: maxY };
+  }, [folderCards]);
+
   return (
     <main
       ref={canvasRef}
-      className="flex-1 relative overflow-hidden bg-background cursor-crosshair selection:bg-primary/20 h-full w-full"
+      className="flex-1 relative overflow-auto no-scrollbar bg-background cursor-crosshair selection:bg-primary/20 h-full w-full"
+      style={{
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+      }}
+      onMouseDown={handleCanvasMouseDown}
       onMouseUp={handleGlobalMouseUp}
       onMouseLeave={handleGlobalMouseUp}
       onDoubleClick={(e) => {
-        if (e.target === canvasRef.current) {
-          const rect = canvasRef.current.getBoundingClientRect();
-          addCard("", e.clientX - rect.left - 150, e.clientY - rect.top - 100);
+        if (
+          e.target === canvasRef.current ||
+          (e.target as HTMLElement).classList.contains("lucid-canvas-bg")
+        ) {
+          const rect = canvasRef.current?.getBoundingClientRect();
+          if (rect) {
+            const scrollLeft = canvasRef.current?.scrollLeft || 0;
+            const scrollTop = canvasRef.current?.scrollTop || 0;
+            addCard("", e.clientX - rect.left + scrollLeft - 150, e.clientY - rect.top + scrollTop - 100);
+          }
         }
       }}
     >
-      {/* Floating Canvas Controls Overlay */}
-      <div className="absolute top-4 right-4 z-40 flex items-center gap-2 bg-surface/90 backdrop-blur-md border border-border/80 shadow-md rounded-xl p-1.5 transition-all">
-        <button
-          onClick={() => autoArrangeCards()}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-primary hover:bg-background rounded-lg transition-colors cursor-pointer"
-          title="Auto arrange cards to prevent overlap"
+      <div
+        className="lucid-canvas-bg relative"
+        style={{
+          width: `${canvasBounds.width}px`,
+          height: `${canvasBounds.height}px`,
+          minWidth: "100%",
+          minHeight: "100%",
+        }}
+      >
+        <svg
+          className="absolute inset-0 pointer-events-none z-0 overflow-visible"
+          style={{ width: `${canvasBounds.width}px`, height: `${canvasBounds.height}px` }}
         >
-          <LayoutGrid className="w-3.5 h-3.5" />
-          <span>Auto Arrange</span>
-        </button>
-        <div className="h-4 w-px bg-border/60" />
-        <button
-          onClick={() => addCard()}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-primary text-white hover:bg-primary-hover rounded-lg shadow-xs transition-colors cursor-pointer"
-          title="Add a new card"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Add Card</span>
-        </button>
-      </div>
-
-      <div className="absolute inset-0 z-0">
-        <svg className="absolute inset-0 pointer-events-none z-0 w-full h-full overflow-visible">
           <defs>
             <marker id="arrowhead" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto">
               <polygon
@@ -290,6 +342,8 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
               }}
               isDragged={draggedCardId === card.id}
               isActive={activeCardId === card.id}
+              isExpanded={!collapsedCardIds.has(card.id)}
+              onToggleExpand={() => handleToggleCardExpand(card.id)}
               isSource={linkingFromId === card.id}
               isTarget={proximityTargetId === card.id}
               connCount={
