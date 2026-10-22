@@ -7,6 +7,7 @@ export interface LucidCard {
   tasks: Task[];
   x: number;
   y: number;
+  width?: number;
   createdAt: number;
 }
 

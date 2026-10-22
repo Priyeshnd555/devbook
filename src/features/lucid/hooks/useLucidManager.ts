@@ -96,15 +96,19 @@ export const useLucidManager = (activeProjectId: string) => {
         el.style.transform = `translate3d(${dragDataRef.current.currentX}px, ${dragDataRef.current.currentY}px, 0) rotate(${tilt}deg) scale(1.02)`;
         dragDataRef.current.lastX = dragDataRef.current.currentX;
 
+        const currentCard = folderCards.find(c => c.id === dragId);
+        const cardWidth = currentCard?.width || el.offsetWidth || 240;
+        const halfWidth = cardWidth / 2;
+
         activeConnectionsRef.current.forEach(conn => {
           const line = connectionRefs.current[conn.id];
           if (!line) return;
 
           if (conn.from === dragId) {
-            line.setAttribute('x1', (dragDataRef.current.currentX + 110).toString());
+            line.setAttribute('x1', (dragDataRef.current.currentX + halfWidth).toString());
             line.setAttribute('y1', (dragDataRef.current.currentY + 30).toString());
           } else if (conn.to === dragId) {
-            line.setAttribute('x2', (dragDataRef.current.currentX + 110).toString());
+            line.setAttribute('x2', (dragDataRef.current.currentX + halfWidth).toString());
             line.setAttribute('y2', (dragDataRef.current.currentY + 30).toString());
           }
         });
@@ -114,7 +118,12 @@ export const useLucidManager = (activeProjectId: string) => {
   };
 
   const handleMouseDown = (e: React.MouseEvent | MouseEvent, card: LucidCard) => {
-    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).tagName === 'TEXTAREA' || (e.target as HTMLElement).tagName === 'INPUT') return;
+    if (
+      (e.target as HTMLElement).closest('button') || 
+      (e.target as HTMLElement).closest('.resize-handle') ||
+      (e.target as HTMLElement).tagName === 'TEXTAREA' || 
+      (e.target as HTMLElement).tagName === 'INPUT'
+    ) return;
     if (linkingFromId) return;
 
     dragDataRef.current = {
@@ -225,6 +234,10 @@ export const useLucidManager = (activeProjectId: string) => {
     setCards(prev => prev.map(c => c.id === cardId ? { ...c, tasks: updatedTasks } : c));
   };
 
+  const updateCardWidth = (cardId: string, width?: number) => {
+    setCards(prev => prev.map(c => c.id === cardId ? { ...c, width } : c));
+  };
+
   const setCommitment = (goal: string) => {
     const newId = crypto.randomUUID();
     const padding = 100;
@@ -260,6 +273,7 @@ export const useLucidManager = (activeProjectId: string) => {
     createConnection,
     removeConnection,
     updateCardTasks,
+    updateCardWidth,
     setCommitment,
     clearCommitment,
     cardRefs,

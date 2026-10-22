@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  /* HSL Channel definitions - Light Theme (Default) */
-  --color-primary: 24 99% 55%;   /* #FB8500 - Vibrant Orange */
-  --color-primary-hover: 17 99% 48%; /* #ea580c */
-  --color-primary-light: 32 98% 93%; /* #ffedd5 */
-  --color-primary-text: 15 79% 34%; /* #c2410c */
+  /* HSL Channel definitions - Light Theme (Default: Blue) */
+  --color-primary: 217 91% 60%;      /* #3b82f6 (blue-500) */
+  --color-primary-hover: 221 83% 53%; /* #2563eb (blue-600) */
+  --color-primary-light: 214 94% 93%; /* #dbeafe (blue-100) */
+  --color-primary-text: 224 76% 30%;  /* #1e3a8a (blue-900) */
 
   --color-accent: 201 98% 41%;   /* #0288D1 */
   
@@ -31,11 +31,11 @@
 /* CONTEXT ANCHOR: DARK THEME VARIABLES                                                              */
 /* ================================================================================================= */
 .dark {
-    /* HSL Channel definitions - Dark Theme */
-    --color-primary: 24 99% 55%;
-    --color-primary-hover: 24 99% 65%; 
-    --color-primary-light: 24 40% 20%; 
-    --color-primary-text: 24 99% 80%; 
+    /* HSL Channel definitions - Dark Theme (Default: Blue) */
+    --color-primary: 217 91% 60%;
+    --color-primary-hover: 217 91% 70%;
+    --color-primary-light: 217 91% 20%;
+    --color-primary-text: 217 91% 80%;
     
     --color-accent: 198 90% 70%; 
     --color-background: 0 0% 7%;  /* #121212 */
@@ -58,6 +58,20 @@
 /* ================================================================================================= */
 /* COLOR THEMES (Data Attribute Overrides)                                                           */
 /* ================================================================================================= */
+
+/* ORANGE THEME */
+[data-color='orange'] {
+  --color-primary: 24 99% 55%;   /* #FB8500 - Vibrant Orange */
+  --color-primary-hover: 17 99% 48%; /* #ea580c */
+  --color-primary-light: 32 98% 93%; /* #ffedd5 */
+  --color-primary-text: 15 79% 34%; /* #c2410c */
+}
+[data-color='orange'].dark {
+  --color-primary: 24 99% 55%;
+  --color-primary-hover: 24 99% 65%;
+  --color-primary-light: 24 40% 20%;
+  --color-primary-text: 24 99% 80%;
+}
 
 /* GREEN THEME */
 [data-color='green'] {

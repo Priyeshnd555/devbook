@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Lightbulb, Lock, X } from 'lucide-react';
 import { LucidCardItem } from './LucidCardItem';
 import { useLucidManager } from '../hooks/useLucidManager';
 import { Task } from "@shared/types";
@@ -33,7 +32,6 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
   const {
     folderCards,
     folderConnections,
-    activeCommitment,
     draggedCardId,
     linkingFromId,
     proximityTargetId,
@@ -47,8 +45,7 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
     createConnection,
     removeConnection,
     updateCardTasks,
-    setCommitment,
-    clearCommitment,
+    updateCardWidth,
     cardRefs,
     connectionRefs,
   } = useLucidManager(activeProjectId);
@@ -160,8 +157,8 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
       <div className="absolute inset-0 z-0">
         <svg className="absolute inset-0 pointer-events-none z-0 w-full h-full overflow-visible">
           <defs>
-            <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-              <polygon points="0 0, 8 3, 0 6" fill="currentColor" className="text-border" />
+            <marker id="arrowhead" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" className="text-slate-700 dark:text-slate-300" />
             </marker>
           </defs>
           {folderConnections.map(conn => {
@@ -169,28 +166,37 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
             const to = folderCards.find(c => c.id === conn.to);
             if (!from || !to) return null;
 
+            const fromWidth = from.width || 240;
+            const toWidth = to.width || 240;
+            const fromX = from.x + fromWidth / 2;
+            const toX = to.x + toWidth / 2;
+            const midX = (fromX + toX) / 2;
+            const midY = (from.y + to.y + 60) / 2;
+
             return (
               <g key={conn.id} className="group pointer-events-auto">
                 <line
                   ref={el => { connectionRefs.current[conn.id] = el }}
-                  x1={from.x + 110} y1={from.y + 30} x2={to.x + 110} y2={to.y + 30}
-                  stroke="currentColor" strokeWidth="1.5"
+                  x1={fromX} y1={from.y + 30} x2={toX} y2={to.y + 30}
+                  stroke="currentColor" strokeWidth="2"
                   markerEnd="url(#arrowhead)"
-                  className="text-border opacity-60 group-hover:opacity-100 transition-opacity"
+                  className="text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors"
                 />
                 <circle 
-                  cx={(from.x + to.x + 220) / 2} 
-                  cy={(from.y + to.y + 60) / 2} 
-                  r="12" fill="var(--color-surface)" 
+                  cx={midX} 
+                  cy={midY} 
+                  r="12" 
+                  fill="var(--color-surface)" 
                   stroke="currentColor" 
-                  className="text-border opacity-0 group-hover:opacity-100 cursor-pointer shadow-sm transition-all" 
+                  strokeWidth="1.5"
+                  className="text-slate-700 dark:text-slate-300 opacity-0 group-hover:opacity-100 cursor-pointer shadow-md transition-all hover:text-danger hover:scale-110" 
                   onClick={() => removeConnection(conn.id)} 
                 />
                 <text 
-                  x={(from.x + to.x + 220) / 2} 
-                  y={(from.y + to.y + 60) / 2 + 4} 
+                  x={midX} 
+                  y={midY + 4} 
                   textAnchor="middle" 
-                  className="pointer-events-none opacity-0 group-hover:opacity-100 fill-text-secondary font-bold text-[10px]"
+                  className="pointer-events-none opacity-0 group-hover:opacity-100 fill-slate-700 dark:fill-slate-300 font-bold text-xs"
                 >
                   ×
                 </text>
@@ -218,41 +224,10 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
               onUnlink={unlinkCard}
               onSetLinkingFrom={setLinkingFromId}
               onUpdateTasks={updateCardTasks}
+              onUpdateWidth={updateCardWidth}
               taskItemProps={lucidTaskItemProps}
             />
           ))}
-        </div>
-      </div>
-
-      {/* DOCK / COMMITMENT area */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-full max-w-2xl z-40 px-6">
-        <div className="bg-surface border border-border shadow-xl rounded-[32px] p-6 flex items-center gap-6">
-          {activeCommitment ? (
-            <div className="flex-1 flex items-center gap-6 animate-in slide-in-from-bottom-2">
-              <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg">
-                <Lock size={28} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-black text-text-secondary/40 uppercase tracking-widest mb-1">Final Goal</p>
-                <p className="text-text-primary font-bold text-xl truncate tracking-tight italic font-sans">{activeCommitment.content}</p>
-              </div>
-              <button onClick={clearCommitment} className="p-4 text-text-secondary/40 hover:text-danger transition-all"><X size={20} /></button>
-            </div>
-          ) : (
-            <form className="flex-1 flex items-center gap-6" onSubmit={(e) => {
-              e.preventDefault();
-              const val = (e.currentTarget.elements.namedItem('goal') as HTMLInputElement).value;
-              if (val) setCommitment(val);
-              e.currentTarget.reset();
-            }}>
-              <div className="w-12 h-12 flex items-center justify-center text-primary/40">
-                <Lightbulb size={28} />
-              </div>
-              <input name="goal" autoComplete="off" placeholder="What's the ultimate goal?"
-                className="flex-1 bg-transparent border-none outline-none focus:ring-0 text-xl font-medium text-text-primary placeholder:text-text-secondary/20 font-sans italic" />
-              <button type="submit" className="bg-primary text-white px-8 py-3 rounded-2xl font-bold text-sm hover:bg-primary-hover transition-all">ACTIVATE</button>
-            </form>
-          )}
         </div>
       </div>
     </main>

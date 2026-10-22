@@ -32,9 +32,9 @@ interface ThemeProviderState {
 const initialState: ThemeProviderState = {
   theme: "system",
   setTheme: () => null,
-  themeColor: "orange",
+  themeColor: "blue",
   setThemeColor: () => null,
-  customColor: "#FB8500", // Default vibrant orange hex
+  customColor: "#3B82F6", // Default vibrant blue hex
   setCustomColor: () => null,
   fontSize: "normal",
   setFontSize: () => null,
@@ -56,8 +56,8 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  defaultColor = "orange",
-  defaultCustomColor = "#FB8500",
+  defaultColor = "blue",
+  defaultCustomColor = "#3B82F6",
   defaultFontSize = "normal",
   storageKey = "devbook-theme",
   colorStorageKey = "devbook-color-theme",
