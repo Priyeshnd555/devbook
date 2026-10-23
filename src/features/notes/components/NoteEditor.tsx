@@ -65,14 +65,24 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     lastSavedRef.current = initialContent;
   }, [initialContent]);
 
-  // Clean up any pending auto-save timer on unmount
+  const editedNoteTextRef = useRef<string>(initialContent);
+
+  useEffect(() => {
+    editedNoteTextRef.current = editedNoteText;
+  }, [editedNoteText]);
+
+  // Clean up any pending auto-save timer on unmount and ensure pending edits are saved
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      if (editedNoteTextRef.current !== lastSavedRef.current) {
+        saveNote(threadId, taskId, editedNoteTextRef.current);
       }
     };
-  }, []);
+  }, [saveNote, threadId, taskId]);
 
   // Debounced auto-save callback to prevent multiple re-renders while typing
   const handleUpdate = useCallback(

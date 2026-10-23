@@ -48,7 +48,7 @@
  */
 import { NoteEditor } from "@features/notes";
 import { useState, useMemo, useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Plus,
   ChevronDown,
@@ -120,9 +120,47 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
   const isEditing = editingNote === task.id;
   const isAddingChild = addingChildTo === task.id;
   const isEditingTask = editingTaskId === task.id;
-  // const [isNoteExpanded, setIsNoteExpanded] = useState(true);
   const [justCompleted, setJustCompleted] = useState(false);
-  // const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+
+  const hasNote = useMemo(() => {
+    if (!task.note) return false;
+    return task.note.replace(/<[^>]*>/g, "").trim().length > 0;
+  }, [task.note]);
+
+  const [isNoteOpen, setIsNoteOpen] = useState(hasNote);
+
+  // Sync state if editing starts externally
+  useEffect(() => {
+    if (isEditing) {
+      setIsNoteOpen(true);
+    }
+  }, [isEditing]);
+
+  // If there is no note and we stop editing, close the empty note container
+  useEffect(() => {
+    if (!hasNote && !isEditing) {
+      setIsNoteOpen(false);
+    }
+  }, [hasNote, isEditing]);
+
+  const isDetailsVisible = isNoteOpen || isEditing;
+
+  const handleToggleNote = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isDetailsVisible) {
+      setIsNoteOpen(false);
+      if (isEditing) {
+        setEditingNote(null);
+      }
+    } else {
+      setIsNoteOpen(true);
+      if (!hasNote) {
+        setEditingNote(task.id);
+      }
+    }
+  };
 
   const handleToggleDone = () => {
     if (!task.done) {
@@ -264,18 +302,26 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
             )}
 
             {/* Note Section */}
-            {(task.note || isEditing) && (
-              <div className="mt-1">
-                <NoteEditor
-                  initialContent={task.note}
-                  threadId={threadId}
-                  taskId={task.id}
-                  saveNote={saveNote}
-                  setEditingNote={setEditingNote}
-                  isEditing={isEditing}
-                />
-              </div>
-            )}
+            <AnimatePresence initial={false}>
+              {isDetailsVisible && (hasNote || isEditing) && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: "auto", marginTop: 4 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  transition={{ duration: 0.18, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <NoteEditor
+                    initialContent={task.note}
+                    threadId={threadId}
+                    taskId={task.id}
+                    saveNote={saveNote}
+                    setEditingNote={setEditingNote}
+                    isEditing={isEditing}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity shrink-0">
@@ -289,15 +335,35 @@ export const TaskItem: React.FC<TaskItemProps> = (props) => {
                 fill={task.priority > 0 ? "currentColor" : "none"}
               />
             </button>
-            {!task.note && !isEditing && (
-              <button
-                onClick={() => setEditingNote(task.id)}
-                className="p-1.5 text-text-secondary/80 hover:text-primary hover:bg-primary-light rounded transition-colors"
-                title="Add note"
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-              </button>
-            )}
+            <button
+              onClick={handleToggleNote}
+              className={`p-1.5 rounded transition-colors ${
+                isDetailsVisible
+                  ? "bg-primary-light text-primary"
+                  : hasNote
+                  ? "text-primary/80 hover:text-primary hover:bg-primary-light"
+                  : "text-text-secondary/80 hover:text-primary hover:bg-primary-light"
+              }`}
+              title={
+                isDetailsVisible
+                  ? "Hide details"
+                  : hasNote
+                  ? "Show details"
+                  : "Add details"
+              }
+              aria-label={
+                isDetailsVisible
+                  ? "Hide details"
+                  : hasNote
+                  ? "Show details"
+                  : "Add details"
+              }
+            >
+              <MessageSquare
+                className="w-3.5 h-3.5"
+                fill={hasNote ? "currentColor" : "none"}
+              />
+            </button>
             <button
               onClick={() => {
                 setAddingChildTo(task.id);
