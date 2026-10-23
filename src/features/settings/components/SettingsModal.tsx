@@ -1,4 +1,3 @@
-
 // =================================================================================================
 // CONTEXT ANCHOR: SETTINGS MODAL (app/components/SettingsModal.tsx)
 // =================================================================================================
@@ -19,7 +18,8 @@
 //   to allow infinite color choice while maintaining a custom UI appearance.
 // =================================================================================================
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Plus } from "lucide-react";
 import { Switch, Listbox } from "@headlessui/react";
@@ -31,7 +31,22 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   // STRATEGY: Connect to global ThemeProvider.
   // We map the global 'theme' string to a binary 'isDarkMode' boolean for the Switch component.
@@ -56,7 +71,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     customColor, setCustomColor, 
     fontSize, setFontSize,
   } = themeContext;
-
 
   // CONSTRAINT: Simple toggle logic assuming 'dark' vs 'light'. 
   // 'system' resets to default, but the toggle forces explicit choice.
@@ -88,30 +102,36 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   ];
   const selectedFontSize = fontSizes.find(fs => fs.value === fontSize) || fontSizes[1];
 
-  if (!isOpen) return null;
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
+          key="settings-modal-backdrop"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          transition={{ duration: 0.18 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 [transform:translateZ(0)]"
           onClick={onClose}
         >
           <motion.div
-            initial={{ scale: 0.95, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.95, y: 20, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4"
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 12 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="bg-surface rounded-xl shadow-2xl border border-border w-full max-w-md mx-4 overflow-hidden flex flex-col [transform:translateZ(0)]"
             onClick={(e) => e.stopPropagation()} // CONSTRAINT: Prevents modal from closing when clicking inside the panel.
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="settings-modal-title"
           >
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className="text-lg font-semibold text-text-primary">Settings</h2>
+            <div className="flex items-center justify-between p-4 border-b border-border bg-surface/50">
+              <h2 id="settings-modal-title" className="text-base font-semibold text-text-primary">Settings</h2>
               <button
                 onClick={onClose}
-                className="p-1 rounded-full text-text-secondary hover:bg-background hover:text-text-primary transition-colors"
+                className="p-1 rounded-md text-text-secondary hover:bg-background hover:text-text-primary transition-colors cursor-pointer"
                 aria-label="Close settings"
               >
                 <X className="h-5 w-5" />
@@ -128,7 +148,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                   checked={isDarkMode}
                   onChange={handleThemeChange}
                   className={`${isDarkMode ? "bg-primary" : "bg-border"
-                    } relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
+                    } relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer`}
                 >
                   <span
                     className={`${isDarkMode ? "translate-x-6" : "translate-x-1"
@@ -146,7 +166,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <button
                       key={color.value}
                       onClick={() => setThemeColor(color.value)}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 ${color.bgClass
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 cursor-pointer ${color.bgClass
                         } ${themeColor === color.value ? "ring-2 ring-offset-2 ring-text-primary" : ""}`}
                       aria-label={`Select ${color.name} theme`}
                     >
@@ -160,7 +180,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                   <div className="relative flex items-center justify-center ml-2 pl-2 border-l border-border">
                     <button
                       onClick={() => setThemeColor("custom")}
-                      className={`group relative w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 overflow-hidden ${themeColor === "custom" ? "ring-2 ring-offset-2 ring-text-primary" : ""}`}
+                      className={`group relative w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 overflow-hidden cursor-pointer ${themeColor === "custom" ? "ring-2 ring-offset-2 ring-text-primary" : ""}`}
                       aria-label="Select Custom theme"
                       style={{ background: 'conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)' }}
                     >
@@ -173,13 +193,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                         <Plus className="w-4 h-4 text-white drop-shadow-md z-10 opacity-70 group-hover:opacity-100" />
                       )}
                     </button>
-                    {/* Hidden input overlay that triggers on click? Or just separate input? 
-                        Analysis: Best UX is probably a button that activates the mode, 
-                        and if active, maybe shows the color or allows picking. 
-                        Let's put the input on top with opacity 0 if we want direct click-to-open, 
-                        BUT we want to be able to select "custom" as a mode even if we don't change color.
-                        Better: Separate tiny input or just trigger click on input.
-                    */}
                     <input
                       type="color"
                       value={customColor}
@@ -202,7 +215,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 <div className="w-32 relative">
                   <Listbox value={fontSize} onChange={setFontSize}>
                     <div className="relative">
-                      <Listbox.Button className="relative w-full cursor-default rounded-lg py-2 pl-3 pr-10 text-left bg-background border border-border text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm">
+                      <Listbox.Button className="relative w-full cursor-pointer rounded-lg py-2 pl-3 pr-10 text-left bg-background border border-border text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm">
                         <span className="block truncate">{selectedFontSize.label}</span>
                         <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                           <svg
@@ -220,7 +233,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                           <Listbox.Option
                             key={size.value}
                             className={({ active }) =>
-                              `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? "bg-primary/10 text-primary" : "text-text-primary"
+                              `relative cursor-pointer select-none py-2 pl-10 pr-4 ${active ? "bg-primary/10 text-primary" : "text-text-primary"
                               }`
                             }
                             value={size.value}
@@ -252,7 +265,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
             <div className="px-4 py-3 bg-background border-t border-border flex justify-end">
               <button
                 onClick={onClose}
-                className="px-5 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background"
+                className="px-5 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background cursor-pointer"
               >
                 Done
               </button>
@@ -260,7 +273,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 

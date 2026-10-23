@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, X, AlertTriangle, Layers } from "lucide-react";
 import { Thread } from "@shared/types";
@@ -21,6 +22,12 @@ export const DeleteCardModal: React.FC<DeleteCardModalProps> = ({
   thread,
   threadNumber,
 }) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -32,30 +39,39 @@ export const DeleteCardModal: React.FC<DeleteCardModalProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!thread) return null;
+  // Keep a reference to the active thread so during exit animation
+  // when the caller clears thread to null, the card content doesn't vanish prematurely
+  const lastThreadRef = useRef<Thread | null>(thread);
+  if (thread) {
+    lastThreadRef.current = thread;
+  }
+  const activeThread = thread || lastThreadRef.current;
 
-  const totalTasks = countAllTasks(thread.tasks || []);
+  if (!mounted) return null;
+
+  const totalTasks = activeThread ? countAllTasks(activeThread.tasks || []) : 0;
   const cardTitle =
-    thread.title?.trim() ||
+    activeThread?.title?.trim() ||
     (threadNumber !== undefined ? `Thread ${threadNumber}` : "Untitled Card");
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      {isOpen && (
+      {isOpen && activeThread && (
         <motion.div
           key="delete-card-modal-backdrop"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+          transition={{ duration: 0.18 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 [transform:translateZ(0)]"
           onClick={onClose}
         >
           <motion.div
-            initial={{ scale: 0.95, y: 15 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.95, y: 15, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="bg-surface rounded-xl shadow-2xl border border-border w-full max-w-md overflow-hidden flex flex-col"
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 12 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="bg-surface rounded-xl shadow-2xl border border-border w-full max-w-md overflow-hidden flex flex-col [transform:translateZ(0)]"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -120,7 +136,6 @@ export const DeleteCardModal: React.FC<DeleteCardModalProps> = ({
                 type="button"
                 onClick={onClose}
                 className="px-3.5 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-background border border-border rounded-lg transition-colors cursor-pointer"
-                autoFocus
               >
                 Cancel
               </button>
@@ -140,6 +155,7 @@ export const DeleteCardModal: React.FC<DeleteCardModalProps> = ({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
