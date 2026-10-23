@@ -440,11 +440,10 @@ export const useLucidManager = (
   };
 
   const deleteCard = (id: string) => {
+    setCards(prev => prev.filter(c => c.id !== id));
+    setConnections(prev => prev.filter(conn => conn.from !== id && conn.to !== id));
     if (actions?.deleteThread) {
       actions.deleteThread(id);
-    } else {
-      setCards(prev => prev.filter(c => c.id !== id));
-      setConnections(prev => prev.filter(conn => conn.from !== id && conn.to !== id));
     }
   };
 

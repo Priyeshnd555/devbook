@@ -24,6 +24,7 @@ interface LucidCanvasProps {
   onUpdateThreadStatus?: (id: string, status: ThreadStatus) => void;
   onUpdateThreadTasks?: (id: string, tasks: Task[]) => void;
   onDeleteThread?: (id: string) => void;
+  onOpenMergeModal?: (id: string) => void;
   onUnlinkThread?: (id: string) => void;
   onCreateConnection?: (fromId: string, toId: string) => void;
   onRemoveConnection?: (id: string) => void;
@@ -58,6 +59,7 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
   onUpdateThreadStatus,
   onUpdateThreadTasks,
   onDeleteThread,
+  onOpenMergeModal,
   onUnlinkThread,
   onCreateConnection,
   onRemoveConnection,
@@ -363,6 +365,7 @@ export const LucidCanvas: React.FC<LucidCanvasProps> = ({
               onUpdateContent={updateCardContent}
               onUpdateStatus={updateCardStatus}
               onDelete={deleteCard}
+              onMerge={onOpenMergeModal}
               onUnlink={unlinkCard}
               onSetLinkingFrom={setLinkingFromId}
               onUpdateTasks={updateCardTasks}

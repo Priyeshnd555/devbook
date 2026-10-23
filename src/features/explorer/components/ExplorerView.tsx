@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, ArrowUp, ArrowDown, LayoutGrid, List } from "lucide-react";
-import { ThreadCard } from "@features/notes";
+import { Plus, ArrowUp, ArrowDown, LayoutGrid, List, GitMerge } from "lucide-react";
+import { ThreadCard, MergeThreadsModal, DeleteCardModal } from "@features/notes";
+import { Thread } from "@shared/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProjectSidebar } from "@features/projects";
 import { GlobalHeader } from "@features/layout";
@@ -42,6 +43,7 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({ defaultView = "list"
     updateThreadTitle,
     updateThreadStatus,
     deleteThread,
+    mergeThreads,
     toggleThread,
     addRootTaskToThread,
     setAddingSessionTo,
@@ -68,6 +70,21 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({ defaultView = "list"
   const [viewMode, setViewMode] = useState<"list" | "canvas">(defaultView);
   const [isSidebarVisible, setSidebarVisible] = useState(false);
   const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [mergeSourceThreadId, setMergeSourceThreadId] = useState<string | null>(null);
+  const [threadToDelete, setThreadToDelete] = useState<Thread | null>(null);
+
+  const handleOpenMergeModal = (threadId?: string) => {
+    setMergeSourceThreadId(threadId || null);
+    setIsMergeModalOpen(true);
+  };
+
+  const handleRequestDelete = (threadId: string) => {
+    const thread = threads[threadId];
+    if (thread) {
+      setThreadToDelete(thread);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-background font-sans overflow-hidden">
@@ -148,6 +165,18 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({ defaultView = "list"
               </button>
             )}
 
+            {filteredThreadOrder.length >= 2 && (
+              <button
+                id="merge-cards-header-btn"
+                onClick={() => handleOpenMergeModal()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-text-secondary hover:text-primary hover:bg-surface bg-surface/90 border border-border/80 shadow-xs backdrop-blur-md transition-all cursor-pointer"
+                title="Combine or merge cards"
+              >
+                <GitMerge className="w-3.5 h-3.5 text-primary" />
+                <span>Merge Cards</span>
+              </button>
+            )}
+
             {/* List and All Cards View Switcher */}
             <div className="flex items-center p-0.5 bg-surface/95 border border-border/80 rounded-lg shadow-xs backdrop-blur-md">
               <button
@@ -196,7 +225,8 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({ defaultView = "list"
               onUpdateThreadTitle={updateThreadTitle}
               onUpdateThreadStatus={updateThreadStatus}
               onUpdateThreadTasks={updateThreadTasks}
-              onDeleteThread={deleteThread}
+              onDeleteThread={handleRequestDelete}
+              onOpenMergeModal={handleOpenMergeModal}
               onUnlinkThread={unlinkThread}
               onCreateConnection={createConnection}
               onRemoveConnection={removeConnection}
@@ -295,7 +325,8 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({ defaultView = "list"
                           isThreadExpanded={expandedThreads.has(thread.id)}
                           toggleThread={toggleThread}
                           onUpdateTitle={updateThreadTitle}
-                          onDelete={deleteThread}
+                          onDelete={handleRequestDelete}
+                          onMerge={handleOpenMergeModal}
                           onAddRootTask={addRootTaskToThread}
                           onUpdateStatus={updateThreadStatus}
                           addingSessionTo={addingSessionTo}
@@ -377,6 +408,33 @@ export const ExplorerView: React.FC<ExplorerViewProps> = ({ defaultView = "list"
       <SettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setSettingsModalOpen(false)}
+      />
+      <MergeThreadsModal
+        isOpen={isMergeModalOpen}
+        onClose={() => {
+          setIsMergeModalOpen(false);
+          setMergeSourceThreadId(null);
+        }}
+        initialSourceId={mergeSourceThreadId}
+        threads={threads}
+        threadOrder={filteredThreadOrder}
+        onMerge={mergeThreads}
+      />
+      <DeleteCardModal
+        isOpen={!!threadToDelete}
+        onClose={() => setThreadToDelete(null)}
+        onConfirm={() => {
+          if (threadToDelete) {
+            deleteThread(threadToDelete.id);
+            setThreadToDelete(null);
+          }
+        }}
+        thread={threadToDelete}
+        threadNumber={
+          threadToDelete
+            ? filteredThreadOrder.indexOf(threadToDelete.id) + 1
+            : undefined
+        }
       />
     </div>
   );

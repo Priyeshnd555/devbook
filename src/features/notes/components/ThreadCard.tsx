@@ -47,6 +47,7 @@ import {
   Clock,
   Pencil,
   Trash2,
+  GitMerge,
   Eye,
   EyeOff,
   ArrowUp,
@@ -97,6 +98,7 @@ interface ThreadCardProps {
   toggleThread: (threadId: string) => void;
   onUpdateTitle: (threadId: string, newTitle: string) => void;
   onDelete: (threadId: string) => void;
+  onMerge?: (threadId: string) => void;
   onAddRootTask: (threadId: string) => void;
   onUpdateStatus: (threadId: string, status: ThreadStatus) => void;
   addingSessionTo: string | null;
@@ -126,6 +128,7 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
   toggleThread,
   onUpdateTitle,
   onDelete,
+  onMerge,
   onAddRootTask,
   onUpdateStatus,
   addingSessionTo,
@@ -245,11 +248,14 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
-                <h3 className="text-base font-semibold text-text-primary hover:text-primary transition-colors cursor-text" onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }}>{thread.title}</h3>
+                <h3 className="text-base font-semibold text-text-primary hover:text-primary transition-colors cursor-text" onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }}>{thread.title || `Thread ${threadNumber}`}</h3>
               )}
               <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
-                <button onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }} className="p-1 text-text-secondary/80 hover:text-primary transition-colors" title="Edit title"><Pencil className="w-3.5 h-3.5" /></button>
-                <button onClick={(e) => { e.stopPropagation(); onDelete(thread.id); }} className="p-1 text-text-secondary/80 hover:text-danger transition-colors" title="Delete thread"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button onClick={(e) => { e.stopPropagation(); setEditingThreadId(thread.id); }} className="p-1 text-text-secondary/80 hover:text-primary transition-colors cursor-pointer" title="Edit title"><Pencil className="w-3.5 h-3.5" /></button>
+                {onMerge && (
+                  <button id={`merge-card-btn-${thread.id}`} onClick={(e) => { e.stopPropagation(); onMerge(thread.id); }} className="p-1 text-text-secondary/80 hover:text-primary transition-colors cursor-pointer" title="Merge card with another"><GitMerge className="w-3.5 h-3.5" /></button>
+                )}
+                <button onClick={(e) => { e.stopPropagation(); onDelete(thread.id); }} className="p-1 text-text-secondary/80 hover:text-danger transition-colors cursor-pointer" title="Delete thread"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             </div>
 

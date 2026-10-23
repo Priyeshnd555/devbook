@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef } from "react";
-import { Trash2, Link as LinkIcon, Unlink, Plus, Clock, Eye, EyeOff, ChevronDown, ChevronRight } from "lucide-react";
+import { Trash2, Link as LinkIcon, Unlink, Plus, Clock, Eye, EyeOff, ChevronDown, ChevronRight, GitMerge } from "lucide-react";
 import { TaskItem, TaskItemProps } from "@features/tasks";
 import { Task, ThreadStatus, THREAD_STATE_TRANSITIONS } from "@shared/types";
 import {
@@ -32,6 +32,7 @@ interface LucidCardItemProps {
   onUpdateContent: (id: string, content: string) => void;
   onUpdateStatus?: (id: string, status: ThreadStatus) => void;
   onDelete: (id: string) => void;
+  onMerge?: (id: string) => void;
   onUnlink: (id: string) => void;
   onSetLinkingFrom: (id: string) => void;
   onUpdateTasks: (id: string, tasks: Task[]) => void;
@@ -58,6 +59,7 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
   onUpdateContent,
   onUpdateStatus,
   onDelete,
+  onMerge,
   onUnlink,
   onSetLinkingFrom,
   onUpdateTasks,
@@ -380,6 +382,18 @@ export const LucidCardItem: React.FC<LucidCardItemProps> = ({
             >
               <LinkIcon size={13} />
             </button>
+            {onMerge && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMerge(card.id);
+                }}
+                className="text-text-secondary/70 hover:text-primary transition-colors p-1 rounded hover:bg-background cursor-pointer"
+                title="Merge Card"
+              >
+                <GitMerge size={13} />
+              </button>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation();

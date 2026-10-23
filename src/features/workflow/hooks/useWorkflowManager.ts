@@ -48,7 +48,7 @@
  * =================================================================================================
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 
 import { usePersistentState } from "@shared/hooks";
 
@@ -194,13 +194,15 @@ const useWorkflowManager = () => {
   };
 
 
+  const hasInitializedRef = useRef(false);
+
   useEffect(() => {
-    // STRATEGY: Handles application initialization and data integrity checks on mount.
+    // STRATEGY: Handles application initialization and data integrity checks once on mount.
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
 
     // 1. Project Initialization: If no projects exist, create a default "Inbox" project.
-
     //    This ensures the app is never in a state without at least one project.
-
     if (Object.keys(projects).length === 0) {
       const inboxId = "proj-inbox";
 
@@ -214,9 +216,7 @@ const useWorkflowManager = () => {
     }
 
     // 2. Project Selection: If no project is selected but projects exist, select the first
-
     //    available root project to ensure the UI is always displaying a valid project context.
-
     if (!selectedProjectId && Object.keys(projects).length > 0) {
       const firstProject =
         (Object.values(projects) as Project[]).find(
@@ -229,12 +229,9 @@ const useWorkflowManager = () => {
     }
 
     // 3. Data Migration: For backward compatibility, this checks if any threads are missing a
-
     //    `projectId`. If so, it assigns them to the "Inbox" project. This is a one-time
-
     //    migration to handle older data structures.
-
-        const threadsNeedMigration =
+    const threadsNeedMigration =
       Array.isArray(threads) ||
       Object.values(threads).some((t) => typeof t === 'object' && t !== null && !('projectId' in t));
 
@@ -248,17 +245,17 @@ const useWorkflowManager = () => {
       }
 
       // Define a utility function to normalize thread data
-      const normalizeThread = (thread: Partial<Thread>, inboxId: string): Thread => {
-          return {
-              id: thread.id || `thread-${Date.now()}`, // Ensure ID exists
-              projectId: thread.projectId || inboxId,
-              title: thread.title || 'Migrated Thread',
-              status: thread.status || 'active',
-              lastWorked: thread.lastWorked || new Date().toISOString().split("T")[0],
-              tasks: thread.tasks || [],
-              sessions: thread.sessions || [],
-              createdAt: thread.createdAt || Date.now(),
-          };
+      const normalizeThread = (thread: Partial<Thread>, targetInboxId: string): Thread => {
+        return {
+          id: thread.id || `thread-${Date.now()}`,
+          projectId: thread.projectId || targetInboxId,
+          title: thread.title || 'Migrated Thread',
+          status: thread.status || 'active',
+          lastWorked: thread.lastWorked || new Date().toISOString().split("T")[0],
+          tasks: Array.isArray(thread.tasks) ? thread.tasks : [],
+          sessions: Array.isArray(thread.sessions) ? thread.sessions : [],
+          createdAt: thread.createdAt || Date.now(),
+        };
       };
 
       setThreads((currentThreads) => {
@@ -274,7 +271,7 @@ const useWorkflowManager = () => {
           Object.keys(currentThreads).forEach((id) => {
             const thread = currentThreads[id];
             if (typeof thread === "object" && thread !== null && thread.id) {
-                migratedThreads[id] = normalizeThread(thread, inboxId!);
+              migratedThreads[id] = normalizeThread(thread, inboxId!);
             }
           });
         }
@@ -283,7 +280,7 @@ const useWorkflowManager = () => {
       });
     }
 
-    // 4. Migration from separate Lucid cards to unified threads
+    // 4. One-time Migration from separate Lucid cards to unified threads
     try {
       if (typeof window !== "undefined") {
         const savedLucid = localStorage.getItem("lucid_web_v12");
@@ -302,7 +299,7 @@ const useWorkflowManager = () => {
                     title: card.content || "Thought...",
                     status: "active",
                     lastWorked: new Date().toISOString().split("T")[0],
-                    tasks: card.tasks || [],
+                    tasks: Array.isArray(card.tasks) ? card.tasks : [],
                     sessions: [],
                     createdAt: card.createdAt || Date.now(),
                     x: card.x,
@@ -322,6 +319,8 @@ const useWorkflowManager = () => {
               return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
             });
           }
+          // IMPORTANT: Clean up legacy storage so it doesn't resurrect deleted or merged cards
+          localStorage.removeItem("lucid_web_v12");
         }
       }
     } catch {
@@ -329,7 +328,7 @@ const useWorkflowManager = () => {
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projects, setProjects, threads, setThreads]);
+  }, [projects, setProjects, setThreads, setConnections, setSelectedProjectId]);
 
   useEffect(() => {
     // STRATEGY: Ensures the integrity and consistency of the thread order and selection.
@@ -526,7 +525,6 @@ const useWorkflowManager = () => {
     const targetProjectId = selectedProjectId || (Object.keys(projects)[0] || "proj-inbox");
 
     if (!targetTitle && title === undefined) {
-      alert("Please enter a title or thought for the card.");
       return;
     }
 
@@ -648,18 +646,153 @@ const useWorkflowManager = () => {
   };
 
   const deleteThread = (threadId: string) => {
-    if (window.confirm("Are you sure you want to delete this card? This action cannot be undone.")) {
-      setThreads((prev) => {
-        const newThreads = { ...prev };
-        delete newThreads[threadId];
-        return newThreads;
-      });
+    setThreads((prev) => {
+      const newThreads = { ...prev };
+      delete newThreads[threadId];
+      return newThreads;
+    });
 
-      setThreadOrder((prev) => prev.filter((id) => id !== threadId));
-      setConnections((prev) => prev.filter((c) => c.from !== threadId && c.to !== threadId));
+    setThreadOrder((prev) => prev.filter((id) => id !== threadId));
+    setConnections((prev) => prev.filter((c) => c.from !== threadId && c.to !== threadId));
 
-      if (selectedThreadId === threadId) {
-        setSelectedThreadId(null);
+    setLocalShowCompleted((prev) => {
+      if (!prev[threadId]) return prev;
+      const next = { ...prev };
+      delete next[threadId];
+      return next;
+    });
+
+    setExpandedThreads((prev) => {
+      if (!prev.has(threadId)) return prev;
+      const next = new Set(prev);
+      next.delete(threadId);
+      return next;
+    });
+
+    if (selectedThreadId === threadId) {
+      setSelectedThreadId(null);
+    }
+
+    // Clean up legacy storage if any remains
+    if (typeof window !== "undefined") {
+      try {
+        const savedLucid = localStorage.getItem("lucid_web_v12");
+        if (savedLucid) {
+          const parsed = JSON.parse(savedLucid);
+          if (parsed.cards) {
+            parsed.cards = parsed.cards.filter((c: any) => c.id !== threadId);
+            localStorage.setItem("lucid_web_v12", JSON.stringify(parsed));
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  const mergeThreads = (
+    sourceThreadId: string,
+    targetThreadId: string,
+    options?: {
+      customTitle?: string;
+    }
+  ) => {
+    if (sourceThreadId === targetThreadId) return;
+
+    setThreads((prevThreads) => {
+      const source = prevThreads[sourceThreadId];
+      const target = prevThreads[targetThreadId];
+      if (!source || !target) return prevThreads;
+
+      // Combine tasks safely even if tasks array is empty or undefined
+      const targetTasks = Array.isArray(target.tasks) ? target.tasks : [];
+      const sourceTasks = Array.isArray(source.tasks) ? source.tasks : [];
+      const mergedTasks = [...targetTasks, ...sourceTasks];
+
+      // Combine sessions safely even if sessions array is empty or undefined
+      const targetSessions = Array.isArray(target.sessions) ? target.sessions : [];
+      const sourceSessions = Array.isArray(source.sessions) ? source.sessions : [];
+      const mergedSessions = [...targetSessions, ...sourceSessions];
+
+      // Title
+      const finalTitle = options?.customTitle?.trim() || target.title;
+
+      // Determine most recent lastWorked timestamp
+      let latestLastWorked = target.lastWorked;
+      if (source.lastWorked) {
+        const sourceTime = new Date(source.lastWorked).getTime();
+        const targetTime = new Date(target.lastWorked).getTime();
+        if (!isNaN(sourceTime) && !isNaN(targetTime)) {
+          if (sourceTime > targetTime) {
+            latestLastWorked = source.lastWorked;
+          }
+        }
+      }
+
+      const updatedTarget: Thread = {
+        ...target,
+        title: finalTitle,
+        tasks: mergedTasks,
+        sessions: mergedSessions,
+        lastWorked: latestLastWorked,
+      };
+
+      const newThreads = { ...prevThreads, [targetThreadId]: updatedTarget };
+      delete newThreads[sourceThreadId];
+      return newThreads;
+    });
+
+    // Remove source from order
+    setThreadOrder((prev) => prev.filter((id) => id !== sourceThreadId));
+
+    // Remap canvas connections
+    setConnections((prev) =>
+      prev
+        .map((conn) => ({
+          ...conn,
+          from: conn.from === sourceThreadId ? targetThreadId : conn.from,
+          to: conn.to === sourceThreadId ? targetThreadId : conn.to,
+        }))
+        .filter((conn) => conn.from !== conn.to)
+        .filter(
+          (conn, idx, self) =>
+            idx === self.findIndex((c) => c.from === conn.from && c.to === conn.to)
+        )
+    );
+
+    // Update selectedThreadId if source was selected
+    if (selectedThreadId === sourceThreadId) {
+      setSelectedThreadId(targetThreadId);
+    }
+
+    // Clean up localShowCompleted
+    setLocalShowCompleted((prev) => {
+      const next = { ...prev };
+      delete next[sourceThreadId];
+      return next;
+    });
+
+    // Expand target thread so user immediately sees all merged items
+    setExpandedThreads((prev) => {
+      const next = new Set(prev);
+      next.delete(sourceThreadId);
+      next.add(targetThreadId);
+      return next;
+    });
+
+    // Clean up legacy storage if any remains
+    if (typeof window !== "undefined") {
+      try {
+        const savedLucid = localStorage.getItem("lucid_web_v12");
+        if (savedLucid) {
+          const parsed = JSON.parse(savedLucid);
+          if (parsed.cards) {
+            parsed.cards = parsed.cards.filter((c: any) => c.id !== sourceThreadId);
+            localStorage.setItem("lucid_web_v12", JSON.stringify(parsed));
+          }
+        }
+      } catch {
+        // ignore
       }
     }
   };
@@ -1296,6 +1429,7 @@ const useWorkflowManager = () => {
         updateThreadTitle,
         updateThreadStatus,
         deleteThread,
+        mergeThreads,
         toggleThread,
         setThreads,
         setThreadOrder,
